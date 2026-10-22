@@ -12,8 +12,8 @@ Recent changes:
 * Average item level/gear score
 * Lots of fixes (talents, honor tabs etc.)
 
-![Screenshots of Addon]([https://github.com/user-attachments/assets/f5334cd0-a4cd-461e-a644-0424149c3ea0](https://github.com/user-attachments/assets/8a99a3ae-c1f7-417a-a7d4-f01b86ce9cf9))
 
+![Screenshots of Addon]( https://github.com/user-attachments/assets/8a99a3ae-c1f7-417a-a7d4-f01b86ce9cf9 )
 
 Examiner - An Advanced Inspection Addon
 ---------------------------------------
