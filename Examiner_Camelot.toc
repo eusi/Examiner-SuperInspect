@@ -1,0 +1,9 @@
+## Interface: 16001
+## Version: 1.00
+## Title: Examiner
+## Author: Aezay (Earthen Ring EU), sAks
+## Notes: Inspect equipment, compare gear stats, and view talents, PvP details, achievements, and cached profiles.
+## SavedVariables: Examiner_Config, Examiner_Cache
+## Category: User Interface
+
+Load.xml
