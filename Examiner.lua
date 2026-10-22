@@ -1,8 +1,21 @@
+local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
 local gtt = GameTooltip;
+local Compat = ExaminerNS.Compat;
+local GetItemInfo = Compat.GetItemInfo;
+local GetItemQualityColor = Compat.GetItemQualityColor;
+local GetDetailedItemLevelInfo = Compat.GetDetailedItemLevelInfo;
+local GetAddOnMetadata = Compat.GetAddOnMetadata;
+local GetAddOnMemoryUsage = Compat.GetAddOnMemoryUsage;
+local UpdateAddOnMemoryUsage = Compat.UpdateAddOnMemoryUsage;
+local UnitPVPName = Compat.UnitPVPName;
+local GetQuestDifficultyColor = Compat.GetQuestDifficultyColor;
 
 -- Create Examiner Frame
 local modName = ...;
 local ex = CreateFrame("Frame",modName,UIParent);
+ExaminerNS.ex = ex;
+ex.Compat = Compat;
+Examiner = ex;
 
 -- Global Chat Message Function
 function AzMsg(msg) DEFAULT_CHAT_FRAME:AddMessage(tostring(msg):gsub("|1","|cffffff80"):gsub("|2","|cffffffff"),0.5,0.75,1.0); end
@@ -19,18 +32,14 @@ end
 
 -- Data Tables
 local info = { Sets = {}, Items = {}, Runes = {} };
-local averageItemLevel = 0;
-local gs = 0;
 local unitStats = {};
-local equippedSlots = {};
 local statTipStats1, statTipStats2 = {}, {};
 ex.compareStats = {};
 ex.unitStats = unitStats;
 ex.info = info;
 
 -- Misc Constants
-local HOOK_DEFAULT_INSPECT = true;	-- Hook Default Inspect Frame -- Az: Disable for debugging
-local DELAYED_INSPECT_TIME = 1;
+local HOOK_DEFAULT_INSPECT = Compat.isEra or Compat.isTBC;
 local CLASSIFICATION_NAMES = {
 	worldboss = BOSS,
 	rareelite = ITEM_QUALITY3_DESC..ELITE,
@@ -39,9 +48,6 @@ local CLASSIFICATION_NAMES = {
 };
 
 -- Colors
-local VERTEX_COLOR_NORMAL = { 1, 1, 1 };
-local VERTEX_COLOR_CACHED = { 1, 1, 0.4 };
-local VERTEX_COLOR_LOADING = { 0.5, 1, 0.5 };
 local CLASS_COLORS = CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS;
 
 -- Texture Mapping
@@ -49,7 +55,6 @@ local TALENT_BACKGROUNDS = {
 	"DeathKnightBlood", "DeathKnightFrost", "DeathKnightUnholy",
 	"DruidBalance", "DruidFeralCombat", "DruidRestoration",
 	"HunterBeastMastery", "HunterMarksmanship", "HunterSurvival",
---	"HunterPetCunning", "HunterPetFerocity", "HunterPetTenacity",
 	"MageArcane", "MageFire", "MageFrost",
 	"PaladinCombat", "PaladinHoly", "PaladinProtection",
 	"PriestDiscipline", "PriestHoly", "PriestShadow",
@@ -61,25 +66,22 @@ local TALENT_BACKGROUNDS = {
 
 -- Options
 ex.options = {
-	{ var = "makeMovable", default = true, label = "Make Examiner Movable", tip = "To freely move Examiner around, enable this option, otherwise it will behave like a normal frame, such as the Quest Log or Spellbook" },
-	{ var = "autoInspect", default = true, label = "Auto Inspect on Target Change", tip = "With this option turned on, Examiner will automatically inspect your new target when you change it." },
-	{ var = "clearInspectOnHide", default = true, label = "Clear Inspect Data on Hide", tip = "When Examiner gets hidden, this option will clear inspection data, thus freeing up some memory." },
+	{ var = "makeMovable", default = true, label = ExaminerNS.L["Make Examiner Movable"], tip = ExaminerNS.L["Allow dragging the window; otherwise use standard panel positioning."] },
+	{ var = "autoInspect", default = true, label = ExaminerNS.L["Auto Inspect on Target Change"], tip = ExaminerNS.L["Inspect the new target while Examiner is open."] },
+	{ var = "clearInspectOnHide", default = true, label = ExaminerNS.L["Clear Inspect Data on Hide"], tip = ExaminerNS.L["Release the current inspection data when the window is hidden."] },
 	-- { var = "percentRatings", default = false, label = "Show Ratings in Percentage *", tip = "* = Not working in WoD.\nWith this option enabled, ratings will be displayed in percent relative to the inspected person's level." },
-	{ var = "combineAdditiveStats", default = true, label = "Combine Additive Stats", tip = "This option will combine certain stats which stacks with others.\n- Spell Power to specific schools\n- Intellect to Spell Power\n- AP to Ranged AP" },
-	{ var = "tooltipSmartAnchor", default = false, label = "Smart Tooltip Anchor", tip = "Instead of showing item tooltips next to the item button, it will place it next to the Examiner window, in a fixed position" },
+	{ var = "combineAdditiveStats", default = true, label = ExaminerNS.L["Combine Additive Stats"], tip = ExaminerNS.L["Combine compatible equipment bonuses without adding character base stats."] },
+	{ var = "tooltipSmartAnchor", default = false, label = ExaminerNS.L["Smart Tooltip Anchor"], tip = ExaminerNS.L["Anchor item tooltips beside Examiner rather than beside each item."] },
 };
 
 -- Binding Name
 BINDING_HEADER_EXAMINER = modName;
-BINDING_NAME_EXAMINER_OPEN = "Ex: Open "..modName;
+BINDING_NAME_EXAMINER_OPEN = ExaminerNS.L["Open Examiner"];
 BINDING_NAME_EXAMINER_TARGET = "Ex: "..INSPECT.." "..TARGET;
-BINDING_NAME_EXAMINER_MOUSEOVER = "Ex: "..INSPECT.." Mouseover";
+BINDING_NAME_EXAMINER_MOUSEOVER = ExaminerNS.L["Inspect mouseover"];
 
--- Allow Inspect from Any Range -- This was apparently causing TAINT, so it has now been disabled.
---UnitPopupButtons.INSPECT.dist = 0;
--- UIPanelWindow Entry  -- Az: Can this cause TAINT?
 UIPanelWindows[modName] = { area = "left", pushable = 1, whileDead = 1 };
--- Allows the use of Esc to close the window -- Az: Can this cause TAINT? Many other addons uses this, so probably no?
+-- Allow Escape to close the window.
 UISpecialFrames[#UISpecialFrames + 1] = modName;
 
 --------------------------------------------------------------------------------------------------------
@@ -97,6 +99,8 @@ end
 
 -- OnHide
 local function Examiner_OnHide(self)
+	ExaminerNS.Inspector:Cancel();
+	self:SendModuleEvent("OnInspectHidden");
 	self.model.isRotating = nil;
 	self.model.isPanning = nil;
 	self:UnregisterEvent("INSPECT_READY");
@@ -123,14 +127,22 @@ end
 --                                           Event Handling                                           --
 --------------------------------------------------------------------------------------------------------
 
+local function WindowScale(value)
+	if not Compat.IsNumber(value) or value~=value or value<=0 or value==math.huge then return 1; end
+	return math.max(0.75,math.min(1.50,math.floor(value*100+0.5)/100));
+end
+function ex:SetWindowScale(value)
+	if not Compat.IsNumber(value) or value~=value or value<=0 or value==math.huge then return; end
+	cfg.scale=WindowScale(value);
+	self:SetScale(cfg.scale);
+	self:SendModuleEvent("OnConfigChanged","scale",cfg.scale);
+end
 -- Variables Loaded
 function ex:VARIABLES_LOADED(event)
 	-- Config
-	if (not Examiner_Config) then
-		Examiner_Config = {};
-	end
-	cfg = Examiner_Config;
-	if (not cfg.caching) then
+	if type(_G[ExaminerNS.configKey]) ~= "table" then _G[ExaminerNS.configKey] = {}; end
+	cfg = _G[ExaminerNS.configKey];
+	if type(cfg.caching) ~= "table" then
 		cfg.caching = {};
 	end
 	self.cfg = cfg;
@@ -144,15 +156,17 @@ function ex:VARIABLES_LOADED(event)
 		end
 	end
 	-- Cache
-	if (not Examiner_Cache) then
-		Examiner_Cache = {};
-	end
-	cache = Examiner_Cache;
+	if type(_G[ExaminerNS.cacheKey]) ~= "table" then _G[ExaminerNS.cacheKey] = {}; end
+	cache = _G[ExaminerNS.cacheKey];
+	self.cache = cache;
+	ExaminerNS.Cache.Initialize(self);
+	Compat.RestorePage(cfg, self.modules);
 	-- SET: Background Visibility | Scale | Frame Movability
 	self:ShowBackground();
-	self:SetScale(cfg.scale or 1);
+	cfg.scale=WindowScale(cfg.scale);
+	self:SetScale(cfg.scale);
 	self:SetMovable(cfg.makeMovable);
-	if (cfg.makeMovable) and (cfg.left and cfg.bottom) then
+	if (cfg.makeMovable) and Compat.IsNumber(cfg.left) and Compat.IsNumber(cfg.bottom) then
 		self:ClearAllPoints();
 		self:SetPoint("BOTTOMLEFT",cfg.left,cfg.bottom);
 	end
@@ -168,7 +182,7 @@ function ex:VARIABLES_LOADED(event)
 		end
 	end
 	-- Is active page valid?
-	if (cfg.activePage) and (cfg.activePage > #self.modules or not self.modules[cfg.activePage].page) then
+	if (cfg.activePage) and (not self.modules[cfg.activePage] or not self.modules[cfg.activePage].page) then
 		cfg.activePage = nil;
 	end
 	-- Initialise the Config for Modules
@@ -185,6 +199,7 @@ function ex:PLAYER_TARGET_CHANGED(event)
 	if (cfg.autoInspect) and (UnitExists("target")) then
 		self:DoInspect("target");
 	elseif (self.unit == "target") then
+		ExaminerNS.Inspector:Cancel();
 		self.unit = nil;
 		self:SetScript("OnUpdate",nil);
 	end
@@ -192,6 +207,7 @@ end
 
 -- Mouseover Unit Changed
 function ex:UPDATE_MOUSEOVER_UNIT(event)
+	ExaminerNS.Inspector:Cancel();
 	self.unit = nil;
 	self:SetScript("OnUpdate",nil);
 	self:UnregisterEvent("UPDATE_MOUSEOVER_UNIT");
@@ -208,10 +224,7 @@ ex.UNIT_PORTRAIT_UPDATE = ex.UNIT_MODEL_CHANGED;
 
 -- Rescan Gear on Item Change
 function ex:UNIT_INVENTORY_CHANGED(event,unit)
-	if (self:ValidateUnit() and UnitIsUnit(unit,self.unit) and CheckInteractDistance(self.unit,3)) then
-		self:ScanGear(unit);
-		self:SendModuleEvent("OnInspectReady",unit,self.guid);
-	end
+    ExaminerNS.Inspector:InventoryChanged(unit);
 end
 
 -- Modifier State Changed
@@ -224,16 +237,18 @@ function ex:MODIFIER_STATE_CHANGED(event)
 	end
 end
 
--- Inspect Ready -- This event will never fire when on a public transport mount for some odd reason
 function ex:INSPECT_READY(event,guid)
-	self:UnregisterEvent("INSPECT_READY");
-	self:InspectReady(guid);
+    ExaminerNS.Inspector:Ready(guid);
 end
 
 -- INSPECT_HONOR_UPDATE
 function ex:INSPECT_HONOR_UPDATE(event)
-	self:RequestHonorData();
-	self:SendModuleEvent("OnHonorReady");
+    local session=ExaminerNS.Inspector.active;
+    if session and ExaminerNS.Inspector:Valid(session) and session.serverReady
+        and (self.isSelf or ExaminerNS.Inspector.notificationGUID==session.guid) then
+        session.honorReady=true;
+        self:SendModuleEvent('OnHonorReady'); self:CachePlayer();
+    end
 end
 
 -- Achievement Inspection Ready
@@ -324,7 +339,8 @@ ex:SetScript("OnMouseUp",function(self,button) if (self:IsMovable()) then self:S
 ex:RegisterEvent("VARIABLES_LOADED");
 
 -- Close Button
-ex.close = CreateFrame("Button",nil,ex,"UIPanelCloseButton"):SetPoint("TOPRIGHT",-30,-8);
+ex.close = CreateFrame("Button",nil,ex,"UIPanelCloseButton");
+ex.close:SetPoint("TOPRIGHT",-34,-12);
 
 -- Portrait
 ex.portrait = ex:CreateTexture(nil,"BACKGROUND");
@@ -409,12 +425,11 @@ function ex:SetUnitDetailString()
 	-- Players Only: Class (+ Realm)
 	if (info.raceFixed) then
 		if (info.class) then
-			local color = CLASS_COLORS[info.classFixed];
+			local color = CLASS_COLORS[info.classFixed] or { r = 1, g = 1, b = 1 };
 			uDetails[#uDetails + 1] = format("|cff%.2x%.2x%.2x%s|r",color.r * 255,color.g * 255,color.b * 255,info.class);
 		end
 		if (info.realm) then
-			uDetails[#uDetails + 1] = "of";
-			uDetails[#uDetails + 1] = info.realm;
+			uDetails[#uDetails + 1] = "["..info.realm.."]";
 		end
 	end
 	-- Set Result
@@ -428,8 +443,8 @@ function ex:SetUnitGuildString()
 	self.guild:SetText("");
 	-- Players
 	if (info.raceFixed) then
-		if (info.guild and info.guildRank and info.guildIndex) then
-			self.guild:SetFormattedText("%s (%d) of <%s>",info.guildRank,info.guildIndex,info.guild);
+		if (info.guild) then
+			self.guild:SetFormattedText("%s%s<%s>",info.guildRank or "",info.guildRank and info.guildRank~="" and ExaminerNS.L[" of "] or "",info.guild);
 		end
 	-- NPC's only, so ok to use 'ex.unit' here
 	else
@@ -438,7 +453,7 @@ function ex:SetUnitGuildString()
 		local line;
 		for i = 2, LibGearExamTip:NumLines() - 1 do
 			line = _G["LibGearExamTipTextLeft"..i]:GetText();
-			if (line:find("^"..TOOLTIP_UNIT_LEVEL:gsub("%%s",".+"))) then
+			if (line and TOOLTIP_UNIT_LEVEL and line:find("^"..TOOLTIP_UNIT_LEVEL:gsub("%%s",".+"))) then
 				line = _G["LibGearExamTipTextLeft"..(i + 1)]:GetText();
 				if (line ~= PVP_ENABLED) then
 					self.guild:SetText(line);
@@ -460,82 +475,20 @@ end
 
 -- Cache Player
 function ex:CachePlayer(override)
-	if (cfg.caching.Core or override) then
-		local entry = ex:GetEntryName();
-		cache[entry] = CopyTable(info);
-		self:SendModuleEvent("OnCache",cache[entry]);
-		return true;
-	end
+    return ExaminerNS.Cache.Store(self,override);
 end
 
 -- Load player from cache
 function ex:LoadPlayerFromCache(entryName)
-	local entry = cache[entryName];
-	if (not entry) then
-		return false;
-	end
-	-- Load Depending on Unit Token
-	info.time = entry.time;
-	info.zone = entry.zone;
-	if (not self.unit or info.level == -1) then
-		info.level = entry.level;
-	end
-	if (not self.unit or not UnitIsVisible(self.unit)) then
-		info.pvpName = entry.pvpName;
-		info.guild, info.guildRank, info.guildIndex = entry.guild, entry.guildRank, entry.guildIndex;
-		--info.guildID, info.guildLevel, info.guildXP, info.guildMembers = entry.guildID, entry.guildLevel, entry.guildXP, entry.guildMembers; -- Old Pre-MoP
-		--info.guildLevel, info.guildXP, info.guildMembers = entry.guildLevel, entry.guildXP, entry.guildMembers;	-- Old Pre-WoD
-		info.guildPoints, info.guildMembers = entry.guildPoints, entry.guildMembers;	-- Az: move to guild module
-		if (not self.unit) then
-			info.name, info.realm = entry.name, entry.realm;
-			info.level = entry.level;
-			info.class, info.classFixed = entry.class, entry.classFixed;
-			info.race, info.raceFixed = entry.race, entry.raceFixed;
-			info.sex = entry.sex;
-		end
-	end
-	-- Item Slots
-	for slotName, slotId in next, LibGearExam.SlotIDs do
-		local link = entry.Items[slotName];
-		info.Items[slotName] = link;
-		LibGearExam:ScanItemLink(link,unitStats);
-	end
-	-- Sets + Set Bonuses [NEW]
-	for setName, setEntry in next, entry.Sets do
-		info.Sets[setName] = { count = setEntry.count, max = setEntry.max };
-		LibGearExam:ScanArmorSetBonuses(setName,setEntry.count,unitStats,info.Items);
-	end
-	-- Sets + Set Bonuses [OLD]
---	for setName, setEntry in next, entry.Sets do
---		info.Sets[setName] = { count = setEntry.count, max = setEntry.max };
---		local idx = 1;
---		while (setEntry["setBonus"..idx]) do
---			info.Sets[setName]["setBonus"..idx] = setEntry["setBonus"..idx];
---			LibGearExam:ScanLineForPatterns(setEntry["setBonus"..idx],unitStats);
---			idx = (idx + 1);
---		end
---	end
-	-- Finalize
-	self.isCacheEntry = true;
-	self.itemsLoaded = true;
-	-- Update UI
-	self:SetBackgroundVertex(unpack(VERTEX_COLOR_CACHED));
-	self:UpdateObjects();
-	self:ShowModulePage();
-	-- Modules: OnCacheLoaded
-	self:SendModuleEvent("OnCacheLoaded",entry,self.unit);
-	return true;
+    return ExaminerNS.Cache.Load(self,entryName);
 end
 
 --------------------------------------------------------------------------------------------------------
 --                                         Inspect Functions                                          --
 --------------------------------------------------------------------------------------------------------
 
--- CanInspect function override as the normal function seems bugged.
 function ex:CanInspect(unit)
-	-- If CanInspect() says yes, then go ahead. Otherwise only inspect if not npc, is visible, and in range, not only that, but the unit has to be friendly, or a non flagged foe.
-	return CanInspect(unit) or (ex.unitType ~= 1 and UnitIsVisible(unit) and CheckInteractDistance(unit,3) and (ex.unitType == 3 or not UnitIsPVP(unit) or UnitIsPVPSanctuary(unit)));
-	
+    return ExaminerNS.Inspector:CanInspect(unit);
 end
 
 -- Show or hide Examiner, but ensures that its done using the movable option
@@ -559,11 +512,10 @@ function ex:OpenSimple()
 	end
 end
 
--- Normal Open
 function ex:InspectMouseover()
 	local unit = "mouseover"
 
-	-- Sichere Alternative zu GetMouseFocus:
+	-- Tooltip tokens also cover unit frames whose mouseover token is not updated yet.
 	if GameTooltip and GameTooltip:GetUnit() then
 		local tooltipUnit = select(2, GameTooltip:GetUnit())
 		if tooltipUnit and UnitExists(tooltipUnit) then
@@ -571,78 +523,20 @@ function ex:InspectMouseover()
 		end
 	end
 
-	-- Show/Hide
 	if UnitExists(unit) then
 		self:DoInspect(unit)
-	else
-		self:Display(false)
 	end
 end
 
 
 -- ClearInspect -- Clears all work variables. Always called before a new inspect request!
 function ex:ClearInspect()
-	INSPECTED_UNIT = nil;
-
-	-- unit specific
-	self.unit = nil;
-	self.guid = nil;
-	self.isSelf = nil;
-	self.unitType = nil;
-	self.canInspect = nil;
-
-	-- data specific
-	self.itemsLoaded = nil;
-	self.isCacheEntry = nil;
-
-	-- clear inspections
-	ClearInspectPlayer();
-	if (self.requestedAchievementData) then
-		ClearAchievementComparisonUnit();
-		self.requestedAchievementData = nil;
-	end
-	self.requestedHonorData = nil;
-
-	-- core
-	wipe(unitStats);
-	for k, v in next, info do
-		if (type(v) == "table") then
-			wipe(v);
-		else
-			info[k] = nil;
-		end
-	end
-	self:SetScript("OnUpdate",nil);
-
-	-- Reset Vertex Color
-	self:SetBackgroundVertex(unpack(VERTEX_COLOR_NORMAL));
-
-	-- post module event
-	self:SendModuleEvent("OnClearInspect");
+    ExaminerNS.Inspector:Clear();
 end
 
 -- Inspect Ready
 function ex:InspectReady(guid)
-	if (self:ValidateUnit()) then
-		local unit = self.unit;
-		-- Guild Vars -- Returns zeros for unguilded people
-		local info = self.info;
-		if (info.guild) then
-			--info.guildID, info.guildLevel, info.guildXP, info.guildMembers = GetInspectGuildInfo(unit);	-- Az: move this into guild.lua? -- Old Pre-MoP
-			--info.guildLevel, info.guildXP, info.guildMembers = GetInspectGuildInfo(unit);	-- MoP: No more guildID as first return -- Az: move this into guild.lua?
-			--info.guildPoints, info.guildMembers = GetInspectGuildInfo(unit);		-- WoD: Guild leveling removed. Az: What are guildPoints?
-		end
-		-- Scan Gear & Post InspectReady
-		self:ScanGear(unit);
-		self:ShowModulePage();
-		self:SendModuleEvent("OnInspectReady",unit,guid);
-		-- Cache
-		if (self.itemsLoaded) then
-			self:CachePlayer();
-		end
-		-- Reset Vertex Color
-		self:SetBackgroundVertex(unpack(VERTEX_COLOR_NORMAL));
-	end
+    ExaminerNS.Inspector:Ready(guid);
 end
 
 -- Converts a unit token such as "mouseover" or "target" into a more static unit token such as "party4" or "raid17"
@@ -661,123 +555,13 @@ end
 
 -- Inspect Unit
 function ex:DoInspect(unit,openFlag)
-	-- Clear
-	self:ClearInspect();
-
-	-- Check unit, fall back on player
-	if (not unit or not UnitExists(unit)) then
-		unit = "player";
-	-- Convert "mouseover" and "target" units to party/raid unit
-	elseif (unit == "mouseover") or (unit == "target") then
-		unit = UnitToStaticUnit(unit) or unit;
-	end
-
-	-- Mouseover Event
-	if (unit == "mouseover") then
-		self:RegisterEvent("UPDATE_MOUSEOVER_UNIT");
-	else
-		self:UnregisterEvent("UPDATE_MOUSEOVER_UNIT");
-	end
-
-	-- Set Work Variables
-	INSPECTED_UNIT = unit;
-	self.unit = unit;
-	self.guid = UnitGUID(unit);
-	self.isSelf = UnitIsUnit(unit,"player");
-	self.unitType = (not UnitIsPlayer(unit) and 1) or (UnitCanCooperate("player",unit) and 3) or 2;	-- Unit Type (1 = npc, 2 = opposing faction, 3 = same faction)
-	self.canInspect = self:CanInspect(unit);
-
-	-- Gather Unit Info
-	info.isSelf = self.isSelf;	-- This is what allows the cache module to filter out alts
-	info.name, info.realm = UnitName(unit);
-	if (info.realm == "") then
-		info.realm = nil;
-	end
-	info.pvpName = UnitPVPName(unit);
-	info.level = (UnitLevel(unit) or 0);
-	info.sex = (UnitSex(unit) or 1);
-	info.class, info.classFixed, info.classID = UnitClass(unit);
-	info.race, info.raceFixed = UnitRace(unit);
-	if (not info.race) then
-		info.race = UnitCreatureFamily(unit) or UnitCreatureType(unit);
-	end
-	info.guild, info.guildRank, info.guildIndex = GetGuildInfo(unit);
-	info.time = time();
-	info.zone = GetMinimapZoneText();
-	local realZone = GetRealZoneText();
-	if (realZone ~= info.zone) then
-		info.zone = realZone..", "..info.zone;
-	end
-
-	-- Players we can Inspect
-	if (self.canInspect) then
-		-- Vertex Color = LOADING
-		self:SetBackgroundVertex(unpack(VERTEX_COLOR_LOADING));
-		-- Magic Inspect Supernova
-		self:RegisterEvent("INSPECT_READY");
-		NotifyInspect(unit);
-		lastInspectRequest = GetTime();
-		-- When we call ScanGear here, even before INSPECT_READY. We can sorta force the client into precaching the items.
-		self:ScanGear(unit);
-	end
-
-	-- Update the UI Objects
-	if (self.unitType == 1) and (cfg.activePage) then
-		self.modules[cfg.activePage].page:Hide();
-	else
-		self:ShowModulePage();
-	end
-	self:UpdateObjects();
-
-	-- Modules: OnInspect
-	self:SendModuleEvent("OnInspect",unit,self.guid);
-
-	-- Player Only Code
-	if (self.unitType ~= 1) then
-		-- We couldn't Inspect, try and see if we have them cached?
-		if (not self.canInspect) and (not self:LoadPlayerFromCache(self:GetEntryName())) and (cfg.activePage) then
-			self.modules[cfg.activePage].page:Hide();	-- Az: this is slightly bad to do, what if a module still have data to show? feats still work outside inspect range for example
-		end
-		-- Outside range, monitor range and inspect as soon as they are in range
-		if (not CheckInteractDistance(unit,3)) then
-			self:SetScript("OnUpdate",Examiner_OnUpdate);
-		end
-	end
-
-	-- Show Examiner
-	if (openFlag ~= false) and (not self:IsShown()) then
-		self:Display();
-	end
+    return ExaminerNS.Inspector:Start(unit,openFlag);
 end
 
 -- Scans the gear (also using LibFroznFunctions and TacoTip algorithm)
 function ex:ScanGear(unit)
-  wipe(unitStats)
-  wipe(info.Sets)
-  wipe(info.Runes)
-
-  self.averageItemLevel = 0
-  self.gs = 0
-
-  LibGearExam:ScanUnitItems(unit, unitStats, info.Sets, info.Runes)
-
-	for slotName, slotId in next, LibGearExam.SlotIDs do
-		local link = (GetInventoryItemLink(unit,slotId) or ""):match(LibGearExam.ITEMLINK_PATTERN);
-		info.Items[slotName] = LibGearExam:FixItemStringLevel(link,info.level);
-	end
-
-  local result = LibFroznFunctions:GetAverageItemLevel(unit)
-
-  -- result can be either table or nil or "LFF_AVERAGE_ITEM_LEVEL.na"
-  if type(result) == "table" and result.TacoTipGearScore then
-      self.gs = math.floor(result.TacoTipGearScore)
-      self.averageItemLevel = result.value or 0
-      ex.itemsLoaded = true
-  else
-      --print("Warning: Could not calculate GearScore from LibFroznFunctions.")
-      self.gs = "-"
-      self.averageItemLevel = "-"
-  end
+    local session=ExaminerNS.Inspector.active;
+    if session and session.unit==unit then ExaminerNS.Inspector:Refresh(session); end
 end
 
 
@@ -789,16 +573,18 @@ end
 
 -- Requests Honor Data
 function ex:RequestHonorData()
-	if (self.requestedHonorData) then
-		return;
-	elseif (HasInspectHonorData()) then
-		self:UnregisterEvent("INSPECT_HONOR_UPDATE");
-		self:SendModuleEvent("OnHonorReady");
-	else
-		self.requestedHonorData = true;
-		self:RegisterEvent("INSPECT_HONOR_UPDATE");
-		RequestInspectHonorData();
-	end
+    local session=ExaminerNS.Inspector.active;
+    if not session or session.cached or not ExaminerNS.Inspector:Valid(session) then return; end
+    if not self.isSelf and not session.serverReady then return; end
+    self:RegisterEvent('INSPECT_HONOR_UPDATE');
+    if (Compat.isRetail or Compat.isForever) and (type(RequestInspectHonorData)~='function' or type(HasInspectHonorData)~='function') then
+        session.honorReady=true;
+        return;
+    end
+    if type(RequestInspectHonorData)~='function' then return; end
+    if self.requestedHonorData then return; end
+    self.requestedHonorData=true;
+    Compat.Try(RequestInspectHonorData);
 end
 
 -- Requests Achievement Data
@@ -830,43 +616,36 @@ end
 
 -- Format Time (sec)
 function ex:FormatTime(time,short)
-	-- bugged?
+	time=math.floor(Compat.Number(time,0));
 	if (time < 0) then
 		return "n/a";
 	-- under a min
 	elseif (time < 60) then
-		return time..(short and "s" or " seconds");
+		return time..(short and "s" or ExaminerNS.L[" seconds"]);
 	-- less than 1 hour
 	elseif (time < 60*60) then
-		return format(short and "%dm %.2ds" or "%d minutes and %.2d seconds",time / 60,time % 60);
+		return format(short and "%dm %.2ds" or ExaminerNS.L["%d minutes and %.2d seconds"],math.floor(time / 60),time % 60);
 	-- less than 1 day
 	elseif (time < 60*60*24) then
-		time = (time/60);
-		return format(short and "%dh %.2dm" or "%d hours and %.2d minutes",time / 60,time % 60);
+		time = math.floor(time/60);
+		return format(short and "%dh %.2dm" or ExaminerNS.L["%d hours and %.2d minutes"],math.floor(time / 60),time % 60);
 	-- above 1 day
 	else
-		time = (time/60/60);
-		return format(short and "%dd %.2dh" or "%d days and %.2d hours",time / 24,time % 24);
+		time = math.floor(time/60/60);
+		return format(short and "%dd %.2dh" or ExaminerNS.L["%d days and %.2d hours"],math.floor(time / 24),time % 24);
 	end
 end
 
 -- Cache current stats for compare or clear previous marked one
 function ex:CacheStatsForCompare(unmark)
-	wipe(ex.compareStats);
-	if (unmark) then
-		ex.isComparing = nil;
-	else
-		ex.isComparing = true;
-		ex.compareStats.entry = ex:GetEntryName();
-		for k, v in next, unitStats do
-			ex.compareStats[k] = v;
-		end
-		for slotName, itemLink in next, info.Items do
-			ex.compareStats[slotName] = itemLink;
-		end
-	end
-	-- Post OnCompare Event
-	self:SendModuleEvent("OnCompare",ex.isComparing,ex.compareStats);
+    wipe(self.compareStats);
+    if unmark then self.isComparing=nil;
+    elseif self.itemsLoaded then
+        self.isComparing=true; self.compareStats.entry=self:GetEntryName();
+        for key,value in pairs(self.unitStats) do self.compareStats[key]=value; end
+        for slot,link in pairs(self.info.Items) do self.compareStats[slot]=link; end
+    end
+    self:SendModuleEvent('OnCompare',self.isComparing,self.compareStats);
 end
 
 -- Sets the background vertex color
@@ -889,14 +668,15 @@ end
 -- Updates the Main Objects
 function ex:UpdateObjects()
 	-- Textures & Model
---	ex.model:SetPosition(0,0,0);
---	ex.model:SetFacing(0);
-	if (UnitIsVisible(ex.unit)) then
+
+
+	if (ex.unit and Compat.IsTrue(UnitIsVisible(ex.unit))) then
 		SetPortraitTexture(ex.portrait,ex.unit);
+		if ex.unitType==1 then ex.model:ClearModel(); end
 		ex.model:SetUnit(ex.unit);
 		ex.model.cleared = nil;
 	else
-		local genderRace = (info.sex == 3 and "Female" or "Male").."-"..(info.raceFixed or "");	-- Az: WoD: raceFixed has a risk of being nil
+		local genderRace = (info.sex == 3 and "Female" or "Male").."-"..(info.raceFixed or "");
 		ex.portrait:SetTexture("Interface\\CharacterFrame\\TemporaryPortrait-"..genderRace);
 		ex.model:ClearModel();
 		ex.model.cleared = true;
@@ -910,6 +690,11 @@ end
 
 -- Show Module Page
 function ex:ShowModulePage(index)
+	local requested = index and self.modules[index];
+	if requested and requested.isPopup then requested:TogglePopup(); return; end
+	if cfg.activePage and self.modules[cfg.activePage] and self.modules[cfg.activePage].isPopup then
+		cfg.activePage=nil; cfg.activePageToken=nil;
+	end
 	-- hide current page
 	local lastMod = ex.modules[cfg.activePage];
 	if (lastMod) then
@@ -929,10 +714,11 @@ function ex:ShowModulePage(index)
 			cfg.activePage = index;
 		end
 	end
+	cfg.activePageToken = cfg.activePage and self.modules[cfg.activePage].token or nil;
 	-- show active page
 	if (cfg.activePage) then
 		local shownMod = ex.modules[cfg.activePage];
-		shownMod.page:Show();
+		if shownMod.hasData then shownMod.page:Show(); else shownMod.page:Hide(); end
 		self:SendModuleEvent("OnPageChanged",shownMod,true);
 	end
 end
@@ -965,12 +751,9 @@ end
 
 -- Check Last Unit -- Clears unit if invalid
 function ex:ValidateUnit()
-	if (ex.unit) and (UnitExists(ex.unit)) and (UnitGUID(ex.unit) == ex.guid) then
-		return true;
-	else
-		ex.unit = nil;
-		ex:SetScript("OnUpdate",nil);
-	end
+    if not self.unit or not Compat.IsTrue(UnitExists(self.unit)) then return false; end
+    local guid=UnitGUID(self.unit);
+    return Compat.IsString(guid) and guid==self.guid;
 end
 
 --------------------------------------------------------------------------------------------------------
@@ -995,17 +778,15 @@ function ex.ItemButton_OnClick(self,button)
 			LibGearExam:ScanItemLink(PlayerItemLink,itemStats2);
 			-- Compare both items
 			if not (PlayerItemLink == nil) then
-				AzMsg("--- Comparing "..ExaminerItemLink.." over "..PlayerItemLink.." |r---");
+				AzMsg(ExaminerNS.F("Comparing %s with %s",ExaminerItemLink,PlayerItemLink));
 				for statToken, statName in next, LibGearExam.StatNames do
 					if (itemStats1[statToken] or itemStats2[statToken]) then
-						if (not cfg.percentRatings) then
-						end
 						local statText = LibGearExam:GetStatValue(statToken,itemStats1,itemStats2,UnitLevel("player"),cfg.combineAdditiveStats,cfg.percentRatings);
 						AzMsg(format("%s = |1%s|r.",statName,statText));
 					end			
 				end
 			else
-				AzMsg("---|1 Cannot compare "..ExaminerItemLink.."|1 since you don't have any item in that slot. |r---");
+				AzMsg(ExaminerNS.L["No equipped item in that slot."]);
 			end
 		elseif (button == "LeftButton") then
 			local editBox = ChatEdit_GetActiveWindow();
@@ -1034,7 +815,7 @@ function ex.ItemButton_OnEnter(self,motion)
 		ResetCursor();
 	end
 
-	-- Anchor -- Az: add new option here to anchor it to the default anchor?
+	-- Use the configured tooltip anchor.
 	ex.tooltipSlot = self;
 	gtt:SetOwner(self,"ANCHOR_NONE");
 	if (cfg.tooltipSmartAnchor) then
@@ -1050,7 +831,7 @@ function ex.ItemButton_OnEnter(self,motion)
 		local is = LibItemString:New(self.link);
 		gtt:AddLine(itemName,GetItemQualityColor(itemRarity));
 		for k, v in ipairs(is) do
-			--gtt:AddDoubleLine(format("|cffaaaaaa[%.2d]|r %s",k,is:GetFieldName(k)),v,1,1,1);
+
 			gtt:AddDoubleLine(format("|cffffffff%.2d|r %s",k,is:GetFieldName(k)),v,nil,nil,nil,1,1,1);
 		end
 		gtt:Show();
@@ -1065,7 +846,7 @@ function ex.ItemButton_OnEnter(self,motion)
 		for index, statToken in ipairs(LibGearExam.StatNamesSorted) do
 			if (statTipStats1[statToken]) or (statTipStats2 and statTipStats2[statToken]) then
 				local statText = LibGearExam:GetStatValue(statToken,statTipStats1,ex.isComparing and statTipStats2,info.level,cfg.combineAdditiveStats,cfg.percentRatings);
-				--gtt:AddDoubleLine(LibGearExam:FormatStatName(statToken,cfg.percentRatings),statText,1,1,1);
+
 				gtt:AddDoubleLine(LibGearExam:FormatStatName(statToken,cfg.percentRatings),statText,nil,nil,nil,1,1,1);
 			end
 		end
@@ -1079,10 +860,9 @@ function ex.ItemButton_OnEnter(self,motion)
 		gtt:SetHyperlink(self.link);
 	-- no valid item available, so add text that we can reload cache to get item
 	elseif (self.realLink) then
-		-- Az: should not be like this anymore, a single call to GetItemInfo() would make the client cache the item, so just make some kind of postcacheload thingie, or just redo the OnCacheLoaded event?
 		gtt:SetText(_G[self.slotName:upper()]);
 		gtt:AddLine("ItemID: "..self.realLink:match(LibGearExam.ITEMLINK_PATTERN_ID),0,0.44,0.86);
-		gtt:AddLine("This item was not in the local item cache, click this button to reload the cached player, so the item will update.",1,1,1,1);
+		gtt:AddLine(ExaminerNS.L["Item data is not cached yet. Click to reload this player."],1,1,1,1);
 		gtt:Show();
 	-- empty item slot
 	elseif (self.slotName) then
@@ -1097,28 +877,28 @@ end
 -- Slash Commands -- Array indices are used for command help. Commands starting with underscore are meant for debugging
 ex.slashCommands = {
 	-- Inspect Unit
-	" |2inspect <unit>|r = Inspects the given unit ('target' if no unit given)",
+	" |2inspect <unit>|r = "..ExaminerNS.L["Inspect the specified unit."],
 	inspect = function(cmd)
 		ex:DoInspect(cmd == "" and "target" or cmd);
 	end,
 	-- Scan a Single Item
-	" |2si <itemlink>|r = Scans one item and shows the total sum of its stats combined",
+	" |2si <itemlink>|r = "..ExaminerNS.L["Show an item's equipment stats."],
 	si = function(cmd)
 		if (cmd ~= "") then
 			local itemStats = {};
 			LibGearExam:ScanItemLink(cmd,itemStats);
-			AzMsg("--- |2Scan Overview for "..cmd.."|r ---");
+			AzMsg(ExaminerNS.F("Scan overview: %s",cmd));
 			for stat in next, itemStats do
 				local statName = (cfg.percentRatings and LibGearExam.StatNames[stat] or LibGearExam.StatNames[stat].." "..RATING);
 				local statText, altText = LibGearExam:GetStatValue(stat,itemStats,nil,UnitLevel("player"),cfg.combineAdditiveStats,cfg.percentRatings);
 				AzMsg(format(altText and "%s = |1%s|r (|1%s|r)." or "%s = |1%s|r.",statName,statText,altText));
 			end
 		else
-			AzMsg("No item link given.");
+			AzMsg(ExaminerNS.L["No item link given."]);
 		end
 	end,
 	-- Compares two Items
-	" |2compare <itemlink1> <itemlink2>|r = Compares two items by listing the stat differences",
+	" |2compare <itemlink1> <itemlink2>|r = "..ExaminerNS.L["Compare two items."],
 	compare = function(cmd)
 		if (cmd ~= "") then
 			local item1, item2 = cmd:match("(|c.+|r)%s+(|c.+|r)");
@@ -1126,7 +906,7 @@ ex.slashCommands = {
 				local itemStats1, itemStats2 = {}, {};
 				LibGearExam:ScanItemLink(item1,itemStats1);
 				LibGearExam:ScanItemLink(item2,itemStats2);
-				AzMsg("--- |2Using "..item1.."|2 over "..item2.."|r ---");
+				AzMsg(ExaminerNS.F("Comparing %s with %s",item1,item2));
 				for statToken, statName in next, LibGearExam.StatNames do
 					if (itemStats1[statToken] or itemStats2[statToken]) then
 						if (not cfg.percentRatings) then
@@ -1137,45 +917,41 @@ ex.slashCommands = {
 					end
 				end
 			else
-				AzMsg("Could not parse item links.");
+				AzMsg(ExaminerNS.L["Could not parse item links."]);
 			end
 		else
-			AzMsg("No item links given.");
+			AzMsg(ExaminerNS.L["No item links given."]);
 		end
 	end,
 	-- Rating Converter
-	" |2rating <stat> <rating> <level>|r = Rating Converter",
+	" |2rating <stat> <rating> <level>|r = "..ExaminerNS.L["Rating converter."],
 	rating = function(cmd)
 		local stat, rating, level = cmd:match("([^%s]+) (%d+%.?%d*) ?(%d*)");
 		rating = tonumber(rating);
 		if (stat and rating) then
 			local value = LibGearExam:GetRatingInPercent(stat:upper(),rating,tonumber(level) or UnitLevel("player"));
-			AzMsg("Converted Rating = |1"..(value or "Invalid Input"));
+			AzMsg(value and ExaminerNS.F("Converted rating: %s",value) or ExaminerNS.L["Rating conversion is unavailable; ratings retain their native units."]);
 		else
-			AzMsg("Invalid Input - Use: <stat> <rating> <level>");
+			AzMsg(ExaminerNS.L["Invalid input. Use: <stat> <rating> <level>"]);
 		end
 	end,
 	-- Reset Window Position
-	" |2reset|r = Resets the position to the center, in case it was moved off screen",
+	" |2reset|r = "..ExaminerNS.L["Reset the window position."],
 	reset = function(cmd)
 		if (cfg.makeMovable) then
 			ex:ClearAllPoints();
 			ex:SetPoint("CENTER");
 		else
-			AzMsg("This command is only available when Examiner is movable");
+			AzMsg(ExaminerNS.L["This command requires a movable window."]);
 		end
 	end,
 	-- Scale
-	" |2scale <value>|r = Sets the scale of the Examiner window (Default is 1)",
+	" |2scale <value>|r = "..ExaminerNS.L["Set window scale (default: 1.00)."],
 	scale = function(cmd)
-		cmd = tonumber(cmd);
-		if (type(cmd) == "number") then
-			cfg.scale = cmd;
-			ex:SetScale(cmd);
-		end
+		ex:SetWindowScale(tonumber(cmd));
 	end,
 	-- Clear Cache
-	" |2clearcache|r = Clears the entire Examiner cache",
+	" |2clearcache|r = "..ExaminerNS.L["Clear all cached players."],
 	clearcache = function(cmd)
 		wipe(cache);
 	end,
@@ -1187,15 +963,7 @@ ex.slashCommands = {
 			ex:LoadPlayerFromCache(name);
 			count = (count + 1);
 		end
-		AzMsg("Scanned |1"..count.."|r cached entries.");
-	end,
-	-- Reports patterns with no uses. Use "_scanall" first to find uses
-	_uses = function(cmd)
-		for index, tbl in ipairs(LibGearExam.Patterns) do
-			if (not tbl.uses) then
-				AzMsg("|2"..tostring(tbl.s).."|r = |1"..tostring(tbl.p));
-			end
-		end
+		AzMsg(ExaminerNS.F("Scanned %d cached entries.",count));
 	end,
 	-- Load all items, so they are cached locally
 	_loaditems = function(cmd)
@@ -1206,7 +974,7 @@ ex.slashCommands = {
 				count = (count + 1);
 			end
 		end
-		AzMsg("Went through |1"..count.."|r items, including duplicates.");
+		AzMsg(ExaminerNS.F("Scanned %d items, including duplicates.",count));
 	end,
 };
 
@@ -1221,7 +989,7 @@ local function HandleSlashCommand(cmd,commandTable)
 	else
 		UpdateAddOnMemoryUsage();
 		AzMsg(format("----- |2%s|r |1%s|r ----- |1%.2f |2kb|r -----",modName,GetAddOnMetadata(modName,"Version"),GetAddOnMemoryUsage(modName)));
-		AzMsg("The following |2parameters|r are valid for this addon:");
+		AzMsg(ExaminerNS.L["Available commands:"]);
 		for index, help in ipairs(commandTable) do
 			AzMsg(help);
 		end

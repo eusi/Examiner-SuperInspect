@@ -3,11 +3,7 @@
 		Examiner:OpenSimple();
 	</Binding>
 	<Binding name="EXAMINER_TARGET">
-		if (Examiner:IsShown()) then
-			HideUIPanel(Examiner);
-		else
-			Examiner:DoInspect("target");
-		end
+		Examiner:DoInspect("target");
 	</Binding>
 	<Binding name="EXAMINER_MOUSEOVER">
 		Examiner:InspectMouseover();

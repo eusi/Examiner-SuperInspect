@@ -1,0 +1,9 @@
+## Interface: 120100
+## Version: 1.00
+## Title: Examiner
+## Author: Aezay (Earthen Ring EU), sAks
+## Notes: Multi-client inspection, equipment stats and read-only talents. In-game validation required.
+## SavedVariables: Examiner_Config, Examiner_Cache
+## Category: User Interface
+
+Load.xml

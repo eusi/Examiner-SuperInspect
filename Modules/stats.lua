@@ -1,10 +1,13 @@
+local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
 local ex = Examiner;
+local GetItemInfo = ExaminerNS.Compat.GetItemInfo;
+local GetDetailedItemLevelInfo = ExaminerNS.Compat.GetDetailedItemLevelInfo;
 local cfg, cache;
 local gtt = GameTooltip;
 
 -- Module
-local mod = ex:CreateModule("Stats","Gear Statistics");
-mod.help = "The calculated stats of the current equipped gear";
+local mod = ex:CreateModule("Stats",ExaminerNS.L["Gear Statistics"]);
+mod.help = ExaminerNS.L["Equipment contributions only; excludes character base stats and buffs. Some conditional effects may be unavailable.\nShift-click: compare. Shift-right-click: clear comparison."];
 mod:CreatePage(false);
 mod:HasButton(true);
 mod.details = ex:CreateDetailObject();
@@ -19,8 +22,28 @@ end
 -- Variables
 local ITEM_HEIGHT = 12;
 local displayList = {};
+mod.displayList = displayList;
 local resists = {};
+mod.resistanceIcons=resists;
 local entries = {};
+mod.statRows=entries;
+local measure=mod.page:CreateFontString(nil,"ARTWORK","GameFontHighlightSmall"); measure:Hide();
+local function TextWidth(text)
+    measure:SetText(text); return ExaminerNS.Compat.Number(measure:GetStringWidth(),0);
+end
+local function FitLabel(text,width)
+    if TextWidth(text)<=width then return text,false; end
+    if TextWidth("...")>width then return "",true; end
+    local chars={};
+    for char in text:gmatch("[^\128-\191][\128-\191]*") do chars[#chars+1]=char; end
+    local low,high=0,#chars;
+    while low<high do
+        local middle=math.floor((low+high+1)/2);
+        if TextWidth(table.concat(chars,"",1,middle).."...")<=width then low=middle; else high=middle-1; end
+    end
+    return table.concat(chars,"",1,low).."...",true;
+end
+mod.FitLabel=FitLabel;
 
 -- Stat Entry Order -- Item 0 is the header for the group
 local StatEntryOrder = {
@@ -38,9 +61,9 @@ local StatEntryOrder = {
 -- OnInitialize
 function mod:OnInitialize()
 	cfg = ex.cfg;
-	cache = Examiner_Cache;
+	cache = ex.cache;
 	-- Defaults
-	cfg.statsViewType = (cfg.statsViewType or 1);
+	cfg.statsViewType = 1;
 	-- Add cache "iLvlAverage" sort method
 	local cacheMod = ex:GetModuleFromToken("Cache");
 	if (cacheMod) and (cacheMod.cacheSortMethods) then
@@ -61,9 +84,6 @@ function mod:OnButtonClick(frame,button)
 	if (button == "LeftButton") then
 		if (IsShiftKeyDown()) and (ex.itemsLoaded) then
 			ex:CacheStatsForCompare();
-		elseif (IsControlKeyDown()) then
-			cfg.statsViewType = (cfg.statsViewType == 1 and 2 or 1);
-			self:BuildShownList();
 		end
 	-- right
 	elseif (IsShiftKeyDown()) then
@@ -73,6 +93,14 @@ end
 
 -- OnInspectReady
 function mod:OnInspectReady(unit,guid)
+	self.blizzardItemLevel=nil;
+	local C,I=ExaminerNS.Compat,ExaminerNS.Inspector;
+	local session=I.active;
+	if (C.isRetail or C.isForever) and not ex.isCacheEntry and session and session.serverReady and I:Valid(session)
+		and unit==session.unit and (ex.isSelf or I.notificationGUID==session.guid) then
+		local value=C.Try(C_PaperDollInfo and C_PaperDollInfo.GetInspectItemLevel,unit);
+		if C.IsNumber(value) and value>=0 and value<math.huge then self.blizzardItemLevel=value; end
+	end
 	self:HasData(ex.itemsLoaded);
 	if (ex.itemsLoaded) then
 		self:InitDetails();
@@ -83,31 +111,17 @@ mod.OnInspect = mod.OnInspectReady;
 
 -- OnCacheLoaded
 function mod:OnCacheLoaded(entry,unit)
-	-- Az: Add "iLvlAverage" to old entries if none exist, maybe one day I will remove this
-	if (not entry.iLvlAverage) then
-		local numItems = (#LibGearExam.Slots - 2); -- Ignore Tabard + Shirt, hence minus 2
-		local iLvlTotal = 0;
-		for slotName, link in next, entry.Items do
-			if (slotName ~= "TabardSlot") and (slotName ~= "ShirtSlot") then
-				local itemLevel = GetDetailedItemLevelInfo(link);
-				if (itemLevel) then
-					if (slotName == "MainHandSlot") and (not entry.Items.SecondaryHandSlot) then
-						itemLevel = (itemLevel * 2);
-					end
-					iLvlTotal = (iLvlTotal + itemLevel);
-				end
-			end
-		end
-		entry.iLvlAverage = (iLvlTotal / numItems);
-	end
-	-- Show stuff
+	self.blizzardItemLevel=nil;
 	self:HasData(true);
 	self:InitDetails();
 	self:BuildShownList();
 end
+mod.OnGearUpdated = mod.OnInspectReady;
+function mod:OnDataTimeout() self:HasData(true); self:InitDetails(); self:BuildShownList(); end
 
 -- OnClearInspect
 function mod:OnClearInspect()
+	self.blizzardItemLevel=nil;
 	self:HasData(nil);
 	self.details:Clear();
 end
@@ -131,19 +145,14 @@ end
 -- Menu Init Items
 function mod.MenuInit(parent,list)
 	-- stats
-	local tbl = list[#list + 1]; tbl.text = "Stats"; tbl.header = 1;
-	tbl = list[#list + 1]; tbl.text = "Cache Player"; tbl.value = 1; tbl.checked = (cache[ex:GetEntryName()] ~= nil);
-	-- view
-	tbl = list[#list + 1]; tbl.header = 1;
-	tbl = list[#list + 1]; tbl.text = "View"; tbl.header = 1;
-	tbl = list[#list + 1]; tbl.text = "Gear Stats"; tbl.value = 4; tbl.checked = (cfg.statsViewType == 1);
-	tbl = list[#list + 1]; tbl.text = "Details"; tbl.value = 5; tbl.checked = (cfg.statsViewType == 2);
+	local tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Stats"]; tbl.header = 1;
+	tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Cache Player"]; tbl.value = 1; tbl.checked = (cache[ex:GetEntryName()] ~= nil);
 	-- compare
 	tbl = list[#list + 1]; tbl.header = 1;
-	tbl = list[#list + 1]; tbl.text = "Compare"; tbl.header = 1;
-	tbl = list[#list + 1]; tbl.text = "Mark for Compare"; tbl.value = 2; tbl.checked = (ex.isComparing and ex.compareStats.entry == ex:GetEntryName());
+	tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Compare"]; tbl.header = 1;
+	tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Mark for Compare"]; tbl.value = 2; tbl.checked = (ex.isComparing and ex.compareStats.entry == ex:GetEntryName());
 	if (ex.isComparing) then
-		tbl = list[#list + 1]; tbl.text = "Clear Compare"; tbl.value = 3;
+		tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Clear Compare"]; tbl.value = 3;
 	end
 end
 
@@ -155,10 +164,6 @@ function mod.MenuSelect(parent,entry)
 	-- Mark for Compare & Clear Compare
 	elseif (entry.value == 2 or entry.value == 3) then
 		ex:CacheStatsForCompare(entry.value == 3);
-	-- View Type
-	else
-		cfg.statsViewType = (entry.value - 3);
-		mod:BuildShownList();
 	end
 end
 
@@ -166,62 +171,24 @@ end
 --                                               Details                                              --
 --------------------------------------------------------------------------------------------------------
 
--- Obtain Gem and Item Level Details
--- http://www.wowwiki.com/Item_level#Epic_Item_Level_Chart
--- http://elitistjerks.com/f15/t44718-item_level_mechanics/
-local function GetGemAndItemInfo()
-	local iLvlTotal, iSlotValues, iLvlMin, iLvlMax = 0, 0;
-	local gemCount, gemRed, gemYellow, gemBlue = 0, 0, 0, 0;
-	for slotName, link in next, ex.info.Items do
-		-- Calculate Item Level Numbers
-		if (slotName ~= "TabardSlot") and (slotName ~= "ShirtSlot") then
-			local _, _, itemRarity, itemLevel = GetItemInfo(link);
-			itemLevel = GetDetailedItemLevelInfo(link);
-			if (itemLevel) then
-				iLvlMin = min(iLvlMin or itemLevel,itemLevel);
-				iLvlMax = max(iLvlMax or itemLevel,itemLevel);
-				-- Az: Since heirlooms scale, we should at least not count them as a level 1 item, that wouldn't be fair
-				-- if (itemRarity == 7) and (itemLevel == 1) then
-					-- itemLevel = ex.info.level;
-				-- end
-				if (slotName == "MainHandSlot") and (not ex.info.Items.SecondaryHandSlot) then
-					itemLevel = (itemLevel * 2);
-				end
-				iLvlTotal = (iLvlTotal + itemLevel);
-			end
-		end
-	end
-	-- Return	
-	return iLvlTotal, iLvlMin, iLvlMax;
+local function GetItemLevelInfo()
+	local gear=ex.gear or {};
+	return gear.total or 0, gear.min, gear.max;
 end
 
 -- Initialise Details
 function mod:InitDetails()
 	local details = self.details;
 	details:Clear();
-	-- Unit Details
-	if (ex.unit) then
-		details:Add("Unit");
-		details:Add("Token",ex.unit);
-		details:Add(HEALTH,UnitHealthMax(ex.unit));
-		if (UnitPowerType(ex.unit) == 0) then
-			details:Add(MANA,UnitPowerMax(ex.unit));
-		end
-	end
 	-- Item Level
-	local iLvlTotal, iLvlMin, iLvlMax = GetGemAndItemInfo();
-	local numItems = (#LibGearExam.Slots - 2); -- Ignore Tabard + Shirt, hence minus 2
-	details:Add("Item Levels");
+	local iLvlTotal, iLvlMin, iLvlMax = GetItemLevelInfo();
+	details:Add(ExaminerNS.L["Item Levels"]);
 	details:Add("Combined Item Levels",iLvlTotal);
-	details:Add("Average Item Level",format("%.2f",iLvlTotal / numItems));
+	details:Add(ExaminerNS.L["Average Item Level"],ex.averageItemLevel or "—");
+	if self.blizzardItemLevel then details:Add(ExaminerNS.L["Blizzard Average Item Level"],ExaminerNS.Compat.FormatNumber(self.blizzardItemLevel)); end
 	if (iLvlMin and iLvlMax) then
-		details:Add("Min / Max Item Levels",iLvlMin.." / "..iLvlMax);
+		details:Add(ExaminerNS.L["Min / Max Item Levels"],iLvlMin.." / "..iLvlMax);
 	end
-	ex.info.iLvlAverage = math.floor((iLvlTotal / numItems)*10)*0.1;
-	-- Gems
-	-- details:Add("Gems");
-	-- details:Add("Number of Gems",gemCount);
-	-- details:Add("Gem Color Matches",format("|cffff6060%d|r/|cffffff00%d|r/|cff008ef8%d",gemRed,gemYellow,gemBlue));
 	-- Cache
 	if (ex.isCacheEntry) then
 		details:Add("Cached Entry");
@@ -229,6 +196,7 @@ function mod:InitDetails()
 		details:Add("Date",date("%a, %b %d, %Y",ex.info.time));
 		details:Add("Time",date("%H:%M:%S",ex.info.time));
 		details:Add("Time Ago",ex:FormatTime(time() - ex.info.time));
+		if ex.gear and ex.gear.time then details:Add("Gear snapshot age",ex:FormatTime(time()-ex.gear.time)); end
 	end
 end
 
@@ -252,6 +220,8 @@ end
 -- ScrollBar: Update Stat List
 local function UpdateShownItems(self)
 	FauxScrollFrame_Update(self,displayList.count,#entries,ITEM_HEIGHT);
+	local rowWidth=displayList.count > #entries and 196 or 212;
+	entries[1]:SetWidth(rowWidth);
 	local index = self.offset;
 	for i = 1, #entries do
 		index = (index + 1);
@@ -261,9 +231,11 @@ local function UpdateShownItems(self)
 				entry.left:SetTextColor(1,1,1);
 				entry.left:SetFormattedText("  %s",displayList[index].name);
 				if ( displayList[index] and displayList[index].name == "GearScore" and displayList[index].value ) then
-					if LibFroznFunctions.GetQualityFromGearScore then
-						local r, g, b = LibFroznFunctions:GetQualityFromGearScore(displayList[index].value);
-						entry.right:SetTextColor(r, g, b);
+					local color = ex.gsQualityColor;
+					if color and color.GetRGB then
+						entry.right:SetTextColor(color:GetRGB());
+					else
+						entry.right:SetTextColor(1, 1, 0);
 					end
 				else 
 					entry.right:SetTextColor(1.0,1.0,0.0);
@@ -278,60 +250,58 @@ local function UpdateShownItems(self)
 				entry.right:SetText("");
 			end
 
-			-- this is where the tip is drawn
-
-			-- if (displayList[index].tip) then
-				-- entry.tip.tip = displayList[index].tip;
-				-- entry.tip:SetWidth(max(entry.right:GetWidth(),20));
-				-- entry.tip:Show();
-			-- else
-				-- entry.tip:Hide();
-			-- end
+			local row=displayList[index];
+			local valueWidth=TextWidth(tostring(row.value or ""));
+			local rightWidth=math.min(rowWidth,math.max(rowWidth*0.2,valueWidth));
+			local leftWidth=math.max(0,math.min(rowWidth*0.8,rowWidth-rightWidth-6));
+			local fullLabel=row.name and (row.value~=nil and ("  "..row.name) or (row.name..":")) or "";
+			local label,truncated=FitLabel(fullLabel,leftWidth);
+			entry.left:SetWidth(leftWidth); entry.left:SetText(label);
+			entry.right:SetWidth(rightWidth);
+			entry.tip.tip=truncated and not row.link and (row.name..(row.tip and ("\n\n"..row.tip) or "")) or row.tip;
+			entry.tip.link=row.link;
+			if entry.tip.tip or entry.tip.link then entry.tip:Show(); else entry.tip:Hide(); end
 
 			entry:Show();
 		else
 			entry:Hide();
 		end
 	end
-	entries[1]:SetWidth(displayList.count > #entries and 200 or 216);
 end
 
 -- Adds a List Entry
-local function AddListEntry(name,value,tip)
+local function AddListEntry(name,value,tip,link)
+	if name and value==nil and displayList.count>0 and displayList[displayList.count].name then AddListEntry(); end
 	displayList.count = (displayList.count + 1);
 	local tbl = displayList[displayList.count] or {};
    	displayList[displayList.count] = tbl;
 	tbl.name = name;
-	tbl.value = value;
+	tbl.value = ExaminerNS.Compat.IsNumber(value) and ExaminerNS.Compat.FormatNumber(value) or value;
 	tbl.tip = tip;
+	tbl.link = link;
 end
 
--- Build Detail List
-local function BuildInfoList()
-	displayList.count = 0;
-	--- Show Details from Modules
-	for index, mod in ipairs(ex.modules) do
-		if (mod.details) and (#mod.details.entries > 0) then
-			for index, entry in ipairs(mod.details.entries) do
-				AddListEntry(entry.label,entry.value,entry.tip);
-			end
-		end
-	end
-	-- Add Padding + Update Resistances + Shown Items
-	AddListEntry();
-	UpdateResistances();
-	UpdateShownItems(mod.scroll);
-end
 
 -- Build Stat List
 local function BuildStatList()
 	displayList.count = 0;
+	AddListEntry(ExaminerNS.L["Item Levels"]);
+	AddListEntry(ExaminerNS.L["Average Item Level"],ex.averageItemLevel or "—");
+	if mod.blizzardItemLevel then AddListEntry(ExaminerNS.L["Blizzard Average Item Level"],mod.blizzardItemLevel); end
+	if ex.gear and ex.gear.min then AddListEntry(ExaminerNS.L["Min / Max Item Levels"],ExaminerNS.Compat.FormatNumber(ex.gear.min).." / "..ExaminerNS.Compat.FormatNumber(ex.gear.max)); end
+	if type(ex.gs)=="number" then AddListEntry("GearScore",ex.gs); end
+	if ex.gear then
+		if ex.gear.state=="loading" then AddListEntry(ExaminerNS.L["Equipment"],ExaminerNS.L["Loading…"]);
+		elseif ex.gear.state=="unavailable" then AddListEntry(ExaminerNS.L["Equipment"],ExaminerNS.L["Not available"]); end
+	end
 	local needHeader;
+	local shown={};
 	-- Build display table
 	for _, statCat in ipairs(StatEntryOrder) do
 		needHeader = 1;
 		for _, statToken in ipairs(statCat) do
-			if (ex.unitStats[statToken]) or (ex.isComparing and ex.compareStats[statToken]) then
+			if not shown[statToken] and ((ex.unitStats[statToken]) or (ex.isComparing and ex.compareStats[statToken])) then
+				shown[statToken]=true;
 				if (needHeader) then
 					AddListEntry(statCat[0]);
 					needHeader = nil;
@@ -341,29 +311,25 @@ local function BuildStatList()
 			end
 		end
 	end
-	-- Add Gear Score
-	AddListEntry("Rating");
-	AddListEntry("GearScore", ex.gs or "n/a", "");
-	AddListEntry("Average Item Level", ex.averageItemLevel or "n/a", "");
+	local ratingTokens={};
+	local available={};
+	for token,value in pairs(ex.unitStats) do if ExaminerNS.Compat.IsNumber(value) then available[token]=true; end end
+	if ex.isComparing then for token,value in pairs(ex.compareStats) do if ExaminerNS.Compat.IsNumber(value) then available[token]=true; end end end
+	for token in pairs(available) do
+		if not shown[token] and token~="SANCTIFIED-SET" and token~="DPS" then ratingTokens[#ratingTokens+1]=token; end
+	end
+	table.sort(ratingTokens);
+	if #ratingTokens>0 then AddListEntry(ExaminerNS.L["Additional Stats"]); end
+	for _,token in ipairs(ratingTokens) do
+		local value,tip=LibGearExam:GetStatValue(token,ex.unitStats,ex.isComparing and ex.compareStats,ex.info.level,cfg.combineAdditiveStats);
+		AddListEntry(ExaminerNS.Gear.labels[token] or LibGearExam.StatNames[token] or token,value,tip);
+	end
 	-- Add Sets
 	if (next(ex.info.Sets)) then
-		AddListEntry("Sets");
+		AddListEntry(ExaminerNS.L["Sets"]);
 	end
 	for setName, setEntry in next, ex.info.Sets do
 		AddListEntry(setName,setEntry.count.."/"..setEntry.max);
-	end
-	--BuildInfoList();
-	--- Show Details from Modules
-	--AddListEntry(entry.label,entry.value,entry.tip);
-	--print(ex.modules.details.entries[7].label);
-	for index, mod in ipairs(ex.modules) do
-		if (mod.details) and (#mod.details.entries > 0) then
-			for index, entry in ipairs(mod.details.entries) do
-				if( index == 8 ) then
-					AddListEntry(entry.label,entry.value,entry.tip);
-				end
-			end
-		end
 	end
 	-- Add Padding + Update Resistances + Shown Items
 	AddListEntry();
@@ -373,11 +339,7 @@ end
 
 -- Build the Shown List
 function mod:BuildShownList()
-	if (cfg.statsViewType == 1) then
-		BuildStatList();
-	else
-		BuildInfoList();
-	end
+	BuildStatList();
 end
 
 --------------------------------------------------------------------------------------------------------
@@ -407,17 +369,27 @@ for i = 1, 5 do
 	end
 
 	resists[i] = t;
+	t:SetShown(not ExaminerNS.Compat.isRetail);
 end
 
 -- Stat Entries
-local StatEntry_OnEnter = function(self,motion) gtt:SetOwner(self,"ANCHOR_RIGHT"); gtt:SetText(self.tip); end
+local StatEntry_OnEnter = function(self,motion)
+	if self.tip or self.link then
+		gtt:SetOwner(self,"ANCHOR_RIGHT");
+		if self.link then
+			gtt:SetHyperlink(self.link);
+			if self.tip then gtt:AddLine(self.tip,0.8,0.8,0.8,true); end
+		else gtt:SetText(self.tip); end
+		gtt:Show();
+	end
+end
 for i = 1, 20 do
 	local t = CreateFrame("Frame",nil,mod.page);
 	t:SetSize(200,ITEM_HEIGHT);
 	t.id = i;
 
 	if (i == 1) then
-		t:SetPoint("TOPLEFT",8,-40);
+		t:SetPoint("TOPLEFT",10,ExaminerNS.Compat.isRetail and -12 or -46);
 	else
 		t:SetPoint("TOPLEFT",entries[i - 1],"BOTTOMLEFT");
 		t:SetPoint("TOPRIGHT",entries[i - 1],"BOTTOMRIGHT");
@@ -425,16 +397,17 @@ for i = 1, 20 do
 
 	t.left = t:CreateFontString(nil,"ARTWORK","GameFontHighlightSmall");
 	t.left:SetPoint("LEFT");
+	t.left:SetJustifyH("LEFT"); t.left:SetWordWrap(false); t.left:SetMaxLines(1);
 
 	t.right = t:CreateFontString(nil,"ARTWORK","GameFontHighlightSmall");
 	t.right:SetPoint("RIGHT");
-	t.right:SetPoint("LEFT",t.left,"RIGHT");
+	t.right:SetWordWrap(false); t.right:SetMaxLines(1);
 	t.right:SetTextColor(1,1,0);
 	t.right:SetJustifyH("RIGHT");
 
 	t.tip = CreateFrame("Frame",nil,t);
-	t.tip:SetPoint("TOPRIGHT");
-	t.tip:SetPoint("BOTTOMRIGHT");
+	t.tip:SetAllPoints(t);
+	t.tip:Hide();
 	t.tip:SetScript("OnEnter",StatEntry_OnEnter);
 	t.tip:SetScript("OnLeave",ex.HideGTT);
 	t.tip:EnableMouse(true);

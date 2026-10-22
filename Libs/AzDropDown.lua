@@ -1,3 +1,4 @@
+local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
 --[[
 	Changelog
 	---------
@@ -36,6 +37,7 @@
 	isAutoClose			boolean		if false, the dropdown menu is not closed when selecting an item (default true)
 	minDropdownWidth	number		the minimum allowed width of the dropdown menu
 	maxShownItems		number		the maximum items shown at once in the dropdown menu before enabling the scrollbar (default 16)
+	menuFillColor		table		optional RGBA fill for the open menu
 
 	Valid keys for a dropdown menu item (filled in during "initFunc")
 	-----------------------------------------------------------------
@@ -46,7 +48,7 @@
 	tip			Tooltip will be shown when mouse is over item
 --]]
 
-local REVISION = 12;
+local REVISION = 15;
 if (type(AzDropDown) == "table") and (AzDropDown.vers >= REVISION) then
 	return;
 end
@@ -65,17 +67,6 @@ local backdrop = {
 	backdropColor = CreateColor(0.1,0.1,0.1,1),
 	backdropBorderColor = CreateColor(0.4,0.4,0.4,1),
 };
---[[
-local backdrop = {
-	bgFile = "Interface\\Buttons\\WHITE8X8",
-	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-	tile = true,
-	tileSize = 16,
-	edgeSize = 14,
-	insets = { left = 1, right = 1, top = 1, bottom = 1 },
-	backdropColor = CreateColor(0.06,0.132,0.21,0.7),
-	backdropBorderColor = CreateColor(0.7,0.7,0.8,0),
-};--]]
 AzDropDown.backdrop = backdrop;
 
 -- Used to copy backdrop colors from parent
@@ -134,7 +125,7 @@ function DropDownMenuMixin:QueryItems(parent)
 
 	-- Show "No items" for empty lists & Update List
 	if (#self.list == 0) then
-		self.list[1].text = "No items";
+		self.list[1].text = ExaminerNS.L["No items"];
 		self.list[1].header = true;
 	end
 end
@@ -203,6 +194,13 @@ function DropDownMenuMixin:Initialize(parent,point,parentPoint)
 		self:ApplyBackdrop(AzDropDown.backdrop);
 	end
 
+	local fill=parent.menuFillColor;
+	if type(fill)=="table" then
+		self.backgroundFill:SetColorTexture(unpack(fill));
+		self.backgroundFill:Show();
+	else
+		self.backgroundFill:Hide();
+	end
 	-- updates the menu items
 	self:UpdateItems();
 end
@@ -263,7 +261,8 @@ local function CreateMenuItem()
 	item.text:SetPoint("LEFT",2,0);
 
 	item.check = item:CreateTexture(nil,"ARTWORK");
-	item.check:SetTexture(READY_CHECK_READY_TEXTURE);
+	item.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check");
+	item.check:SetVertexColor(1,0.82,0);
 	item.check:SetSize(14,14);
 	item.check:SetPoint("RIGHT",item,"LEFT");
 	item.check:Hide();
@@ -321,6 +320,10 @@ local function CreateDropDownMenu()
 		insets = { left = 11, right = 12, top = 12, bottom = 11 }
 	})
 	menu:SetBackdropColor(0, 0, 0, 1)
+	menu.backgroundFill=menu:CreateTexture(nil,"BACKGROUND");
+	menu.backgroundFill:SetPoint("TOPLEFT",3,-3);
+	menu.backgroundFill:SetPoint("BOTTOMRIGHT",-3,3);
+	menu.backgroundFill:Hide();
 
 	menu:SetToplevel(true)
 	menu:SetClampedToScreen(true)
@@ -396,7 +399,7 @@ function DropDownFrameMixin:InitSelectedItem(selectedValue)
 	if (not menu) then
 		CreateDropDownMenu();
 	end
-	self:SetText("|cff00ff00Select Value...");	-- set before calling QueryItems() as that may override it
+	self:SetText("|cff00ff00"..ExaminerNS.L["Select Value..."]);
 	self.selectedValue = selectedValue;
 	menu:QueryItems(self);
 	for _, entry in ipairs(menu.list) do

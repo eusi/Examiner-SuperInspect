@@ -1,10 +1,11 @@
+local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
 local ex = Examiner;
 local cfg;
 
 -- Module
-local mod = ex:CreateModule("More","Module List");
-mod.help = "Show more modules\nShift click for last active page";
-mod:CreatePage(false,"Module List");
+local mod = ex:CreateModule("More",ExaminerNS.L["Module List"]);
+mod.help = ExaminerNS.L["Show more modules\nShift click for last active page"];
+mod:CreatePage(false,ExaminerNS.L["Module List"]);
 mod:HasButton(true);
 
 -- Variables
@@ -12,6 +13,16 @@ local NUM_BUTTONS = 8;
 local BUTTON_HEIGHT = (mod.page:GetHeight() - 47) / NUM_BUTTONS;
 local shownMods = {};
 local buttons = {};
+mod.listButtons=buttons;
+local moduleIcons={
+    Config="Interface\\Icons\\Trade_Engineering",
+    Cache="Interface\\Icons\\INV_Misc_Book_09",
+    Stats="Interface\\Icons\\INV_Chest_Plate01",
+    Talents="Interface\\Icons\\Spell_Holy_MagicalSentry",
+    PvP="Interface\\PvPRankBadges\\PvPRank06",
+    Guild="Interface\\Icons\\INV_Shirt_GuildTabard_01",
+    Runes="Interface\\Icons\\INV_Misc_Rune_01",
+};
 
 --------------------------------------------------------------------------------------------------------
 --                                           Module Scripts                                           --
@@ -32,6 +43,7 @@ end
 function mod:OnInspectReady(unit)
 	self:BuildModuleList();
 end
+mod.OnDataChanged = mod.OnInspectReady;
 
 -- OnCacheLoaded
 function mod:OnCacheLoaded(entry,unit)
@@ -116,12 +128,12 @@ local function UpdateShownItems(self)
 			btn.id = mod.index;
 
 			if (mod.hasData) then
-				btn.name:SetTextColor(0.5,1,0.5);
+				btn.name:SetTextColor(1,1,1);
 			else
-				btn.name:SetTextColor(1,0.5,0.5);
+				btn.name:SetTextColor(0.5,0.5,0.5);
 			end
 
-			btn.icon:SetTexture("Interface\\Icons\\Trade_Engineering");
+			btn.icon:SetTexture(ExaminerNS.Compat.Icon(mod.icon) or moduleIcons[mod.token] or "Interface\\Icons\\INV_Misc_QuestionMark");
 			btn:Show();
 		else
 			btn:Hide();
@@ -162,8 +174,8 @@ for i = 1, NUM_BUTTONS do
 	end
 
 	btn:SetScript("OnClick",Button_OnClick);
---	btn:SetScript("OnEnter",nil);
---	btn:SetScript("OnLeave",ex.HideGTT);
+
+
 
 	btn.icon = btn:CreateTexture(nil,"ARTWORK");
 	btn.icon:SetSize(BUTTON_HEIGHT - 2,BUTTON_HEIGHT - 2);

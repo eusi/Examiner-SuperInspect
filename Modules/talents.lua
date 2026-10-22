@@ -1,8 +1,11 @@
+local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
 local ex = Examiner;
+local C=ExaminerNS.Compat;
+if ExaminerNS.Compat.talentKind ~= "classic" then return; end
 
 -- Module
 local mod = ex:CreateModule("Talents",TALENTS);
-mod.help = "The Inspected Player's Talent Specialization";
+mod.help = ExaminerNS.L["The inspected character's talents"];
 mod.page = CreateFrame("Frame",nil,ex);
 mod:HasButton(true);
 mod.canCache = true;
@@ -16,6 +19,45 @@ local isInspect;
 local arrowIndex, branchIndex;
 local points = {};
 local BRANCH_ARRAY = {};
+local cached;
+local function GroupCount()
+    local count=C.Number(C.Try(GetNumTalentGroups,isInspect));
+    return (count==1 or count==2) and count or C.ActiveTalentGroup(isInspect);
+end
+local function SelectedGroup()
+    if cached then return cached.group; end
+    local selected=cfg.shownSpec;
+    if (selected==1 or selected==2) and selected<=GroupCount() then return selected; end
+    return C.ActiveTalentGroup(isInspect);
+end
+local function TabCount()
+    return cached and #cached.trees or math.min(3,C.Number(C.Try(GetNumTalentTabs,isInspect,false),0));
+end
+local function ReadTab(index)
+    if cached then
+        local tree=cached.trees[index];
+        if tree then return tree.name,tree.icon,tree.points,tree.background; end
+        return;
+    end
+    return C.LegacyTalentTab(index,isInspect,activeSpec);
+end
+local function TalentCount(tab)
+    if cached then return cached.trees[tab] and #cached.trees[tab].nodes or 0; end
+    return math.min(40,C.Number(C.Try(GetNumTalents,tab,isInspect,false),0));
+end
+local function ReadTalent(tab,index)
+    if cached then
+        local node=cached.trees[tab] and cached.trees[tab].nodes[index];
+        if node then return unpack(node.values,1,12); end
+        return;
+    end
+    return C.LegacyTalentInfo(tab,index,isInspect,activeSpec);
+end
+local function ReadPrereqs(tab,index)
+    if cached then return unpack(cached.trees[tab].nodes[index].prereqs); end
+    local values={C.Try(GetTalentPrereqs,tab,index,isInspect,false,activeSpec)};
+    if C.IsNumber(values[1]) and C.IsNumber(values[2]) then return unpack(values); end
+end
 
 -- Init Talent Branches
 for tier = 1, MAX_NUM_TALENT_TIERS do
@@ -25,87 +67,110 @@ for tier = 1, MAX_NUM_TALENT_TIERS do
 	end
 end
 
---------------------------------------------------------------------------------------------------------
---                                           Module Scripts                                           --
---------------------------------------------------------------------------------------------------------
+-- Inspect lifecycle and cache
 
--- OnInitialize
 function mod:OnInitialize()
-	cfg = Examiner_Config;
-	cache = Examiner_Cache;
+	cfg = ex.cfg;
+	cache = ex.cache;
 end
 
--- OnInspect
 function mod:OnInspect(unit)
+	cached=nil;
 	if (ex.isSelf) then
 		isInspect = nil;
 		self:HasData(true);
-	end
-end
-
--- OnInspectReady
-function mod:OnInspectReady(unit)
-	if (not ex.isSelf) then
-		isInspect = true;
-		self:HasData(ex.canInspect);
 		self:InitTalents();
 	end
 end
 
--- OnCacheLoaded
+function mod:OnInspectReady(unit)
+	cached=nil;
+	isInspect=not ex.isSelf;
+	self:HasData(true);
+	self:InitTalents();
+end
+
 function mod:OnCacheLoaded(entry,unit)
+	cached=ExaminerNS.Cache.Copy(entry.ClassicTalents);
+	if C.IsTable(cached) and C.IsTable(cached.trees) and #cached.trees>0 then
+		isInspect=true; activeSpec=cached.group;
+		self:HasData(true); self:InitTalents();
+		return;
+	end
+	cached=nil;
+	self:HasData(nil);
 	if (entry.talentPoints or entry.talents) and (entry.talentSpec) then
 		self.details:Clear();
-		self.details:Add("Talents");
-		self.details:Add("Specialization",entry.talentSpec or UNKNOWN);
-		self.details:Add("Points",entry.talentPoints or entry.talents); -- Az: backward compatibility with old cache entries
+		self.details:Add(ExaminerNS.L["Talents"]);
+		self.details:Add(ExaminerNS.L["Specialization"],entry.talentSpec or UNKNOWN);
+		self.details:Add(ExaminerNS.L["Points"],entry.talentPoints or entry.talents);
 		self.details:Update();
 	end
 end
 
--- OnCache
 function mod:OnCache(entry,unit)
 	if (self:CanCache()) and (self.hasData) then
 		entry.talentSpec = self.talentSpec;
 		entry.talentPoints = self.talentPoints;
 		entry.level = ex.info.level;
+		if not ex.isCacheEntry then
+			local snapshot={group=activeSpec or C.ActiveTalentGroup(isInspect),trees={}};
+			local complete=TabCount()>0;
+			for tab=1,TabCount() do
+				local name,icon,spent,background=ReadTab(tab);
+				local tree={name=name,icon=icon,points=spent,background=background,nodes={}};
+				if not name or name=="?" then complete=false; end
+				if spent and spent>0 and TalentCount(tab)==0 then complete=false; end
+				for index=1,TalentCount(tab) do
+					local values={ReadTalent(tab,index)};
+					if not values[1] then complete=false; end
+					tree.nodes[index]={values=values,prereqs={ReadPrereqs(tab,index)},link=C.Text(C.Try(GetTalentLink,tab,index,isInspect,false,snapshot.group))};
+				end
+				snapshot.trees[tab]=tree;
+			end
+			if complete then entry.ClassicTalents=ExaminerNS.Cache.Copy(snapshot); end
+		end
 	end
 end
 
--- OnClearInspect
 function mod:OnClearInspect()
+	cached=nil;
 	self:HasData(nil);
+	self.talentSpec,self.talentPoints=nil,nil;
 	self.details:Clear();
 end
 
---------------------------------------------------------------------------------------------------------
---                                                Menu                                                --
---------------------------------------------------------------------------------------------------------
+-- Talent group menu
 
 -- Menu Init Items
 function mod.MenuInit(parent,list)
-	local group = GetActiveTalentGroup(true);
-	local _, _, _, _, p1 = GetTalentTabInfo(1,isInspect,nil,2);
-	local _, _, _, _, p2 = GetTalentTabInfo(2,isInspect,nil,2);
-	local _, _, _, _, p3 = GetTalentTabInfo(3,isInspect,nil,2);
-	local noSecondary = (p1 + p2 + p3 == 0);
-	list[1].text = "Shown Spec"; list[1].header = 1;
-	list[2].text = "Active"; list[2].value = nil; list[2].checked = (cfg.shownSpec == nil);
-	list[3].text = (group == 1 and "|cff80ff80" or "").."Primary"; list[3].value = 1; list[3].checked = (cfg.shownSpec == 1);
-	list[4].text = (group == 2 and "|cff80ff80" or noSecondary and "|cffff8080" or "").."Secondary"; list[4].value = 2; list[4].checked = (cfg.shownSpec == 2);
+	local group = cached and cached.group or C.ActiveTalentGroup(isInspect);
+	if cached then
+		list[1].text=ExaminerNS.L["Shown Spec"]; list[1].header=1;
+		list[2].text=ExaminerNS.L["Active"]; list[2].checked=true;
+		return;
+	end
+	local groups=GroupCount();
+	list[1].text = ExaminerNS.L["Shown Spec"]; list[1].header = 1;
+	local selected=(cfg.shownSpec==1 or cfg.shownSpec==2) and cfg.shownSpec<=groups and cfg.shownSpec or nil;
+	list[2].text = ExaminerNS.L["Active"]; list[2].value = nil; list[2].checked = (selected == nil);
+	list[3].text = (group == 1 and "|cff80ff80" or "")..ExaminerNS.L["Primary"]; list[3].value = 1; list[3].checked = (selected == 1);
+	if groups>1 then list[4].text = (group == 2 and "|cff80ff80" or "")..ExaminerNS.L["Secondary"]; list[4].value = 2; list[4].checked = (selected == 2); end
 end
 
 -- Menu Select Item
 function mod.MenuSelect(parent,entry)
+	local inspector=ExaminerNS.Inspector;
+	local session=inspector.active;
+	if cached or ex.isCacheEntry or not session or session.cached or not session.serverReady or not inspector:Valid(session)
+		or (not ex.isSelf and inspector.notificationGUID~=session.guid) then return; end
+	if entry.value~=nil and ((entry.value~=1 and entry.value~=2) or entry.value>GroupCount()) then return; end
 	cfg.shownSpec = entry.value;
-	if (mod:IsShown()) then
-		mod:UpdateTalents();
-	end
+	mod:InitTalents();
+	if not ex.isCacheEntry then ex:CachePlayer(); end
 end
 
---------------------------------------------------------------------------------------------------------
---                                       Talent Button Functions                                      --
---------------------------------------------------------------------------------------------------------
+-- Talent controls
 
 -- Select Tab
 local function TalentsTab_OnClick(self,button)
@@ -118,7 +183,9 @@ end
 local function TalentButton_OnClick(self,button)
 	local editBox = ChatEdit_GetActiveWindow();
 	if (IsModifiedClick("CHATLINK")) and (editBox) and (editBox:IsVisible()) then
-		editBox:Insert(GetTalentLink(activeTab,self.id,isInspect,nil,activeSpec));
+		local node=cached and cached.trees[activeTab] and cached.trees[activeTab].nodes[self.id];
+		local link=node and node.link or (not cached and C.Try(GetTalentLink,activeTab,self.id,isInspect,false,activeSpec));
+		if C.IsString(link) then editBox:Insert(link); end
 	end
 end
 
@@ -126,7 +193,14 @@ end
 local function TalentButton_OnEnter(self,motion)
 	GameTooltip:SetOwner(self,"ANCHOR_RIGHT");
 	if( activeTab == nil ) then	return end;
-	GameTooltip:SetTalent(activeTab,self.id,isInspect,nil,activeSpec);
+	local node=cached and cached.trees[activeTab] and cached.trees[activeTab].nodes[self.id];
+	if cached then
+		if node and node.link then GameTooltip:SetHyperlink(node.link);
+		elseif self.talentName then GameTooltip:SetText(self.talentName); end
+	elseif self.talentID and C_SpecializationInfo and type(C_SpecializationInfo.GetTalentInfo)=="function" then
+		GameTooltip:SetTalent(self.talentID,isInspect or false,false,activeSpec);
+	else GameTooltip:SetTalent(activeTab,self.id,isInspect,false,activeSpec); end
+	GameTooltip:Show();
 end
 
 -- Create Talent Button
@@ -169,9 +243,7 @@ local function CreateTalentButton(parent,index)
 	return btn;
 end
 
---------------------------------------------------------------------------------------------------------
---                                           Widget Creation                                          --
---------------------------------------------------------------------------------------------------------
+-- Widgets
 
 -- OnShow
 local function OnShow(self)
@@ -211,7 +283,7 @@ scf:SetHeight(1);
 sc:SetScrollChild(scf);
 
 -- Talent Tabs
-for i = 1, 3 do --_G.GetNumTalentTabs()
+for i = 1, 3 do
 	local tab = CreateFrame("Button","ExaminerTab"..i,mod.page,"TabButtonTemplate");
 	tab.id = i;
 	tab:SetScript("OnClick",TalentsTab_OnClick);
@@ -226,8 +298,9 @@ ex.selectedTab = 1;
 PanelTemplates_SetNumTabs(ex,3);
 PanelTemplates_UpdateTabs(ex);
 
--- Talent Buttons -- Az: workaround, if I create these dynamically with a metatable (see commented out line below), the framelevel/strata of the arrowframe screws up, seems like a blizzard ui bug
+-- Create buttons before the arrow overlay to preserve their frame ordering.
 local talentBtns = {};
+mod.talentButtons=talentBtns;
 for i = 1, 40 do
 	talentBtns[i] = CreateTalentButton(scf,i);
 end
@@ -237,13 +310,10 @@ local af = CreateFrame("Frame",nil,scf);
 af:SetAllPoints();
 
 -- Talent Buttons + Arrows + Branches
---local talentBtns = setmetatable({},{ __index = function(t,k) t[k] = CreateTalentButton(scf,k); return t[k]; end });
 local branches = setmetatable({},{ __index = function(t,k) t[k] = scf:CreateTexture(nil,"BACKGROUND","TalentBranchTemplate"); return t[k]; end });
 local arrows = setmetatable({},{ __index = function(t,k) t[k] = af:CreateTexture(nil,"OVERLAY","TalentArrowTemplate"); return t[k]; end });
 
---------------------------------------------------------------------------------------------------------
---                                              Functions                                             --
---------------------------------------------------------------------------------------------------------
+-- Tree connections and data
 
 -- Branch
 local function SetBranchTexture(coords,x,y)
@@ -292,12 +362,11 @@ local function CalculateBranchLines(tier,column,rank,...)
 			for i = preTier, tier - 1 do
 				if (BRANCH_ARRAY[i][column].id) then
 					blocked = true;
--- Az: debug, going to keep this in, one day talent trees might change so this is needed, this way people can see Examiner is the cause
-AzMsg("|2Examiner Talent Module:|r blocked path |1"..tier.." x "..i.."|r    left = |1"..left.."|r, right = |1"..right);
+					ExaminerNS.Record("talent-layout","blocked path "..tier.." x "..i);
 					break;
 				end
 			end
-			-- Top Connection -- Az: Currently, as of patch 3.1, no classes actually has a blocking talent above, so I haven't been able to test it, and it will most likely not be correct
+			-- Route around the intervening talent.
 			if (blocked) then
 				for i = preTier, tier - 1 do
 					BRANCH_ARRAY[i][column].up = type;
@@ -321,36 +390,33 @@ AzMsg("|2Examiner Talent Module:|r blocked path |1"..tier.." x "..i.."|r    left
 end
 -- Init Talents
 function mod:InitTalents()
-	if (self:IsShown()) then
-	    mod:UpdateTalents();
-	end
+	activeSpec=SelectedGroup();
+	self.details:Clear();
+	wipe(points);
+	self.talentSpec,self.talentPoints=nil,nil;
 	-- Gather Talent Info
 	local maxTree = 1;
 	local combined = 0;
-	for i = 1, _G.GetNumTalentTabs() do
-		local _, _, pointsSpent = GetTalentTabInfo(i,isInspect);
-		pointsSpent = tonumber(pointsSpent) or 0
-		points[i] = pointsSpent;
-		combined = (combined + pointsSpent);
-		if (pointsSpent > points[maxTree]) then
-			maxTree = i;
-		end
-	end
-	local talentPoints = points[1].."/"..points[2].."/"..points[3];
-	-- Fancy level estimate since we can determine it from talents
-	if (ex.info.level == -1) and (combined > 0) then
-		if (combined >= 36) then
-			ex.info.level = (80 + combined - 36);
+	local complete=TabCount()==3;
+	for i = 1, TabCount() do
+		local name, _, pointsSpent = ReadTab(i);
+		if not name or name=="" or name=="?" or not C.IsNumber(pointsSpent)
+			or not (pointsSpent>=0 and pointsSpent<math.huge and pointsSpent%1==0) then complete=false;
 		else
-			ex.info.level = ((combined - 1) * 2 + 10);
+			points[i] = pointsSpent;
+			combined = (combined + pointsSpent);
+			if (pointsSpent > (points[maxTree] or -1)) then maxTree = i; end
 		end
-		ex:SetUnitDetailString();
 	end
+	self:HasData(complete);
+	if self:IsShown() then self:UpdateTalents(); end
+	if not complete then self.details:Update(); return; end
+	local talentPoints = (points[1] or 0).."/"..(points[2] or 0).."/"..(points[3] or 0);
 	-- Details
-	local _, talentSpec = GetTalentTabInfo(maxTree,isInspect,nil,group);
-	self.details:Add("Talents");
-	self.details:Add("Specialization",combined > 0 and talentSpec or "No Talents");
-	self.details:Add("Points",talentPoints);
+	local talentSpec = ReadTab(maxTree);
+	self.details:Add(ExaminerNS.L["Talents"]);
+	self.details:Add(ExaminerNS.L["Specialization"],combined > 0 and talentSpec or ExaminerNS.L["No Talents"]);
+	self.details:Add(ExaminerNS.L["Points"],talentPoints);
 	self.details:Update();
 	-- Backup Values for Caching later
 	self.talentSpec = talentSpec;
@@ -359,19 +425,28 @@ end
 
 -- Update Talents
 function mod:UpdateTalents()
-	activeSpec = cfg.shownSpec or GetActiveTalentGroup(isInspect);
+	activeSpec = SelectedGroup();
+	activeTab=math.min(activeTab,math.max(1,TabCount()));
+	for _,button in ipairs(talentBtns) do button:Hide(); end
+	-- These pools allocate on indexed access; ipairs would keep creating entries.
+	for i=1,#branches do branches[i]:Hide(); end
+	for i=1,#arrows do arrows[i]:Hide(); end
+	if not self.hasData then
+		for i=1,3 do _G["ExaminerTab"..i]:Hide(); end
+		sc:Hide(); return;
+	end
 	-- Show Objects
 	sc:Show();
-	for i = 1, _G.GetNumTalentTabs() do
-		_G["ExaminerTab"..i]:Show();
+	for i = 1, 3 do
+		_G["ExaminerTab"..i]:SetShown(i<=TabCount());
 	end
 	-- Update Tabs
-	for i = 1, _G.GetNumTalentTabs() do
+	for i = 1, TabCount() do
 		local tab = _G["ExaminerTab"..i];
-		local uniqueId, tabName, description, icon, pointsSpent, background, previewPointsSpent, bool = _G.GetTalentTabInfo(i,isInspect,nil,activeSpec);
-		ex:SetBackgroundTexture("Interface\\TalentFrame\\"..background.."-");
+		local tabName, icon, pointsSpent, background = ReadTab(i);
+        if background and i==activeTab then ex:SetBackgroundTexture("Interface\\TalentFrame\\"..background.."-"); end
 		if (pointsSpent == nil) then
-			pointsSpent = "";
+			pointsSpent = 0;
 		end
 		if (tabName == nil) then
 			tabName = "";
@@ -389,17 +464,18 @@ function mod:UpdateTalents()
 	end
 	-- Talents
 	if( activeTab == nil ) then return end;
-	local numTalents = GetNumTalents(activeTab,isInspect,nil);
+	local numTalents = TalentCount(activeTab);
 	if not numTalents or numTalents <= 0 then return end;
 
 	for i = 1, numTalents do
-		local name, iconTexture, tier, column, rank, maxRank, meetsPrereq, previewRank, meetsPreviewPrereq, isExceptional, goldBorder =	GetTalentInfo(activeTab,i,isInspect,nil,activeSpec);
+		local name, iconTexture, tier, column, rank, maxRank, meetsPrereq, previewRank, meetsPreviewPrereq, isExceptional, goldBorder, talentID = ReadTalent(activeTab,i);
 		local btn = talentBtns[i];
-		if (not name) then
-			btn:Hide();	-- Az: For some silly reason, we are able to get a nil entry before we reach the end. This happens for mages/arcane as of patch 4.0.3a
+		btn.talentID,btn.talentName=talentID,name;
+		if not name or not BRANCH_ARRAY[tier] or not BRANCH_ARRAY[tier][column] or not C.IsNumber(rank) or not C.IsNumber(maxRank) then
+			btn:Hide();
 		else
 			BRANCH_ARRAY[tier][column].id = i;
-			CalculateBranchLines(tier,column,rank,GetTalentPrereqs(activeTab,i,isInspect,nil,activeSpec));
+			CalculateBranchLines(tier,column,rank,ReadPrereqs(activeTab,i));
 
 			btn:Show();
 			btn:ClearAllPoints();
@@ -448,7 +524,3 @@ function mod:UpdateTalents()
 	end
 end
 
---local status, error = pcall(PanelTemplates_UpdateTabs, ex);
---if not status then
---    print("Error on PanelTemplates_UpdateTabs: ", error);
---end

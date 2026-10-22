@@ -1,3 +1,4 @@
+local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
 local ex = Examiner;
 local gtt = GameTooltip;
 
@@ -138,6 +139,7 @@ end
 
 -- Tells if this module has data available for Examiner to show
 function ModuleCore:HasData(value)
+	local changed=(self.hasData and true or false)~=(value and true or false);
 	self.hasData = (value and true or nil);
 	if (value) then
 		if (self.button) then
@@ -151,9 +153,17 @@ function ModuleCore:HasData(value)
 			self.button:Disable();
 		end
 	end
+	if changed and ex.cfg then ex:SendModuleEvent("OnDataChanged",self); end
 end
 
 -- Has Button
+function ex:RefreshModuleButtons()
+	for _,button in ipairs(self.buttons) do
+		local module=self.modules[button.id];
+		button:SetShown(module~=nil and module.hasButton and module.button==button and (self.unitType~=1 or module.token=="More"));
+	end
+end
+
 function ModuleCore:HasButton(value)
 	self.hasButton = value;
 	-- Position Module Buttons
@@ -169,9 +179,9 @@ function ModuleCore:HasButton(value)
 			end
 			btn:Enable();
 			btn.id = index;
-			btn:SetText(mod.token);
+			btn:SetText(mod.buttonLabel or ExaminerNS.L[mod.token]);
 			mod.button = btn;
-			--mod.hasData = nil;
+
 		end
 	end
 	-- Resize Buttons
@@ -194,8 +204,8 @@ local backdrop = {
 	tileSize = 16,
 	edgeSize = 16,
 	insets = { left = 4, right = 4, top = 4, bottom = 4 },
---	backdropColor = CreateColor(0.06,0.132,0.21,0.7),
---	backdropBorderColor = CreateColor(0.7,0.7,0.8,1),
+
+
 	backdropColor = CreateColor(0.06,0.132,0.21,0.7),
 	backdropBorderColor = CreateColor(0.7,0.7,0.8,0.2),
 };

@@ -1,4 +1,9 @@
+local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
 local ex = Examiner;
+local GetItemInfo = ExaminerNS.Compat.GetItemInfo;
+local GetItemQualityColor = ExaminerNS.Compat.GetItemQualityColor;
+local GetDetailedItemLevelInfo = ExaminerNS.Compat.GetDetailedItemLevelInfo;
+local GetInventorySlotInfo = ExaminerNS.Compat.GetInventorySlotInfo;
 local cfg;
 local gtt = GameTooltip;
 
@@ -10,7 +15,7 @@ mod.slotBtns = {};
 local ITEM_ICON_UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark";
 
 -- Options
-mod:AddOption({ var = "alwaysShowItemLevel", default = true, label = "Always Show Item Levels", tip = "With this enabled, the items will always show their item levels, instead of having to hold down the ALT key." });
+mod:AddOption({ var = "alwaysShowItemLevel", default = true, label = ExaminerNS.L["Always Show Item Levels"], tip = ExaminerNS.L["Show item levels without holding Alt."] });
 
 --------------------------------------------------------------------------------------------------------
 --                                           Module Scripts                                           --
@@ -21,12 +26,23 @@ function mod:OnInitialize()
 	cfg = ex.cfg;
 end
 
+function mod:OnClearInspect()
+	for _,button in ipairs(self.slotBtns) do
+		if gtt:IsOwned(button) then gtt:Hide(); end
+		button.link,button.realLink=nil,nil;
+		button.texture:SetTexture(button.bgTexture);
+		button.border:Hide(); button.level:SetText(""); button.level:Hide(); button:Hide();
+	end
+	ex.tooltipSlot=nil;
+end
+
 -- OnInspectReady
 function mod:OnInspectReady(unit,guid)
 	self:UpdateItemSlots();
 	self:ShowItemSlotButtons();
 end
 mod.OnInspect = mod.OnInspectReady;
+mod.OnGearUpdated = mod.OnInspectReady;
 
 -- OnCacheLoaded
 function mod:OnCacheLoaded(entry,unit)
@@ -59,7 +75,7 @@ end
 -- Show the Item Slot Buttons
 function mod:ShowItemSlotButtons()
 	local shownMod = (cfg.activePage and ex.modules[cfg.activePage]);
-	local visible = (ex.itemsLoaded) and (not shownMod or shownMod.showItems or not shownMod.page:IsShown());
+	local visible = ex.unitType~=1 and (ex.itemsLoaded) and (not shownMod or shownMod.showItems or not shownMod.page:IsShown());
 	for _, button in ipairs(self.slotBtns) do
 		if (visible) then
 			button:Show();
@@ -134,15 +150,7 @@ local function OnClick(self,button)
 	if (CursorHasItem()) then
 		OnDrag(self);
 	elseif (self.link) then
-		if (button == "RightButton") then
-			-- AzMsg("---|2 Gem Overview for "..select(2,GetItemInfo(self.link)).." |r---");
-			-- for i = 1, 3 do
-				-- local _, gemLink = GetItemGem(self.link,i);
-				-- if (gemLink) then
-					-- AzMsg(format("Gem |1%d|r = %s",i,gemLink));
-				-- end
-			-- end
-		elseif (button == "LeftButton") then
+		if (button == "LeftButton") then
 			local editBox = ChatEdit_GetActiveWindow();
 			if (IsModifiedClick("DRESSUP")) then
 				DressUpItemLink(self.link);
@@ -154,8 +162,6 @@ local function OnClick(self,button)
 			end
 		end
 	elseif (self.realLink) then
-		-- Az: this needs to be changed, look at shared onenter func for more info
-		-- Az: should not be like this anymore, a single call to GetItemInfo() would make the client cache the item, so just make some kind of postcacheload thingie, or just redo the OnCacheLoaded event?
 		local entryName = ex:GetEntryName();
 		ex:ClearInspect();
 		ex:LoadPlayerFromCache(entryName);
@@ -204,7 +210,7 @@ for index, slot in ipairs(LibGearExam.Slots) do
 	btn.texture:SetAllPoints();
 
 	btn.border = btn:CreateTexture(nil,"OVERLAY");
-	btn.border:SetTexture("Interface\\Addons\\Examiner\\Textures\\Border");
+	btn.border:SetTexture(ExaminerNS.assetPath.."Textures\\Border");
 	btn.border:SetSize(41,41);
 	btn.border:SetPoint("CENTER");
 
@@ -218,7 +224,7 @@ for index, slot in ipairs(LibGearExam.Slots) do
 	elseif (index == 9) then
 		btn:SetPoint("TOPRIGHT",-4,-3);
 	elseif (index == 17) then
-		btn:SetPoint("BOTTOM",-41.5,27);
+		btn:SetPoint("BOTTOM",ExaminerNS.Compat.hasRangedSlot and -41.5 or -21,27);
 	elseif (index <= 16) then
 		btn:SetPoint("TOP",mod.slotBtns[index - 1],"BOTTOM",0,-4);
 	else

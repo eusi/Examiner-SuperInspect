@@ -1,14 +1,13 @@
+local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
 local ex = Examiner;
+local C=ExaminerNS.Compat;
+local GetQuestDifficultyColor=C.GetQuestDifficultyColor;
 local cfg, cache;
 
 -- Module
--- local mod = ex:CreateModule("Cache","Cached Players");
--- mod.help = "Right Click for extended menu";
--- mod:CreatePage(false,"");
--- mod:HasButton(true);
-local mod = ex:CreateModule("Cache","Cached Players");
-mod.help = "Examiner Settings";
-mod:CreatePage(false,"Cached Players");
+local mod = ex:CreateModule("Cache",ExaminerNS.L["Cached Players"]);
+mod.help = ExaminerNS.L["Cached Players"];
+mod:CreatePage(false,ExaminerNS.L["Cached Players"]);
 
 -- Variables
 local cacheSortMethods = { "none", "name", "realm", "level", "guild", "race", "class", "time" };
@@ -67,10 +66,10 @@ ex.slashCommands.clearcache = function(cmd) oldClearCacheFunc(cmd); mod:BuildCac
 -- OnInitialize
 function mod:OnInitialize()
 	cfg = ex.cfg;
-	cache = Examiner_Cache;
+	cache = ex.cache;
 	-- Defaults
 	cfg.cacheSort = cfg.cacheSort or "class";
-	cfg.cacheFilter = cfg.cacheFilter or "";
+	cfg.cacheFilter = type(cfg.cacheFilter)=="string" and cfg.cacheFilter or "";
 end
 
 -- OnButtonClick
@@ -78,7 +77,7 @@ function mod:OnButtonClick(frame,button)
 	-- left
 	if (button == "LeftButton") then
 		if (IsShiftKeyDown()) then
-			AzDialog:Show("Enter new cache filter...",cfg.cacheFilter,CacheFilterOkayFunc);
+			AzDialog:Show(ExaminerNS.L["Enter new cache filter..."],cfg.cacheFilter,CacheFilterOkayFunc);
 		end
 	-- right
 	elseif (IsShiftKeyDown()) then
@@ -153,23 +152,23 @@ function mod.MenuInit(parent,list)
 		mod:BuildCacheList();
 	end
 	-- filter
-	local tbl = list[#list + 1]; tbl.text = "Filter"; tbl.header = 1;
-	tbl = list[#list + 1]; tbl.text = "Set Filter..."; tbl.value = 1;
-	tbl = list[#list + 1]; tbl.text = "Show Alts"; tbl.value = 10; tbl.checked = cfg.cacheShowAlts;
+	local tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Filter"]; tbl.header = 1;
+	tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Set Filter..."]; tbl.value = 1;
+	tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Show Alts"]; tbl.value = 10; tbl.checked = cfg.cacheShowAlts;
 	-- sort
 	tbl = list[#list + 1]; tbl.header = 1;
-	tbl = list[#list + 1]; tbl.text = "Sort Method"; tbl.header = 1;
+	tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Sort Method"]; tbl.header = 1;
 	for index, method in ipairs(cacheSortMethods) do
 		local tbl = list[#list + 1];
-		tbl.text = method; tbl.value = method; tbl.checked = (cfg.cacheSort == method);
+		tbl.text = ExaminerNS.L[method]; tbl.value = method; tbl.checked = (cfg.cacheSort == method);
 	end
 	-- cache
 	tbl = list[#list + 1]; tbl.header = 1;
-	tbl = list[#list + 1]; tbl.text = "Cache"; tbl.header = 1;
-	tbl = list[#list + 1]; tbl.text = "Delete All Entries"; tbl.value = 2;
+	tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Cache"]; tbl.header = 1;
+	tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Delete All Entries"]; tbl.value = 2;
 	if (#activeCacheList ~= GetTableEntries(cache)) then
-		tbl = list[#list + 1]; tbl.text = "Delete Shown Entries"; tbl.value = 3;
-		tbl = list[#list + 1]; tbl.text = "Delete Hidden Entries"; tbl.value = 4;
+		tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Delete Shown Entries"]; tbl.value = 3;
+		tbl = list[#list + 1]; tbl.text = ExaminerNS.L["Delete Hidden Entries"]; tbl.value = 4;
 	end
 end
 
@@ -180,16 +179,16 @@ function mod.MenuSelect(parent,entry)
 		cfg.cacheSort = entry.value;
 	-- Cache Filter
 	elseif (entry.value == 1) then
-		AzDialog:Show("Enter new cache filter...",cfg.cacheFilter,CacheFilterOkayFunc);
+		AzDialog:Show(ExaminerNS.L["Enter new cache filter..."],cfg.cacheFilter,CacheFilterOkayFunc);
 	elseif (entry.value == 10) then
 		cfg.cacheShowAlts = (not cfg.cacheShowAlts);
 	-- Delete Cache
 	elseif (entry.value == 2) then
-		AzDialog:Show("Are you sure you want to delete |cffffff80"..GetTableEntries(cache).."|r cached entries?",nil,DeleteAllCache);
+		AzDialog:Show(ExaminerNS.F("Delete %d cached entries?",GetTableEntries(cache)),nil,DeleteAllCache);
 	elseif (entry.value == 3) then
-		AzDialog:Show("Sure you want to delete the |cffffff80"..#activeCacheList.."|r shown cache entries?",nil,DeleteShownCache);
+		AzDialog:Show(ExaminerNS.F("Delete %d shown entries?",#activeCacheList),nil,DeleteShownCache);
 	elseif (entry.value == 4) then
-		AzDialog:Show("Sure you want to delete the |cffffff80"..(GetTableEntries(cache) - #activeCacheList).."|r hidden cache entries?",nil,DeleteHiddenCache);
+		AzDialog:Show(ExaminerNS.F("Delete %d hidden entries?",GetTableEntries(cache)-#activeCacheList),nil,DeleteHiddenCache);
 	end
 	-- Rebuild Cache List
 	if (entry.value ~= 1) then
@@ -207,7 +206,7 @@ local function CacheEntry_OnClick(self,button)
 		local editBox = ChatEdit_GetActiveWindow();
 		if (editBox) and (IsModifiedClick("CHATLINK")) and (editBox:IsVisible()) then
 			local entry = cache[self.entryName];
-			editBox:Insert(format("%s, %d %s%s",self.entryName,entry.level,entry.class,(entry.guild and " of <"..entry.guild..">" or "")));
+			editBox:Insert(format("%s, %d %s%s",self.entryName,entry.level,entry.class,(entry.guild and ExaminerNS.L[" of "].."<"..entry.guild..">" or "")));
 		else
 			-- Go to previous page
 			if (not IsShiftKeyDown()) then
@@ -229,20 +228,20 @@ local function CacheEntry_OnEnter(self,motion)
 	local entry = cache[self.entryName];
 	GameTooltip:SetOwner(self,"ANCHOR_RIGHT");
 	-- Init Text & Colors
-	local color = CLASS_COLORS[entry.classFixed];
+	local color = CLASS_COLORS[entry.classFixed] or {r=1,g=1,b=1};
 	local classText = ("|cff%.2x%.2x%.2x%s|r"):format(color.r*255,color.g*255,color.b*255,entry.class);
 	color = GetQuestDifficultyColor(entry.level ~= -1 and entry.level or 500);
 	local level = ("|cff%.2x%.2x%.2x%s|r"):format(color.r*255,color.g*255,color.b*255,entry.level ~= -1 and entry.level or "??");
 	-- Add Lines & Show
 	GameTooltip:AddLine(entry.pvpName..(entry.realm and " - "..entry.realm or ""),0.5,0.75,1.0);
 	if (entry.guild) then
-		GameTooltip:AddLine("<"..entry.guild.."> |cffc0c0c0"..entry.guildRank,0.0,0.5,0.8);
+		GameTooltip:AddLine("<"..entry.guild.."> |cffc0c0c0"..(entry.guildRank or ""),0.0,0.5,0.8);
 	end
 	GameTooltip:AddLine(level.."  "..entry.race.." "..classText,1,1,1);
 	GameTooltip:AddLine(entry.zone,1,1,1);
-	GameTooltip:AddLine(ex:FormatTime(time() - entry.time).." ago");
+	GameTooltip:AddLine(ex:FormatTime(time() - entry.time)..ExaminerNS.L[" ago"]);
 	GameTooltip:AddLine(date("%a, %b %d, %Y - %H:%M:%S",entry.time));
-	GameTooltip:AddLine("<Shift + Right-Click to Delete>",0.7,0.7,0.7);
+	GameTooltip:AddLine(ExaminerNS.L["<Shift + Right-Click to Delete>"],0.7,0.7,0.7);
 	GameTooltip:Show();
 end
 
@@ -254,6 +253,7 @@ local function CacheListSortFunc(a,b)
 		return cache[a].name < cache[b].name;
 	elseif (not aValue or not bValue) then
 		return aValue and true;
+	elseif type(aValue)~=type(bValue) then return tostring(aValue)<tostring(bValue);
 	elseif (type(aValue) == "number") then
 		return aValue > bValue;
 	else
@@ -273,7 +273,7 @@ local function UpdateShownItems(self)
 		if (activeCacheList[index]) then
 			local entryName = activeCacheList[index];
 			local entry = cache[entryName];
-			local color = CLASS_COLORS[entry.classFixed];
+			local color = CLASS_COLORS[entry.classFixed] or {r=1,g=1,b=1};
 
 			button.entryName = entryName;
 			button.name:SetFormattedText("|cffffffff%s|r %s%s",(entry.level ~= -1 and entry.level or "??"),entry.name,entry.realm and "|cffffff00*" or "");
@@ -307,12 +307,13 @@ end
 
 -- Include Filtered Entry
 local function IncludeFilteredEntry(entry,filter,lvlMin,lvlHyphen,lvlMax)
+	if not ExaminerNS.Cache.Valid(entry) then return false; end
 	local include = true;
 	-- Show Alts
 	include = (include) and (not cfg.cacheShowAlts or cfg.cacheShowAlts and entry.isSelf);
 	-- List Pattern
 	for type, string in next, filterList do
-		include = (include) and (entry[type]) and (tostring(entry[type]):lower():gsub(" ",""):match(string));
+		include = (include) and (entry[type]) and (tostring(entry[type]):lower():gsub(" ",""):find(string,1,true));
 	end
 	-- Level Match
 	if (lvlMin and lvlMax) then
@@ -323,7 +324,7 @@ local function IncludeFilteredEntry(entry,filter,lvlMin,lvlHyphen,lvlMax)
 		include = (include) and (entry.level == lvlMin);
 	end
 	-- Name Match & Return
-	return (include) and (entry.name:lower():find(filter));
+	return (include) and (entry.name:lower():find(filter,1,true));
 end
 
 -- Build the table used to display the cache (display table)
@@ -355,7 +356,7 @@ function mod:BuildCacheList()
 		sort(activeCacheList,CacheListSortFunc);
 	end
 	-- Update
-	self.page.header:SetFormattedText("Cached Players (%d)%s",#activeCacheList,(notFiltered and "" or " |cffffff00*"));
+	self.page.header:SetFormattedText(ExaminerNS.L["Cached Players (%d)%s"],#activeCacheList,(notFiltered and "" or " |cffffff00*"));
 	UpdateShownItems(self.scroll);
 	wipe(filterList);
 end

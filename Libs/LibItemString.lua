@@ -1,3 +1,5 @@
+local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
+local GetItemInfo = ExaminerNS.Compat.GetItemInfo;
 --[[----------------------------------------------------
 	LibItemString - Easy Access to ItemString Properties
 	----------------------------------------------------
@@ -285,9 +287,7 @@ function LIS:GetFieldName(fieldindex)
 	return UNKNOWN;
 end
 
--- Analyses the itemString and checks for upgrades that affects itemLevel -- Only itemLevel 450 and above will have this
--- As new upgrades are added all the time, this function is rather unreliable, and its therefore not recommended to use
--- WARNING: Use the LibItemString:GetTrueItemLevel() function instead, which scans the tooltip for a 100% correct itemLevel
+-- Historical upgrade estimates; not authoritative for modern or scaled items.
 function LIS:GetUpgradedItemLevel()
 	local _, _, _, itemLevel = GetItemInfo(self.source);
 	if not (itemLevel) then
@@ -307,7 +307,7 @@ function LIS:GetUpgradedItemLevel()
 	end
 end
 
--- Scans the tooltip for the proper itemLevel as we cannot get it consistently any other way
+-- Legacy tooltip fallback; returns nil while item-level text is unavailable.
 -- No ItemString instance is needed to call this function, that is calling LibItemString:New()
 function LIS:GetTooltipItemLevel(itemLink)
 	LIS.ScanTip:ClearLines();
@@ -323,7 +323,6 @@ function LIS:GetTooltipItemLevel(itemLink)
 	end
 end
 
--- Returns the true itemLevel for upgraded items, even when GetItemInfo() says otherwise
 -- This method replaces the old GetUpgradedItemLevelFromItemLink() function
 function LIS:GetTrueItemLevel(itemLink)
 	return self:GetTooltipItemLevel(itemLink);

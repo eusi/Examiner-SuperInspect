@@ -1,3 +1,4 @@
+local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
 local REVISION = 1;
 if (type(AzDialog) == "table") and (AzDialog.revision >= REVISION) then
 	return;
@@ -37,7 +38,7 @@ end
 -- Creates a Dialog
 local function CreateDialog()
 	local index = (#dialogs + 1);
-	local f = CreateFrame("Frame",nil,UIParent);
+	local f = CreateFrame("Frame",nil,UIParent,"BackdropTemplate");
 	f:SetSize(340,88);
 	f:SetBackdrop(backdrop);
 	f:SetBackdropColor(0.1,0.22,0.35,1.0);
@@ -51,7 +52,7 @@ local function CreateDialog()
 
 	f.header = f:CreateFontString(nil,"ARTWORK","GameFontHighlight");
 
-	f.edit = CreateFrame("EditBox",nil,f);
+	f.edit = CreateFrame("EditBox",nil,f,"BackdropTemplate");
 	f.edit:SetHeight(24);
 	f.edit:SetPoint("TOPLEFT",12,-28);
 	f.edit:SetPoint("TOPRIGHT",-12,-28);
@@ -102,7 +103,7 @@ function AzDialog:Show(header,text,okayFunc,cancelFunc)
 	dlg.cancelFunc = cancelFunc;
 
 	-- Set Type
-	dlg.header:SetText(header or "Enter text here...");
+	dlg.header:SetText(header or ExaminerNS.L["Enter text here..."]);
 	if (text) then
 		dlg:SetHeight(88);
 		dlg.header:ClearAllPoints();

@@ -1,8 +1,8 @@
--- tww 11.0.7 build 58911, from https://wago.tools/db2/MawPower?build=11.0.7.58911, converted to "Lua - Dictionary Table" by mawPowerID with https://thdoan.github.io/mr-data-converter/
+-- mn 12.0.0 build 65727, from https://wago.tools/db2/MawPower?build=12.0.0.65727, converted to "Lua - Dictionary Table" by mawPowerID with https://thdoan.github.io/mr-data-converter/
 
 -- define table
 local TABLE_NAME = "LFF_MAWPOWERID_TO_MAWPOWER_LOOKUP";
-local TABLE_MINOR = 3; -- bump on changes
+local TABLE_MINOR = 5; -- bump on changes
 
 local LibFroznFunctions = LibStub:GetLibrary("LibFroznFunctions-1.0");
 
@@ -1267,5 +1267,30 @@ LibFroznFunctions:ChainTables(LFF_MAWPOWERID_TO_MAWPOWER_LOOKUP, {
 	[1996]={spellID=452735,mawPowerRarityID=3},
 	[1997]={spellID=452882,mawPowerRarityID=3},
 	[1998]={spellID=452992,mawPowerRarityID=3},
-	[2000]={spellID=459254,mawPowerRarityID=4}
+	[2000]={spellID=459254,mawPowerRarityID=4},
+	[2017]={spellID=1214334,mawPowerRarityID=3},
+	[2018]={spellID=1214336,mawPowerRarityID=3},
+	[2019]={spellID=1214339,mawPowerRarityID=3},
+	[2020]={spellID=1214342,mawPowerRarityID=3},
+	[2021]={spellID=1214350,mawPowerRarityID=3},
+	[2022]={spellID=1214415,mawPowerRarityID=3},
+	[2023]={spellID=1215287,mawPowerRarityID=4},
+	[2024]={spellID=1215320,mawPowerRarityID=4},
+	[2025]={spellID=1215327,mawPowerRarityID=4},
+	[2028]={spellID=1246552,mawPowerRarityID=4},
+	[2030]={spellID=1246610,mawPowerRarityID=4},
+	[2031]={spellID=1246611,mawPowerRarityID=4},
+	[2032]={spellID=1246612,mawPowerRarityID=4},
+	[2045]={spellID=1246346,mawPowerRarityID=4},
+	[2046]={spellID=1246360,mawPowerRarityID=4},
+	[2047]={spellID=1246351,mawPowerRarityID=4},
+	[2048]={spellID=1246357,mawPowerRarityID=4},
+	[2049]={spellID=1248340,mawPowerRarityID=3},
+	[2050]={spellID=1248428,mawPowerRarityID=3},
+	[2051]={spellID=1248402,mawPowerRarityID=3},
+	[2052]={spellID=1248431,mawPowerRarityID=3},
+	[2053]={spellID=1264718,mawPowerRarityID=4},
+	[2054]={spellID=1264631,mawPowerRarityID=4},
+	[2055]={spellID=1264616,mawPowerRarityID=4},
+	[2056]={spellID=1264648,mawPowerRarityID=4}
 });

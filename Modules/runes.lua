@@ -1,11 +1,13 @@
+local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
 local ex = Examiner;
-local cfg;
+if not ExaminerNS.Compat.isSoD then return; end
+local C = ExaminerNS.Compat;
 local gtt = GameTooltip;
 
 -- Module
-local mod = ex:CreateModule("Runes","SoD Runes");
-mod.help = "Shows the currently equipped SoD Runes";
-mod:CreatePage(false,"Runes");
+local mod = ex:CreateModule("Runes",ExaminerNS.L["SoD Runes"]);
+mod.help = ExaminerNS.L["Shows the currently equipped SoD Runes"];
+mod:CreatePage(false,ExaminerNS.L["Runes"]);
 mod:HasButton(true);
 
 -- Variables
@@ -14,52 +16,32 @@ local BUTTON_HEIGHT = (mod.page:GetHeight() - 47) / NUM_BUTTONS;
 local showEngravings = {};
 local buttons = {};
 
---------------------------------------------------------------------------------------------------------
---                                           Module Scripts                                           --
---------------------------------------------------------------------------------------------------------
+-- Inspect lifecycle and cache
 
--- OnInitialize
-function mod:OnInitialize()
-	cfg = ex.cfg;
-end
-
--- OnInspect
 function mod:OnInspect(unit)
-	-- in case you inspect one from the other fraction
-	--mod.page:Hide();
 	self:BuildEngravingList();
 end
 
--- OnInspectReady
 function mod:OnInspectReady(unit)
 	self:BuildEngravingList();
 end
 
--- OnCacheLoaded
 function mod:OnCacheLoaded(entry,unit)
 	self:BuildEngravingList();
 end
 
--- OnClearInspect
 function mod:OnClearInspect()
 	self:HasData(nil);
 	wipe(showEngravings);
 end
 
--- OnPageChanged
 function mod:OnPageChanged(module,shown)
 	if (self == module) then
 		self:BuildEngravingList();
 	end
 end
 
--- OnButtonClick
-function mod:OnButtonClick(frame,button)
-end
-
---------------------------------------------------------------------------------------------------------
---                                           Widget Scripts                                           --
---------------------------------------------------------------------------------------------------------
+-- Rune tooltips
 
 -- Rune OnEnter
 local function RuneButton_OnEnter(self,motion)
@@ -73,61 +55,42 @@ local function RuneButton_OnLeave(self,motion)
   gtt:Hide();
 end
 
---------------------------------------------------------------------------------------------------------
---                                                Code                                                --
---------------------------------------------------------------------------------------------------------
+-- Rune list
 
 -- Update
 local function UpdateShownItems(self)
     FauxScrollFrame_Update(self, #showEngravings, NUM_BUTTONS, BUTTON_HEIGHT);
-    LibRunes:CreateRunesTable(ex.info.class);
-
-    local index = self.offset+1;
-
     for i = 1, NUM_BUTTONS do
         local btn = buttons[i];
-        local engraving, engravingId = nil, nil;
-
-        --search for a valid engraving (skip enchantings etc.)
-        while index <= #showEngravings and not engravingId do
-            engraving = showEngravings[index];
-            engravingId = LibRunes.abilities[engraving.name];
-            --print( engraving.name, engravingId );
-            if not engravingId then
-                index = index+1;
-            end
-        end
-
-        if engravingId then
+        local engraving=showEngravings[(self.offset or 0)+i];
+        if engraving then
             btn.name:SetText(engraving.name);
-            btn.id = engravingId;
-            btn.icon:SetTexture(GetSpellTexture(btn.id));
+            btn.id = engraving.spellID;
+            btn.icon:SetTexture(C.Icon(C.Try(C.GetSpellTexture,btn.id)));
             btn.name:SetTextColor(0.9, 0.9, 0.9);
-            btn:SetAttribute("type", "spell");
-            btn:SetAttribute("spell", engraving.name);
             btn:Show();
-            index = index + 1;
         else
             btn:Hide();
         end
     end
 end
 
--- Build list of runes which has a page but no button
+-- Live snapshots carry spell IDs; old caches may only contain localized names.
 function mod:BuildEngravingList()
 	wipe(showEngravings);
+	LibRunes:CreateRunesTable(ex.info.class);
 	for _, rune in ipairs(ex.info.Runes) do
-		showEngravings[#showEngravings + 1] = rune;
+		local id=C.Number(rune.spellID) or LibRunes.abilities[rune.name];
+		if C.IsNumber(id) and id>0 and C.IsString(rune.name) then
+			showEngravings[#showEngravings + 1] = {name=rune.name,spellID=id};
+		end
 	end
 	UpdateShownItems(self.scroll);
-	if(#showEngravings>0) then
-		self:HasData(true);
-	end
+	self:HasData(#showEngravings>0);
+	return #showEngravings;
 end
 
---------------------------------------------------------------------------------------------------------
---                                           Widget Creation                                          --
---------------------------------------------------------------------------------------------------------
+-- Widgets
 
 -- Buttons
 for i = 1, NUM_BUTTONS do
@@ -155,13 +118,9 @@ for i = 1, NUM_BUTTONS do
 	btn.icon:SetTexCoord(0.07,0.93,0.07,0.93);
 	btn.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark");
 
-	btn.val = btn:CreateFontString(nil,"ARTWORK","GameFontHighlight");
-	btn.val:SetPoint("RIGHT",-4,0);
-	btn.val:SetTextColor(1,1,0);
-
 	btn.name = btn:CreateFontString(nil,"ARTWORK","GameFontHighlight");
 	btn.name:SetPoint("LEFT",btn.icon,"RIGHT",3,0);
-	btn.name:SetPoint("RIGHT",btn.val,"LEFT",-8,0);
+	btn.name:SetPoint("RIGHT",-8,0);
 	btn.name:SetJustifyH("LEFT");
 
 	buttons[i] = btn;

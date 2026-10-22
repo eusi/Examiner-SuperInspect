@@ -1,3 +1,4 @@
+local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
 local REVISION = 2;
 if (type(LibTableRecycler) == "table") and (LibTableRecycler.revision >= REVISION) then
 	return;
