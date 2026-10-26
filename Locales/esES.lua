@@ -1,6 +1,6 @@
 local _,ns=...;
 if ns.blocked then return; end
-if GetLocale()~="esES" and GetLocale()~="esMX" then return; end
+if GetLocale()~="esES" then return; end
 ns.locales.esES={
     ["Sanctified"]="Santificado",
     ["Increased Daggers Skill"]="Habilidad: dagas",
