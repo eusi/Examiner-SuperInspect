@@ -5,6 +5,9 @@
 	<Binding name="EXAMINER_TARGET">
 		Examiner:DoInspect("target");
 	</Binding>
+	<Binding name="EXAMINER_SELF">
+		Examiner:DoInspect("player");
+	</Binding>
 	<Binding name="EXAMINER_MOUSEOVER">
 		Examiner:InspectMouseover();
 	</Binding>

@@ -1,5 +1,5 @@
 ## Interface: 120105
-## Version: 1.00
+## Version: 1.0.1
 ## Title: Examiner
 ## Author: Aezay (Earthen Ring EU), sAks
 ## Notes: Inspect equipment, compare gear stats, and view talents, PvP details, achievements, and cached profiles.

@@ -1,100 +1,62 @@
-# Examiner 1.00
+# Examiner
 
-I'm a fan of the original addon (SuperInspect and Examiner). Since it no longer worked, I extensively modified and extended it for all WoW versions (Retail, Forever, Classic SoD with all phases etc) — adding a new Rune module, achievements module, fixing the talents and honor tabs, adding gear score stats, adding new settings (e.g. UI scaling) and more.
+With Examiner, you can check other players' gear, gear stats, talents, runes, achievements, guild information, honor, and arena details in one convenient window. Mouseover shortcuts, gear comparisons, a searchable inspection cache, and customizable settings make inspecting players quick and easy. Available features depend on your WoW version.
 
----------------------------------------
+## Installation
 
-Recent changes:
-* Retail: Achievements
-* Forever: Talents
-* New Settings
-* SOD: Rune page
-* Average item level/gear score
-* Lots of fixes (talents, honor tabs etc.)
+- **Automatic:** Install via [CurseForge](https://www.curseforge.com/wow/addons/examiner-classic-sod)
+- **Manual:** Download the addon ZIP from [GitHub Releases](https://github.com/eusi/Examiner-SoD-/releases), extract the `Examiner` folder into your WoW client's `Interface/AddOns`. Then restart WoW and enable Examiner in **AddOns**.
 
+## Features
 
-![Screenshots of Addon]( https://github.com/user-attachments/assets/8a99a3ae-c1f7-417a-a7d4-f01b86ce9cf9 )
+- **Gear overview:** Equipped items, individual and average item levels, GearScore, and combined gear stats.
+- **Inspect keybindings:** Mouseover (without selecting the player), target, and yourself; toggle Examiner.
+- **3D model:** Rotate, move, zoom, and customize the background.
+- **Talents:** Interactive trees and spell tooltips; Retail/Forever build exports and Wowhead links.
+- **PvP:** Honor, kills, ranks, and arena/rated records; Forever rank progress.
+- **Player cache:** Keep inspected gear and optional talent, PvP, and guild snapshots for later; search, filter, and sort saved players.
+- **Guilds:** Guild details and crests where available.
+- **SoD runes:** Equipped runes across all Season of Discovery phases.
+- **Achievements:** Completion dates, points, and rewards (Retail/Mists).
+- **Auto-inspect:** Follow target changes while Examiner is open.
+- **Gear comparison:** Stat differences between players or individual items.
+- **Customization:** Movable, scalable window; item-level, tooltip, and caching options.
+- **Eight translations:** English, German, French, Spanish, Korean, Russian, Simplified Chinese, and Traditional Chinese.
 
-Examiner - An Advanced Inspection Addon
----------------------------------------
-With Examiner, you can check/inspect other players gear, talents, runes and honor details.
+Features depend on the client and available inspect data. Gear stats exclude base stats, talents, and buffs; some conditional bonuses are incomplete. Enable caching and choose which data to save in **Settings**; caching is off by default.
 
-When you inspect someone, it will show the 3D model of the character (or even NPC) and a stat summery of all their equipped gear combined. Please note that these values are from gear alone, and will not include bonuses from buffs, talents or normal base stats.
+![Examiner screenshots](https://github.com/user-attachments/assets/8a99a3ae-c1f7-417a-a7d4-f01b86ce9cf9)
 
-Each player you inspect can be cached, that way you can look them up later, even when they are not around.
-The option to cache others is disabled by default, you will have to enable caching on the "Config" page.
+**Supported versions:** Retail, Forever, Classic Era, Hardcore, Season of Discovery, TBC Classic, and Mists of Pandaria Classic.
 
-You can bind a key to inspect your target, you can even bind a key to inspect whoever is under your mouse, without having to target anyone (stealth inspection). To set this up, open the Key Bindings dialog and look under "Examiner".
+## Quick start
 
-One of the commands: /ex inspect <unit> or /ex i <unit>
+- Inspect through the player's unit menu or `/ex inspect target`.
+- Assign shortcuts under **Key Bindings > Examiner**.
 
-Examiner does not use that much memory by itself, but once you start caching a lot of people, memory usage can grow quite quickly.
+## Controls
 
-You can always find the latest release of this addon on Curse or WoWInterface
-- https://www.curseforge.com/wow/addons/examiner-classic-sod
-- https://www.wowinterface.com/downloads/fileinfo.php?id=26695
+- **Gear comparison:** Shift-left-click **Stats** to mark a reference; Shift-right-click to clear it.
+- **Cache filters:** Shift-click **Cache**. Examples: `1-79`, `class:deathknight`, `class:hunter guild:awesome`.
+- **Model:** Left-drag to rotate, right-drag to move, scroll to zoom. Ctrl-left-click changes the background; Ctrl-right-click toggles it; Shift-left-click resets the model.
 
-Comparing Gear
---------------
-To compare one person's gear with another, you can mark a target for compare, by right clicking on the "Stats" button to get the drop down menu to open,
-this menu will have an entry called "Mark for Compare". You can also use the shortcut by holding down Shift when clicking the "Stats" button.
-When marked for compare, the Stats page will no longer show the actual stats of your inspected person, but will instead show the difference in stats
-compared to the person you marked for compare.
+## Commands
 
-Cache Filtering
----------------
-If your number of cached entries is getting quite high, you may want a way to filter out specific players.
-First you have to open the filter dialog, do this by right clicking on the Cache button and pick "Filter...", or use the shortcut by holding down the Shift key and then click the Cache button.
-The filter works a bit similar to the /who function in WoW, so you can for example set the filter to "1-79" and it will show all non level 80s.
-To only show a specific class, you can use the filter "class:deathknight", and only Death Knights will be shown.
-You can add as many filter matches as you want, so using the filter: "class:hunter race:nightelf guild:awesome" will show all Night Elf hunters from the guild <Awesome>.
-Filter matches cannot have spaces, you must write them without, that is why "Death Knight" has to be written as "DeathKnight", you can even just use "deathk" it does not have to match the entire thing.
-You can use the filter type "sex" to match males or females. Using "sex:2" will match males, "sex:3" will match females.
-There are many filter types, here are some examples: "class", "race", "realm", "guild", "guildRank", "sex" and "zone".
+`/ex` or `/examiner` lists commands. Both prefixes work with the following:
 
-Model Frame Controls
---------------------
-Left Click + Move:		Rotates the Model
-Right Click + Move:		Moves the Model
-Mousewheel:				Zoom
-Ctrl + Left Click:		Change Background
-Ctrl + Right Click:		Toggle Background
-Shift + Left Click:		Reset Model Position 
+| Command | Action |
+| --- | --- |
+| `/ex inspect [unit]` | Inspect `target`, `player`, `focus`, `party3`, etc. Defaults to your target, or yourself without a target. |
+| `/ex si <itemLink>` | Print an item's gear stats. |
+| `/ex compare <itemLink1> <itemLink2>` | Print item stat differences. |
+| `/ex scale <value>` | Window scale: `0.75`–`1.50`; default `1.00`. |
+| `/ex reset` | Center the window when **Make Examiner Movable** is enabled in Settings. |
+| `/ex clearcache` | Delete all cached inspection data. |
 
-Slash Commands
---------------
-The slash command for Examiner is /examiner or just /ex.
+Based on the original SuperInspect and Examiner; rebuilt and expanded in 2024, with a major overhaul in 2026.
 
-Although you probably wont need to use any slash commands as almost everything is available from the UI,
-there are a few things which can only be done through slash commands.
+## Credits
 
-/ex inspect <unit> or /ex i 'unit'
-This one will inspect the given unit (target, focus, party3 etc). If no unit token is given, it will inspect target and then player if no target exist.
-
-/ex si <itemLink>
-This command will scan just a single item and list its combined stats in the chat frame.
-Holding down ALT while the mouse is over an item in Examiner will show a tooltip with the stats like this.
-
-/ex compare <itemLink1> <itemLink2>
-Compares two items and lists the stat differences.
-
-/ex arena <rating>
-Shows you the amount of arena points the given rating gives for 2v2, 3v3 and 5v5.
-
-/ex rating <stat> <rating> <level>
-Converts a given stat rating into the amount it gives in percentage, at the specified level. Will use your level if omitted.
-
-/ex scale <value>
-Changes the scale of the Examiner window.
-
-/ex reset
-Resets the position in case it was moved off screen.
-
-/ex clearcache
-Clears the entire cache of Examiner.
-
-Special Thanks
---------------
 - Chester, the original author of SuperInspect, who gave me the idea to make this mod.
 - Haldamir of Gorgonnash, for the German translation.
 - Qcat0214, who made the Chinese translation for the 1.13.2 patch.
@@ -118,12 +80,3 @@ Special Thanks
 - Valmere for ZG enchants and more.
 - vanillalad for Details talents implementation and AQ enchant (enUS).
 - All the people using Examiner!
-
-Lacking Features, Ideas & Problems
-----------------------------------
-- Always listen for INSPECT_READY, and invalidate the current unit if an event is recieved that is not "our" unit.
-- Cache: Modify the function that builds a list of players from the filter, to take a table parameter, so external code can request a filterd list, without modifying the cache list.
-- Module's OnInitialize() shouldn't run until first time Examiner is opened. This would allow for much more optimization.
-- mod:HasData() should be posting an event. It messes with the modlist module.
-- Locked frames seem to have moved a bit up as of 4.0, change this in Examiner to so it will align with other frames.
-- Bring back the ability, as a new module, to send an inspected player to another person with Examiner.

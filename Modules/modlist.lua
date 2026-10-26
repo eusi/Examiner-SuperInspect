@@ -4,7 +4,7 @@ local cfg;
 
 -- Module
 local mod = ex:CreateModule("More",ExaminerNS.L["Module List"]);
-mod.help = ExaminerNS.L["Show more modules\nShift click for last active page"];
+mod.help = ExaminerNS.L["Show more modules.\nShift click for last active page."];
 mod:CreatePage(false,ExaminerNS.L["Module List"]);
 mod:HasButton(true);
 

@@ -161,11 +161,8 @@ function mod:OnInitialize()
 		local limit=slider:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall");
 		limit:SetPoint(index==1 and "TOPLEFT" or "TOPRIGHT",slider,index==1 and "BOTTOMLEFT" or "BOTTOMRIGHT",0,-2);
 		limit:SetText(text);
+		limit:SetTextColor(0.7,0.7,0.7);
 	end
-	slider.defaultText=slider:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall");
-	slider.defaultText:SetPoint("TOP",slider,"BOTTOM",0,-2);
-	slider.defaultText:SetText(ExaminerNS.L["Default: 1.00"]);
-	slider.defaultText:SetTextColor(0.7,0.7,0.7);
 	local function ApplyScale(self)
 		local value=self.pendingScale;
 		self.pendingScale=nil;

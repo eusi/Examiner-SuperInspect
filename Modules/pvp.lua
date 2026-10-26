@@ -6,7 +6,7 @@ if not ExaminerNS.Compat.hasLegacyHonor then return; end
 
 -- Module
 local mod = ex:CreateModule("PvP",PLAYER_V_PLAYER);
-mod.help = ExaminerNS.L["Honor Details"];
+mod.help = ExaminerNS.L["Honor Details."];
 mod:CreatePage(true,PLAYER_V_PLAYER);
 mod:HasButton(true);
 mod.canCache = true;

@@ -5,8 +5,42 @@ local L,P=ns.L,ns.PvP;
 
 -- Widgets
 local mod=ex:CreateModule("PvP",PLAYER_V_PLAYER);
-mod.help=ns.L["Available honor and rated PvP information"]; mod.canCache=true;
+mod.help=ns.L["Available honor and rated PvP information."]; mod.canCache=true;
 mod:CreatePage(true,PLAYER_V_PLAYER); mod:HasButton(true);
+local scroll=CreateFrame("ScrollFrame","ExaminerPvPScroll",mod.page,"UIPanelScrollFrameTemplate");
+local content=CreateFrame("Frame",nil,scroll); content:SetSize(272,1); scroll:SetScrollChild(content);
+local scrollbar=scroll.ScrollBar or _G[scroll:GetName().."ScrollBar"];
+local scrollUp=scrollbar.ScrollUpButton or _G[scrollbar:GetName().."ScrollUpButton"];
+local scrollDown=scrollbar.ScrollDownButton or _G[scrollbar:GetName().."ScrollDownButton"];
+scrollbar.scrollStep=32;
+mod.scroll,mod.content,mod.scrollbar=scroll,content,scrollbar;
+mod.contentTop=44;
+mod.contentBottom=C.isRetail and 8 or 36;
+function mod:ScrollTo(value)
+    local offset=math.max(0,math.min(self.maxScroll or 0,value));
+    if scroll:GetVerticalScroll()~=offset then scroll:SetVerticalScroll(offset); end
+    if scrollbar:GetValue()~=offset then scrollbar:SetValue(offset); end
+    if scrollUp then scrollUp:SetEnabled(offset>0.005); end
+    if scrollDown then scrollDown:SetEnabled((self.maxScroll or 0)-offset>0.005); end
+end
+function mod:RefreshScroll()
+    self.maxScroll=math.max(0,content:GetHeight()-scroll:GetHeight());
+    scrollbar:SetMinMaxValues(0,self.maxScroll);
+    scrollbar:SetShown(self.maxScroll>0);
+    self:ScrollTo(scroll:GetVerticalScroll());
+end
+function mod:LayoutScroll()
+    scroll:ClearAllPoints(); scroll:SetPoint("TOPLEFT",16,-self.contentTop);
+    scroll:SetSize(math.max(1,self.page:GetWidth()-48),math.max(1,self.page:GetHeight()-self.contentTop-self.contentBottom));
+    content:SetWidth(scroll:GetWidth());
+    self:RefreshScroll();
+end
+scrollbar:SetScript("OnValueChanged",function(_,value) mod:ScrollTo(value); end);
+scroll:SetScript("OnScrollRangeChanged",function() mod:RefreshScroll(); end);
+scroll:EnableMouseWheel(true);
+scroll:SetScript("OnMouseWheel",function(_,delta) mod:ScrollTo(scroll:GetVerticalScroll()-delta*32); end);
+mod.page:SetScript("OnSizeChanged",function() mod:LayoutScroll(); end);
+mod:LayoutScroll();
 local rankIcon=CreateFrame("Frame",nil,mod.page); mod.rankIcon=rankIcon;
 rankIcon:SetPoint("TOPLEFT",12,-12); rankIcon:SetSize(22,22); rankIcon:EnableMouse(true);
 rankIcon.texture=rankIcon:CreateTexture(nil,"ARTWORK"); rankIcon.texture:SetAllPoints();
@@ -20,7 +54,7 @@ local fields={{"honorLevel","Honor level"},{"lifetimeHK","Lifetime honorable kil
     {"todayHonor","Today's honor"},{"yesterdayHK","Yesterday's honorable kills"},{"yesterdayHonor","Yesterday's honor"}};
 local rows={}; mod.rows=rows;
 for i=1,#fields do
-    local row=CreateFrame("Frame",nil,mod.page); row:SetHeight(20);
+    local row=CreateFrame("Frame",nil,content); row:SetHeight(20);
     row.label=row:CreateFontString(nil,"ARTWORK","GameFontHighlightSmall");
     row.label:SetPoint("TOPLEFT"); row.label:SetPoint("TOPRIGHT",-64,0);
     row.label:SetJustifyH("LEFT"); row.label:SetTextColor(0.65,0.8,1);
@@ -40,12 +74,20 @@ if C.isForever then
     local background=progress:CreateTexture(nil,"BACKGROUND"); background:SetAllPoints(); background:SetColorTexture(0,0,0,0.65);
     progress:Hide();
 end
-local honor=mod.page:CreateFontString(nil,"ARTWORK","GameFontNormalSmall"); honor:SetText(L["Honor"]);
-local ratings=mod.page:CreateFontString(nil,"ARTWORK","GameFontNormalSmall"); ratings:SetText(L["Season ratings"]);
+local honor=content:CreateFontString(nil,"ARTWORK","GameFontNormalSmall"); honor:SetText(L["Honor"]);
+local ratings=content:CreateFontString(nil,"ARTWORK","GameFontNormalSmall"); ratings:SetText(L["Season ratings"]);
 local status=mod.page:CreateFontString(nil,"ARTWORK","GameFontHighlightSmall"); mod.status=status;
 status:SetPoint("BOTTOMLEFT",16,20); status:SetPoint("BOTTOMRIGHT",-16,20); status:SetJustifyH("LEFT"); status:SetTextColor(0.65,0.65,0.65);
 local rankTitle=mod.page:CreateFontString(nil,"ARTWORK","GameFontNormalSmall"); mod.rankTitle=rankTitle;
 rankTitle:SetPoint("TOPLEFT",40,-16); rankTitle:SetPoint("TOPRIGHT",-12,-16); rankTitle:SetJustifyH("LEFT");
+local rankNumber=mod.page:CreateFontString(nil,"ARTWORK","GameFontHighlightSmall"); mod.rankNumber=rankNumber;
+rankNumber:SetPoint("TOPLEFT",80,-42); rankNumber:SetPoint("TOPRIGHT",-12,-42); rankNumber:SetJustifyH("LEFT");
+rankTitle:SetWordWrap(false); rankNumber:SetWordWrap(false);
+if C.isForever then
+    rankIcon:SetSize(56,56);
+    rankTitle:ClearAllPoints(); rankTitle:SetPoint("TOPLEFT",80,-20); rankTitle:SetPoint("TOPRIGHT",-12,-20);
+    rankTitle:SetFontObject(GameFontNormal);
+end
 
 -- Data adapters
 local Record=P.Record;
@@ -63,7 +105,7 @@ function mod:Draw(data)
     P.Filter(data);
     if progress then progress:Hide(); progress:SetValue(0); end
     rankIcon:Hide(); rankIcon.tip=nil; rankIcon.texture:SetTexture(nil);
-    rankTitle:SetText("");
+    rankTitle:SetText(""); rankNumber:SetText("");
     local foreverRank=C.isForever and P.Count(data.foreverRank);
     if mod.page.header then mod.page.header:SetShown(not foreverRank); end
     if foreverRank then
@@ -74,25 +116,35 @@ function mod:Draw(data)
             sex=C.Number(C.Try(UnitSex,ex.unit),sex);
         end
         local firstRank=Enum and Enum.PvPRanks and C.Number(Enum.PvPRanks.Rank_1);
-        local name;
+        local name=foreverRank==0 and C.Text(PVP_RANK_0_NAME) or nil;
         if foreverRank>0 and foreverRank<=14 and firstRank and (faction=="Alliance" or faction=="Horde") then
-            local key="PVP_RANK_"..(firstRank+foreverRank-1)..(faction=="Alliance" and "_1" or "_0");
+            local key=string.format("PVP_RANK_%d_%d",firstRank+foreverRank-1,faction=="Alliance" and 1 or 0);
             name=C.Text(C.Try(GetText,key,sex));
+            if not name or name=="" or name==key then name=C.Text(_G[key]); end
         end
-        rankTitle:SetText((name or L[foreverRank==0 and "Unranked" or "Rank"])..(foreverRank>0 and (" ("..foreverRank..")") or ""));
+        if name=="" then name=nil; end
+        rankTitle:SetText(name or L[foreverRank==0 and "Unranked" or "Rank"]);
+        rankNumber:SetText(L.Rank.." "..foreverRank);
         if foreverRank>0 and foreverRank<=14 then
             local atlas="UI-Character-Info-Honor-Icon-"..foreverRank;
             if C.IsTable(C.Try(C_Texture and C_Texture.GetAtlasInfo,atlas)) then rankIcon.texture:SetAtlas(atlas);
             else rankIcon.texture:SetTexture("Interface\\PvPRankBadges\\PvPRank"..string.format("%02d",foreverRank)); end
             rankIcon.tip=rankTitle:GetText(); rankIcon:Show();
+        elseif foreverRank==0 and (faction=="Alliance" or faction=="Horde") then
+            local atlas="UI-Character-Info-Honor-Icon-"..faction;
+            if C.IsTable(C.Try(C_Texture and C_Texture.GetAtlasInfo,atlas)) then rankIcon.texture:SetAtlas(atlas);
+            else rankIcon.texture:SetTexture("Interface\\TargetingFrame\\UI-PVP-"..faction); end
+            rankIcon.tip=rankTitle:GetText(); rankIcon:Show();
         end
     end
     self.visibleFields=foreverRank and 1 or 0;
-    local y=-44; local group;
+    self.contentTop=foreverRank and 80 or 44;
+    local y=0; local group;
     honor:Hide(); ratings:Hide();
     for _,index in ipairs({1,2,9,10,11,12,13,14,3,4,8,5,6,7}) do
         local field=fields[index];
         local key,label=field[1],field[2]; local row=rows[index]; local value=data[key];
+        row:ClearAllPoints(); row:SetPoint("TOPLEFT",0,y); row:SetPoint("TOPRIGHT",0,y);
         local valueWidth=key=="honorCurrent" and 110 or 60;
         row.value:SetWidth(valueWidth); row.label:SetPoint("TOPRIGHT",-valueWidth-4,0);
         row.unavailable=not C.IsNumber(value);
@@ -115,9 +167,16 @@ function mod:Draw(data)
         if weekly then recordText=recordText..(recordText~="" and "\n" or "")..L["This week"]..": "..P.FormatRecord(weekly); end
         row.record:SetText(recordText);
         row.record:SetShown(recordText~="");
-        row:SetHeight(recordText~="" and (valid or wins~=nil) and weekly and 46 or recordText~="" and 32 or 20);
+        local labelHeight=C.Number(row.label:GetStringHeight(),0);
+        local recordTop=math.max(16,labelHeight+2);
+        row.record:ClearAllPoints(); row.record:SetPoint("TOPLEFT",4,-recordTop); row.record:SetPoint("TOPRIGHT",0,-recordTop);
+        local height=recordText~="" and (valid or wins~=nil) and weekly and 46 or recordText~="" and 32 or 20;
+        height=math.max(height,labelHeight+4,recordText~="" and (recordTop+C.Number(row.record:GetStringHeight(),0)+4) or 0);
+        row:SetHeight(height);
         if index==9 and progress and not row.unavailable then
-            progress:SetValue(value); progress:Show(); row:SetHeight(36);
+            local progressTop=math.max(17,labelHeight+3);
+            progress:ClearAllPoints(); progress:SetPoint("TOPLEFT",0,-progressTop); progress:SetPoint("TOPRIGHT",0,-progressTop);
+            progress:SetValue(value); progress:Show(); row:SetHeight(math.max(36,progressTop+14));
         end
         row:SetShown(supported);
         if supported then
@@ -126,13 +185,21 @@ function mod:Draw(data)
             if section~=group then
                 if group then y=y-6; end
                 local header=section=="honor" and honor or ratings;
-                header:ClearAllPoints(); header:SetPoint("TOPLEFT",16,y); header:Show(); y=y-18; group=section;
+                header:ClearAllPoints(); header:SetPoint("TOPLEFT",0,y); header:Show(); y=y-18; group=section;
             end
-            row:ClearAllPoints(); row:SetPoint("TOPLEFT",16,y); row:SetPoint("TOPRIGHT",-16,y); y=y-row:GetHeight();
+            row:ClearAllPoints(); row:SetPoint("TOPLEFT",0,y); row:SetPoint("TOPRIGHT",0,y); y=y-row:GetHeight();
         end
     end
-    status:SetText(data.state=="loading" and (LOADING or "Loading...") or "");
+    local loading=data.state=="loading";
+    -- Retail only needs the footer space while the loading message is visible.
+    self.contentBottom=C.isRetail and (loading and 36 or 8) or 36;
+    content:SetHeight(math.max(1,-y)); self:LayoutScroll();
+    status:SetText(loading and (LOADING or "Loading...") or "");
+    if C.isRetail then status:SetShown(loading); end
 end
+mod.page:SetScript("OnShow",function()
+    if ex.pvpData then mod:Draw(ex.pvpData); end
+end);
 function mod:Read(unit)
     local session=ns.Inspector.active;
     local current=not ex.isCacheEntry and session and not session.cached and ns.Inspector:Valid(session)
@@ -190,6 +257,7 @@ function mod:Read(unit)
 end
 -- Inspect lifecycle and cache
 function mod:OnInspect(unit)
+    self:ScrollTo(0);
     self:HasData(true);
     if ex.isSelf then
         C.Try(C_PvP and C_PvP.RequestRatedInfo or RequestRatedInfo);
@@ -202,8 +270,9 @@ function mod:OnInspectReady(unit)
 end
 function mod:OnHonorReady() self:Read(ex.unit); end
 function mod:OnClearInspect()
+    self:ScrollTo(0);
     if progress then progress:Hide(); progress:SetValue(0); end
-    ex.pvpData=nil; rankIcon:Hide(); rankIcon.tip=nil; rankIcon.texture:SetTexture(nil); rankTitle:SetText(""); self:HasData(nil);
+    ex.pvpData=nil; rankIcon:Hide(); rankIcon.tip=nil; rankIcon.texture:SetTexture(nil); rankTitle:SetText(""); rankNumber:SetText(""); self:HasData(nil);
 end
 function mod:OnDataTimeout()
     local data=ex.pvpData or {};
@@ -228,6 +297,7 @@ function mod:OnCache(entry)
     stored.cached=nil; entry.PvP=P.Filter(stored);
 end
 function mod:OnCacheLoaded(entry)
+    self:ScrollTo(0);
     local data=ns.Cache.Copy(entry.PvP) or {message="This cache has no PvP snapshot."}; data.cached=true;
     ex.pvpData=data; self:Draw(data); self:HasData(self.visibleFields>0);
 end

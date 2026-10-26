@@ -79,6 +79,7 @@ BINDING_HEADER_EXAMINER = modName;
 BINDING_NAME_EXAMINER_OPEN = ExaminerNS.L["Open Examiner"];
 BINDING_NAME_EXAMINER_TARGET = "Ex: "..INSPECT.." "..TARGET;
 BINDING_NAME_EXAMINER_MOUSEOVER = ExaminerNS.L["Inspect mouseover"];
+BINDING_NAME_EXAMINER_SELF = ExaminerNS.L["Inspect yourself"];
 
 UIPanelWindows[modName] = { area = "left", pushable = 1, whileDead = 1 };
 -- Allow Escape to close the window.
@@ -921,18 +922,6 @@ ex.slashCommands = {
 			end
 		else
 			AzMsg(ExaminerNS.L["No item links given."]);
-		end
-	end,
-	-- Rating Converter
-	" |2rating <stat> <rating> <level>|r = "..ExaminerNS.L["Rating converter."],
-	rating = function(cmd)
-		local stat, rating, level = cmd:match("([^%s]+) (%d+%.?%d*) ?(%d*)");
-		rating = tonumber(rating);
-		if (stat and rating) then
-			local value = LibGearExam:GetRatingInPercent(stat:upper(),rating,tonumber(level) or UnitLevel("player"));
-			AzMsg(value and ExaminerNS.F("Converted rating: %s",value) or ExaminerNS.L["Rating conversion is unavailable; ratings retain their native units."]);
-		else
-			AzMsg(ExaminerNS.L["Invalid input. Use: <stat> <rating> <level>"]);
 		end
 	end,
 	-- Reset Window Position

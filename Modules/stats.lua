@@ -7,7 +7,7 @@ local gtt = GameTooltip;
 
 -- Module
 local mod = ex:CreateModule("Stats",ExaminerNS.L["Gear Statistics"]);
-mod.help = ExaminerNS.L["Equipment contributions only; excludes character base stats and buffs. Some conditional effects may be unavailable.\nShift-click: compare. Shift-right-click: clear comparison."];
+mod.help = ExaminerNS.L["Equipment statistics.\nShift-click: compare. Shift-right-click: clear comparison."];
 mod:CreatePage(false);
 mod:HasButton(true);
 mod.details = ex:CreateDetailObject();
