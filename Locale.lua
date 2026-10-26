@@ -3,7 +3,7 @@ if ns.blocked then return; end
 ns.locales={};
 local globals={Honor="HONOR",Rank="RANK",Today="HONOR_TODAY",Yesterday="HONOR_YESTERDAY",Lifetime="HONOR_LIFETIME"};
 local locale=GetLocale();
-if locale=="enGB" then locale="enUS"; elseif locale=="esMX" then locale="esES"; end
+if locale=="enGB" then locale="enUS"; end
 ns.L=setmetatable({}, {__index=function(_,key)
     local global=globals[key];
     local text=global and ns.Compat.Text(_G[global]);

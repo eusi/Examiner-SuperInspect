@@ -21,7 +21,7 @@ With Examiner, you can check other players' gear, gear stats, talents, runes, ac
 - **Auto-inspect:** Follow target changes while Examiner is open.
 - **Gear comparison:** Stat differences between players or individual items.
 - **Customization:** Movable, scalable window; item-level, tooltip, and caching options.
-- **Eight translations:** English, German, French, Spanish, Korean, Russian, Simplified Chinese, and Traditional Chinese.
+- **11 translations:** enUS, deDE, frFR, esES, esMX, itIT, ptBR, koKR, ruRU, zhCN, zhTW.
 
 Features depend on the client and available inspect data. Gear stats exclude base stats, talents, and buffs; some conditional bonuses are incomplete. Enable caching and choose which data to save in **Settings**; caching is off by default.
 
@@ -53,10 +53,11 @@ Features depend on the client and available inspect data. Gear stats exclude bas
 | `/ex reset` | Center the window when **Make Examiner Movable** is enabled in Settings. |
 | `/ex clearcache` | Delete all cached inspection data. |
 
-Based on the original SuperInspect and Examiner; rebuilt and expanded in 2024, with a major overhaul in 2026.
+## History & Credits
 
-## Credits
+I took over and rebuilt Aezay's original Examiner in 2024, followed by another major overhaul in 2026, while keeping the original idea.
 
+- Aezay, the original author of Examiner.
 - Chester, the original author of SuperInspect, who gave me the idea to make this mod.
 - Haldamir of Gorgonnash, for the German translation.
 - Qcat0214, who made the Chinese translation for the 1.13.2 patch.
@@ -80,3 +81,6 @@ Based on the original SuperInspect and Examiner; rebuilt and expanded in 2024, w
 - Valmere for ZG enchants and more.
 - vanillalad for Details talents implementation and AQ enchant (enUS).
 - All the people using Examiner!
+
+Cheers,
+sAks/eusi
