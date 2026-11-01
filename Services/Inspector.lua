@@ -201,9 +201,9 @@ function I:SpellLoaded(spellID,success)
     if (C.talentKind~="traits" and not C.isMists) or not success or not request or request.delivered or not session or not session.done
         or session.cached or not session.serverReady or not self:Valid(session)
         or (not ex.isSelf and self.notificationGUID~=session.guid) then return; end
-    request.delivered=true;
     local mod=ex:GetModuleFromToken("Talents");
-    if not mod then return; end
+    if not mod or not mod:IsEnabled() then return; end
+    request.delivered=true;
     mod:OnInspectReady(session.unit);
     local data=ex.talentData;
     if data and data.state=="loading" then

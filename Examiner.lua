@@ -66,12 +66,12 @@ local TALENT_BACKGROUNDS = {
 
 -- Options
 ex.options = {
-	{ var = "makeMovable", default = true, label = ExaminerNS.L["Make Examiner Movable"], tip = ExaminerNS.L["Allow dragging the window; otherwise use standard panel positioning."] },
-	{ var = "autoInspect", default = true, label = ExaminerNS.L["Auto Inspect on Target Change"], tip = ExaminerNS.L["Inspect the new target while Examiner is open."] },
-	{ var = "clearInspectOnHide", default = true, label = ExaminerNS.L["Clear Inspect Data on Hide"], tip = ExaminerNS.L["Release the current inspection data when the window is hidden."] },
+	{ var = "makeMovable", default = true, label = ExaminerNS.L["Make Examiner Movable"], tip = ExaminerNS.L["Lets you drag the window to a different position."] },
+	{ var = "autoInspect", default = true, label = ExaminerNS.L["Auto Inspect on Target Change"], tip = ExaminerNS.L["Automatically inspects new targets while Examiner is open."] },
+	{ var = "clearInspectOnHide", default = true, label = ExaminerNS.L["Clear Inspect Data on Hide"], tip = ExaminerNS.L["Clears the current inspection when Examiner closes."] },
 	-- { var = "percentRatings", default = false, label = "Show Ratings in Percentage *", tip = "* = Not working in WoD.\nWith this option enabled, ratings will be displayed in percent relative to the inspected person's level." },
-	{ var = "combineAdditiveStats", default = true, label = ExaminerNS.L["Combine Additive Stats"], tip = ExaminerNS.L["Combine compatible equipment bonuses without adding character base stats."] },
-	{ var = "tooltipSmartAnchor", default = false, label = ExaminerNS.L["Smart Tooltip Anchor"], tip = ExaminerNS.L["Anchor item tooltips beside Examiner rather than beside each item."] },
+	{ var = "combineAdditiveStats", default = true, label = ExaminerNS.L["Combine Additive Stats"], tip = ExaminerNS.L["Combines gear bonuses without including base character stats."] },
+	{ var = "tooltipSmartAnchor", default = false, label = ExaminerNS.L["Smart Tooltip Anchor"], tip = ExaminerNS.L["Shows item tooltips beside Examiner instead of beside each item."] },
 };
 
 -- Binding Name
@@ -147,6 +147,10 @@ function ex:VARIABLES_LOADED(event)
 		cfg.caching = {};
 	end
 	self.cfg = cfg;
+	if type(cfg.disabledModules)~="table" then cfg.disabledModules={}; end
+	cfg.disabledModules.Config=nil;
+	cfg.disabledModules.Cache=nil;
+	cfg.disabledModules.Modules=nil;
 	-- Load Defaults
 	if (cfg.showBackground == nil) then
 		cfg.showBackground = true;
@@ -183,6 +187,16 @@ function ex:VARIABLES_LOADED(event)
 		end
 	end
 	-- Is active page valid?
+	for _,module in ipairs(self.modules) do
+		if not module:IsEnabled() then
+			if module.OnInspectHidden then module:OnInspectHidden(); end
+			if module.OnClearInspect then module:OnClearInspect(); end
+		end
+	end
+	self:RefreshModuleButtons();
+	if cfg.activePage and self.modules[cfg.activePage] and not self.modules[cfg.activePage]:IsEnabled() then
+		cfg.activePage=nil; cfg.activePageToken=nil;
+	end
 	if (cfg.activePage) and (not self.modules[cfg.activePage] or not self.modules[cfg.activePage].page) then
 		cfg.activePage = nil;
 	end
@@ -692,6 +706,10 @@ end
 -- Show Module Page
 function ex:ShowModulePage(index)
 	local requested = index and self.modules[index];
+	if index and (not requested or not requested:IsEnabled()) then return; end
+	if not index and cfg.activePage and self.modules[cfg.activePage] and not self.modules[cfg.activePage]:IsEnabled() then
+		cfg.activePage=nil; cfg.activePageToken=nil;
+	end
 	if requested and requested.isPopup then requested:TogglePopup(); return; end
 	if cfg.activePage and self.modules[cfg.activePage] and self.modules[cfg.activePage].isPopup then
 		cfg.activePage=nil; cfg.activePageToken=nil;

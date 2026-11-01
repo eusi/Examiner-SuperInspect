@@ -6,7 +6,7 @@ local cfg, cache;
 
 -- Module
 local mod = ex:CreateModule("Cache",ExaminerNS.L["Cached Players"]);
-mod.help = ExaminerNS.L["Cached Players"];
+mod.help = ExaminerNS.L["Shows saved players with their gear and cached details."];
 mod:CreatePage(false,ExaminerNS.L["Cached Players"]);
 
 -- Variables
@@ -57,7 +57,12 @@ mod.page:SetScript("OnShow",function(self) if (#activeCacheList == 0) then mod:B
 
 -- HOOK: Slash Command "clearcache"
 local oldClearCacheFunc = ex.slashCommands.clearcache;
-ex.slashCommands.clearcache = function(cmd) oldClearCacheFunc(cmd); mod:BuildCacheList(); end
+ex.slashCommands.clearcache = function(cmd)
+    oldClearCacheFunc(cmd);
+    if mod:IsEnabled() then mod:BuildCacheList(); else wipe(activeCacheList); end
+end
+
+function mod:OnInspectHidden() wipe(activeCacheList); end
 
 --------------------------------------------------------------------------------------------------------
 --                                           Module Scripts                                           --

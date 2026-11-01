@@ -1,202 +1,135 @@
-local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
-local ex = Examiner;
-local cfg;
-
--- Module
-local mod = ex:CreateModule("More",ExaminerNS.L["Module List"]);
-mod.help = ExaminerNS.L["Show more modules.\nShift click for last active page."];
-mod:CreatePage(false,ExaminerNS.L["Module List"]);
-mod:HasButton(true);
-
--- Variables
-local NUM_BUTTONS = 8;
-local BUTTON_HEIGHT = (mod.page:GetHeight() - 47) / NUM_BUTTONS;
-local shownMods = {};
-local buttons = {};
-mod.listButtons=buttons;
-local moduleIcons={
-    Config="Interface\\Icons\\Trade_Engineering",
-    Cache="Interface\\Icons\\INV_Misc_Book_09",
-    Stats="Interface\\Icons\\INV_Chest_Plate01",
-    Talents="Interface\\Icons\\Spell_Holy_MagicalSentry",
-    PvP="Interface\\PvPRankBadges\\PvPRank06",
-    Guild="Interface\\Icons\\INV_Shirt_GuildTabard_01",
-    Runes="Interface\\Icons\\INV_Misc_Rune_01",
+local _,ns=...;
+if ns.blocked then return; end
+local ex,L=ns.ex,ns.L;
+local mod=ex:CreateModule("More",L["More"]);
+mod.help=L["Shows additional modules, such as settings.\nShift-click: reopen the last menu page."];
+mod:CreatePage(false,L["More"]); mod:HasButton(true);
+local controls=ex:CreateModule("Modules",L["Modules"]);
+controls.help=L["Lets you enable or disable modules and their tabs."];
+controls:CreatePage(false,L["Modules"]);
+local catalog={
+    {"Stats","Gear Statistics","INV_Chest_Plate01",L["Shows gear statistics, item levels, bonuses and more.\nShift-click: mark this player for comparison.\nShift-right-click: clear comparison."]:match("^[^\n]+")},
+    {"Talents","Talents","Spell_Holy_MagicalSentry",L["Shows talent trees."]},
+    {"PvP","PvP","INV_BannerPVP_02",ns.Compat.isEra and L["Shows PvP details, such as honor ranks and honorable kills."] or L["Shows PvP details, such as honorable kills and ratings."]},
+    {"Guild","Guild","INV_Shirt_GuildTabard_01",L["Shows guild details, such as rank, member count, and banner."]},
+    {"Runes","SoD Runes","INV_Misc_Rune_01",L["Shows equipped runes for each gear slot."]},
+    {"Achievements","Achievements","Achievement_General",L["Shows achievements, completion status, points, and rewards."]},
 };
-
---------------------------------------------------------------------------------------------------------
---                                           Module Scripts                                           --
---------------------------------------------------------------------------------------------------------
-
--- OnInitialize
-function mod:OnInitialize()
-	cfg = ex.cfg;
-	self:BuildModuleList();
+controls.catalog=catalog;
+local navigation={
+    {"Config","Settings","INV_Misc_Gear_01"},
+    {"Cache","Cached Players","INV_Misc_Book_09"},
+    {"Modules","Modules","INV_Misc_EngGizmos_19"},
+};
+local rows,entries={},{};
+mod.listButtons={}; controls.listButtons=rows;
+local count,height=8,(controls.page:GetHeight()-47)/8;
+local function PaintRow(row,entry)
+    local module=entry.module;
+    row.entry=entry; row.id=module and module.index;
+    row.name:SetText(module and module.title or L[entry[2]]);
+    row.name:SetTextColor(module and 1 or 0.5,module and 1 or 0.5,module and 1 or 0.5);
+    row.icon:SetTexture(ns.Compat.Icon(module and module.icon) or "Interface\\Icons\\"..entry[3]);
+    row.icon:SetDesaturated(not module);
+    if row.check then
+        row.check:SetChecked(module~=nil and module:IsEnabled());
+        row.check:SetEnabled(module~=nil);
+    end
+    row:Show();
 end
-
--- OnInspect
-function mod:OnInspect(unit)
-	self:BuildModuleList();
+local function Paint()
+    controls.scroll.offset=math.max(0,math.min(controls.scroll.offset or 0,math.max(0,#entries-count)));
+    FauxScrollFrame_Update(controls.scroll,#entries,count,height);
+    for index,row in ipairs(mod.listButtons) do
+        local definition=navigation[index];
+        PaintRow(row,{definition[1],definition[2],definition[3],module=ex:GetModuleFromToken(definition[1])});
+    end
+    for index,row in ipairs(rows) do
+        local entry=entries[(controls.scroll.offset or 0)+index];
+        if entry then
+            PaintRow(row,entry);
+        else row.entry=nil; row.id=nil; row:Hide(); end
+    end
 end
-
--- OnInspectReady
-function mod:OnInspectReady(unit)
-	self:BuildModuleList();
-end
-mod.OnDataChanged = mod.OnInspectReady;
-
--- OnCacheLoaded
-function mod:OnCacheLoaded(entry,unit)
-	self:BuildModuleList();
-end
-
--- OnClearInspect
-function mod:OnClearInspect()
-	self:BuildModuleList();
-end
-
--- OnPageChanged
-function mod:OnPageChanged(module,shown)
-	if (self == module) then
-		self:BuildModuleList();
-	end
-end
-
--- OnButtonClick
-function mod:OnButtonClick(frame,button)
-	-- Left -- with shift pressed, show the last active mod page
-	if (button == "LeftButton") then
-		if (IsShiftKeyDown()) then
-			ex:ShowModulePage(cfg.lastActivatedModule);
-		end
-	-- Right -- if the active mod has a dropdown menu, show that
-	elseif (button == "RightButton") then
-		local module = ex.modules[cfg.activePage];
-		if (module) and (not IsModifierKeyDown()) then
-			if (module.MenuInit and module.MenuSelect) then
-				frame.initFunc = module.MenuInit;
-				frame.selectValueFunc = module.MenuSelect;
-				AzDropDown:ToggleMenu(frame,"TOPLEFT","BOTTOMLEFT");
-			end
-		end
-	end
-end
-
---------------------------------------------------------------------------------------------------------
---                                           Widget Scripts                                           --
---------------------------------------------------------------------------------------------------------
-
--- Button: OnClick -- 99% identical to modcode's "Buttons_OnClick"
-local function Button_OnClick(self,button,down)
-	local id = self.id;
-	local module = ex.modules[id];
-	if (module.hasData) then
-		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);	-- "igMainMenuOptionCheckBoxOn"
-		cfg.lastActivatedModule = id;
-		-- Call Module OnButtonClick
-		if (module.OnButtonClick) then
-			module:OnButtonClick(self,button,down);
-		end
-		-- Unmodified Left Clicks
-		if (not IsModifierKeyDown()) then
-			if (button == "LeftButton") and (module.page) then
-				ex:ShowModulePage(id);
-				AzDropDown:HideMenu();
-			elseif (module.MenuInit and module.MenuSelect) then
-				self.initFunc = module.MenuInit;
-				self.selectValueFunc = module.MenuSelect;
-				AzDropDown:ToggleMenu(self,"TOPLEFT","BOTTOMLEFT");
-			end
-		end
-	end
-end
-
---------------------------------------------------------------------------------------------------------
---                                                Code                                                --
---------------------------------------------------------------------------------------------------------
-
--- Update
-local function UpdateShownItems(self)
-	FauxScrollFrame_Update(self,#shownMods,NUM_BUTTONS,BUTTON_HEIGHT);
-	local index = self.offset;
-	for i = 1, NUM_BUTTONS do
-		index = (index + 1);
-		local btn = buttons[i];
-		local mod = shownMods[index];
-		if (mod) then
-			btn.name:SetText(mod.title or mod.token);
-			btn.id = mod.index;
-
-			if (mod.hasData) then
-				btn.name:SetTextColor(1,1,1);
-			else
-				btn.name:SetTextColor(0.5,0.5,0.5);
-			end
-
-			btn.icon:SetTexture(ExaminerNS.Compat.Icon(mod.icon) or moduleIcons[mod.token] or "Interface\\Icons\\INV_Misc_QuestionMark");
-			btn:Show();
-		else
-			btn:Hide();
-		end
-	end
-end
-
--- Build list of modules which has a page but no button
 function mod:BuildModuleList()
-	wipe(shownMods);
-	for index, module in ipairs(ex.modules) do
-		if (module.page) and (not module.button) then
-			shownMods[#shownMods + 1] = module;
-		end
-	end
-	UpdateShownItems(self.scroll);
+    wipe(entries);
+    for _,definition in ipairs(catalog) do
+        entries[#entries+1]={definition[1],definition[2],definition[3],definition[4],module=ex:GetModuleFromToken(definition[1])};
+    end
+    for _,module in ipairs(ex.modules) do
+        local found=module.token=="More" or module.token=="Config" or module.token=="Cache" or module.token=="Modules" or not module.page;
+        for _,definition in ipairs(catalog) do if definition[1]==module.token then found=true; end end
+        if not found then entries[#entries+1]={module.token,module.title,"INV_Misc_QuestionMark",module=module}; end
+    end
+    Paint();
 end
-
---------------------------------------------------------------------------------------------------------
---                                           Widget Creation                                          --
---------------------------------------------------------------------------------------------------------
-
--- Buttons
-for i = 1, NUM_BUTTONS do
-	local btn = CreateFrame("Button",nil,mod.page);
-
-	btn:SetHeight(BUTTON_HEIGHT);
-	btn:RegisterForClicks("LeftButtonDown","RightButtonDown");
-	btn:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight");
-	btn:Hide();
-
-	if (#buttons == 0) then
-		btn:SetPoint("TOPLEFT",8,-36.5);
-		btn:SetPoint("TOPRIGHT",-28,-36.5);
-	else
-		btn:SetPoint("TOPLEFT",buttons[#buttons],"BOTTOMLEFT");
-		btn:SetPoint("TOPRIGHT",buttons[#buttons],"BOTTOMRIGHT");
-	end
-
-	btn:SetScript("OnClick",Button_OnClick);
-
-
-
-	btn.icon = btn:CreateTexture(nil,"ARTWORK");
-	btn.icon:SetSize(BUTTON_HEIGHT - 2,BUTTON_HEIGHT - 2);
-	btn.icon:SetPoint("LEFT",2,0);
-	btn.icon:SetTexCoord(0.07,0.93,0.07,0.93);
-	btn.icon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark");
-
-	btn.val = btn:CreateFontString(nil,"ARTWORK","GameFontHighlight");
-	btn.val:SetPoint("RIGHT",-4,0);
-	btn.val:SetTextColor(1,1,0);
-
-	btn.name = btn:CreateFontString(nil,"ARTWORK","GameFontHighlight");
-	btn.name:SetPoint("LEFT",btn.icon,"RIGHT",3,0);
-	btn.name:SetPoint("RIGHT",btn.val,"LEFT",-8,0);
-	btn.name:SetJustifyH("LEFT");
-
-	buttons[i] = btn;
+mod.OnInitialize=mod.BuildModuleList;
+mod.OnInspect=mod.BuildModuleList;
+mod.OnInspectReady=mod.BuildModuleList;
+mod.OnDataChanged=mod.BuildModuleList;
+mod.OnCacheLoaded=mod.BuildModuleList;
+mod.OnClearInspect=mod.BuildModuleList;
+function mod:OnPageChanged() self:BuildModuleList(); end
+function mod:OnButtonClick(frame,button)
+    if button=="LeftButton" and IsShiftKeyDown() then
+        ex:ShowModulePage(ex.cfg.lastActivatedModule or ex.cfg.prevPage);
+    elseif button=="RightButton" and not IsModifierKeyDown() then
+        local module=ex.modules[ex.cfg.activePage];
+        if module and module:IsEnabled() and module.MenuInit and module.MenuSelect then
+            frame.initFunc=module.MenuInit; frame.selectValueFunc=module.MenuSelect;
+            AzDropDown:ToggleMenu(frame,"TOPLEFT","BOTTOMLEFT");
+        end
+    end
 end
-
--- Scroll
-mod.scroll = CreateFrame("ScrollFrame","Examiner"..mod.token.."Scroll",mod.page,"FauxScrollFrameTemplate");
-mod.scroll:SetPoint("TOPLEFT",buttons[1]);
-mod.scroll:SetPoint("BOTTOMRIGHT",buttons[NUM_BUTTONS],-6,-1);
-mod.scroll:SetScript("OnVerticalScroll",function(self,offset) FauxScrollFrame_OnVerticalScroll(self,offset,BUTTON_HEIGHT,UpdateShownItems) end);
+local function Tooltip(row)
+    GameTooltip:SetOwner(row,"ANCHOR_RIGHT");
+    local module=row.entry and row.entry.module;
+    GameTooltip:ClearLines();
+    local text=module and (module.help or module.title) or (row.entry and (row.entry[4] or L[row.entry[2]]));
+    if row.check and module then
+        text=module.toggleHelp or ns.F("Enable/disable: %s",text:match("^[^\n]+"));
+    end
+    if text then GameTooltip:AddLine(text,1,1,1,true); end
+    if not module then GameTooltip:AddLine(L["Not available in this WoW version."],1,0.82,0,true); end
+    GameTooltip:Show();
+end
+local function CreateRow(top,toggle)
+    local row=CreateFrame("Button",nil,toggle and controls.page or mod.page);
+    row:SetHeight(height); row:SetPoint("TOPLEFT",8,-top); row:SetPoint("TOPRIGHT",toggle and -28 or -8,-top);
+    row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight");
+    row.icon=row:CreateTexture(nil,"ARTWORK"); row.icon:SetSize(23,23); row.icon:SetPoint("LEFT",2,0); row.icon:SetTexCoord(0.07,0.93,0.07,0.93);
+    if toggle then
+        row.check=CreateFrame("CheckButton",nil,row); row.check:SetSize(26,26); row.check:SetPoint("RIGHT",0,0);
+        row.check:SetNormalTexture("Interface\\Buttons\\UI-CheckBox-Up");
+        row.check:SetPushedTexture("Interface\\Buttons\\UI-CheckBox-Down");
+        row.check:SetHighlightTexture("Interface\\Buttons\\UI-CheckBox-Highlight");
+        row.check:SetCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check");
+        row.check:SetDisabledCheckedTexture("Interface\\Buttons\\UI-CheckBox-Check-Disabled");
+        row.check:SetScript("OnClick",function()
+            local entry=row.entry;
+            if entry and entry.module then ex:SetModuleEnabled(entry[1],not entry.module:IsEnabled()); end
+        end);
+        row.check:SetScript("OnEnter",function() Tooltip(row); end); row.check:SetScript("OnLeave",ex.HideGTT);
+    end
+    row.name=row:CreateFontString(nil,"ARTWORK","GameFontHighlightSmall"); row.name:SetPoint("LEFT",row.icon,"RIGHT",5,0);
+    if row.check then row.name:SetPoint("RIGHT",row.check,"LEFT",-3,0);
+    else row.name:SetPoint("RIGHT",-3,0); end
+    row.name:SetJustifyH("LEFT"); row.name:SetWordWrap(false);
+    row:SetScript("OnClick",function()
+        local module=row.entry and row.entry.module;
+        if toggle then
+            if module then ex:SetModuleEnabled(module.token,not module:IsEnabled()); end
+        elseif module and module:IsEnabled() and module.hasData then
+            ex.cfg.lastActivatedModule=module.index; ex:ShowModulePage(module.index);
+        end
+    end);
+    row:SetScript("OnEnter",Tooltip); row:SetScript("OnLeave",ex.HideGTT);
+    return row;
+end
+for index=1,#navigation do mod.listButtons[index]=CreateRow(38+(index-1)*32,false); end
+for index=1,count do rows[index]=CreateRow(38+(index-1)*height,true); end
+controls.scroll=CreateFrame("ScrollFrame","ExaminerModulesScroll",controls.page,"FauxScrollFrameTemplate");
+controls.scroll:SetPoint("TOPLEFT",rows[1]); controls.scroll:SetPoint("BOTTOMRIGHT",rows[count],-6,-1);
+controls.scroll:SetScript("OnVerticalScroll",function(self,offset) FauxScrollFrame_OnVerticalScroll(self,offset,height,Paint) end);
+mod.page:SetScript("OnShow",function() mod:BuildModuleList(); end);
+controls.page:SetScript("OnShow",function() mod:BuildModuleList(); end);

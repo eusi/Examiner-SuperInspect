@@ -6,7 +6,15 @@ if not ExaminerNS.Compat.hasLegacyHonor then return; end
 
 -- Module
 local mod = ex:CreateModule("PvP",PLAYER_V_PLAYER);
-mod.help = ExaminerNS.L["Honor Details."];
+if C.isTBC then mod.help=L["Shows PvP details, such as honorable kills and ratings."];
+else mod.help=L["Shows PvP details, such as honor ranks and honorable kills."]; end
+if C.isTBC then
+    mod.toggleHelp=L["Enable/disable the PvP module, which shows details such as honorable kills and ratings."];
+    mod.cacheHelp=L["Saves honor and PvP ratings for later viewing. Requires Core Caching."];
+else
+    mod.toggleHelp=L["Enable/disable the PvP module, which shows details such as honor ranks and honorable kills."];
+    mod.cacheHelp=L["Saves honor ranks and honorable kills. Requires Core Caching."];
+end
 mod:CreatePage(true,PLAYER_V_PLAYER);
 mod:HasButton(true);
 mod.canCache = true;
@@ -269,7 +277,7 @@ if C.isEra then
     updates:RegisterEvent("PLAYER_PVP_RANK_CHANGED");
     updates:SetScript("OnEvent",function()
         local session=ExaminerNS.Inspector.active;
-        if ex.isSelf and not ex.isCacheEntry and session and not session.cached and ExaminerNS.Inspector:Valid(session) then
+        if mod:IsEnabled() and ex.isSelf and not ex.isCacheEntry and session and not session.cached and ExaminerNS.Inspector:Valid(session) then
             mod:LoadHonorNormal(); ex:CachePlayer();
         end
     end);

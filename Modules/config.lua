@@ -5,13 +5,13 @@ local cfg;
 
 -- Module
 local mod = ex:CreateModule("Config",ExaminerNS.L["Settings"]);
-mod.help = ExaminerNS.L["Examiner Settings"];
+mod.help = ExaminerNS.L["Various settings can be adjusted here."];
 mod:CreatePage(false,ExaminerNS.L["Settings"]);
 
 -- Create Version String
 local modName = ex:GetName();
 local vers = mod.page:CreateFontString(nil,"ARTWORK","GameFontHighlightSmall");
-vers:SetText(modName.." |cffffff80"..GetAddOnMetadata(modName,"Version"));
+vers:SetText("Examiner |cffffff80"..(GetAddOnMetadata(modName,"Version") or "").."|r by sAks");
 vers:SetPoint("BOTTOM",0,14);
 
 -- Variables
@@ -47,8 +47,9 @@ end
 local function ConfigCheckBox_OnEnter(self)
 	local option = ex.options[self.id];
 	GameTooltip:SetOwner(self,"ANCHOR_RIGHT");
+	GameTooltip:ClearLines();
 	GameTooltip:AddLine(option.label,1,1,1);
-	GameTooltip:AddLine(option.tip,nil,nil,nil,1);
+	GameTooltip:AddLine(option.tip,1,1,1,true);
 	GameTooltip:Show();
 end
 
@@ -61,14 +62,14 @@ local function MenuInit(parent,list)
 	list[1].text = "|cff00c0ff"..ExaminerNS.L["Examiner Core Caching"];
 	list[1].value = "Core";
 	list[1].checked = cfg.caching.Core;
-	list[1].tip = ExaminerNS.L["Disable this to turn off caching completely in Examiner"];
+	list[1].tip = ExaminerNS.L["Automatically saves inspected players' gear and basic details."];
 	for index, mod in ipairs(ex.modules) do
 		if (mod.canCache) then
 			local tbl = list[#list + 1];
 			tbl.text = mod.title;
 			tbl.value = mod.token;
 			tbl.checked = cfg.caching[mod.token];
-			tbl.tip = ExaminerNS.L["Enable to turn on caching for this module"];
+			tbl.tip = mod.cacheHelp or ExaminerNS.L["Save this module's data with player profiles. Requires Core Caching."];
 		end
 	end
 end
@@ -190,7 +191,7 @@ function mod:OnInitialize()
 	end);
 	slider:SetScript("OnEnter",function(self)
 		GameTooltip:SetOwner(self,"ANCHOR_RIGHT");
-		GameTooltip:AddLine(ExaminerNS.L["Set window scale (default: 1.00)."],1,1,1);
+		GameTooltip:AddLine(ExaminerNS.L["Adjusts the window scale. Default: 100%."],1,1,1);
 		GameTooltip:Show();
 	end);
 	slider:SetScript("OnLeave",ex.HideGTT);

@@ -3,7 +3,8 @@ if ns.blocked or not (ns.Compat.isRetail or ns.Compat.isMists) then return; end
 local ex,C,L=ns.ex,ns.Compat,ns.L;
 local mod=ex:CreateModule("Achievements",L.Achievements);
 mod.buttonLabel=L["Achievements short"];
-mod.help=L["Browse the inspected player's achievements."];
+mod.help=L["Shows achievements, completion status, points, and rewards."];
+mod.toggleHelp=L["Enable/disable the Achievements module, which shows achievements, completion status, points and rewards."];
 mod.icon="Interface\\Icons\\Achievement_General";
 mod:CreatePage(false,L.Achievements); mod:HasButton(true); mod:HasData(nil);
 local page=mod.page;
@@ -24,14 +25,14 @@ local function NewestFirst(a,b)
     return a.id<b.id;
 end
 local function Eligible()
-    return not ex.isCacheEntry and ex.unitType~=1 and C.IsString(ex.unit)
+    return mod:IsEnabled() and not ex.isCacheEntry and ex.unitType~=1 and C.IsString(ex.unit)
         and C.IsTrue(C.Try(UnitIsPlayer,ex.unit)) and not C.IsTrue(C.Try(UnitCanAttack,"player",ex.unit))
         and type(SetAchievementComparisonUnit)=="function" and type(GetAchievementComparisonInfo)=="function"
         and type(GetCategoryList)=="function" and type(GetCategoryNumAchievements)=="function" and type(GetAchievementInfo)=="function";
 end
 local function Valid()
     local I=ns.Inspector;
-    return mod.session and mod.session==I.active and I:Valid(mod.session) and not ex.isCacheEntry
+    return mod:IsEnabled() and mod.session and mod.session==I.active and I:Valid(mod.session) and not ex.isCacheEntry
         and mod.owner==mod.session.guid and mod:IsShown();
 end
 local function Completion(item)

@@ -5,7 +5,9 @@ local L,P=ns.L,ns.PvP;
 
 -- Widgets
 local mod=ex:CreateModule("PvP",PLAYER_V_PLAYER);
-mod.help=ns.L["Available honor and rated PvP information."]; mod.canCache=true;
+mod.help=ns.L["Shows PvP details, such as honorable kills and ratings."]; mod.canCache=true;
+mod.toggleHelp=L["Enable/disable the PvP module, which shows details such as honorable kills and ratings."];
+mod.cacheHelp=L["Saves honor and PvP ratings for later viewing. Requires Core Caching."];
 mod:CreatePage(true,PLAYER_V_PLAYER); mod:HasButton(true);
 local scroll=CreateFrame("ScrollFrame","ExaminerPvPScroll",mod.page,"UIPanelScrollFrameTemplate");
 local content=CreateFrame("Frame",nil,scroll); content:SetSize(272,1); scroll:SetScrollChild(content);
@@ -310,7 +312,7 @@ if C.isRetail or C.isForever or C.isMists then
     end
     updates:SetScript("OnEvent",function()
         local session=ns.Inspector.active;
-        if ex.isSelf and not ex.isCacheEntry and session and not session.cached and ns.Inspector:Valid(session) then
+        if mod:IsEnabled() and ex.isSelf and not ex.isCacheEntry and session and not session.cached and ns.Inspector:Valid(session) then
             mod:Read(ex.unit); ex:CachePlayer();
         end
     end);
