@@ -2,7 +2,9 @@ local _,ns=...;
 if ns.blocked then return; end
 local ex,C=ns.ex,ns.Compat;
 local mod=ex:CreateModule("Guild",GUILD or ns.L["Guild"]);
-mod.help=ns.L["Guild information for the inspected character"];
+mod.help=ns.L["Shows guild details, such as rank, member count, and banner."];
+mod.toggleHelp=ns.L["Enable/disable the Guild module, which shows guild details such as rank, member count and banner."];
+mod.cacheHelp=ns.L["Saves guild details and the banner. Requires Core Caching."];
 mod.canCache=true; mod:CreatePage(false,GUILD or ns.L["Guild"]); mod:HasButton(true);
 local page=mod.page;
 local banner=page:CreateTexture(nil,"ARTWORK",nil,0); mod.banner=banner;

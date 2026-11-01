@@ -37,6 +37,8 @@ function Cache.Initialize(ex)
 end
 
 function Cache.Store(ex, manual)
+    local browser=ex:GetModuleFromToken("Cache");
+    if not manual and browser and not browser:IsEnabled() then return false; end
     if ex.isCacheEntry or not ex.gear or not C.IsString(ex.info.name) or not ex.info.raceFixed then return false; end
     if not manual then
         if not ex.cfg.caching.Core then return false; end

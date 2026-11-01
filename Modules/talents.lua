@@ -5,7 +5,9 @@ if ExaminerNS.Compat.talentKind ~= "classic" then return; end
 
 -- Module
 local mod = ex:CreateModule("Talents",TALENTS);
-mod.help = ExaminerNS.L["The inspected character's talents"];
+mod.help = ExaminerNS.L["Shows talent trees."];
+mod.toggleHelp=ExaminerNS.L["Enable/disable the Talents module, which shows talent trees."];
+mod.cacheHelp=ExaminerNS.L["Saves talent builds for later viewing. Requires Core Caching."];
 mod.page = CreateFrame("Frame",nil,ex);
 mod:HasButton(true);
 mod.canCache = true;

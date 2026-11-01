@@ -6,7 +6,8 @@ local gtt = GameTooltip;
 
 -- Module
 local mod = ex:CreateModule("Runes",ExaminerNS.L["SoD Runes"]);
-mod.help = ExaminerNS.L["Shows the currently equipped SoD Runes"];
+mod.help = ExaminerNS.L["Shows equipped runes for each gear slot."];
+mod.toggleHelp=ExaminerNS.L["Enable/disable the Runes module, which shows equipped runes for each gear slot."];
 mod:CreatePage(false,ExaminerNS.L["Runes"]);
 mod:HasButton(true);
 

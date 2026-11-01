@@ -7,7 +7,8 @@ local gtt = GameTooltip;
 
 -- Module
 local mod = ex:CreateModule("Stats",ExaminerNS.L["Gear Statistics"]);
-mod.help = ExaminerNS.L["Equipment statistics.\nShift-click: compare. Shift-right-click: clear comparison."];
+mod.help = ExaminerNS.L["Shows gear statistics, item levels, bonuses and more.\nShift-click: mark this player for comparison.\nShift-right-click: clear comparison."];
+mod.toggleHelp=ExaminerNS.L["Enable/disable the Stats module, which shows gear statistics, item levels, bonuses and more."];
 mod:CreatePage(false);
 mod:HasButton(true);
 mod.details = ex:CreateDetailObject();

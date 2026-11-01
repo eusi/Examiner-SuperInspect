@@ -2,7 +2,9 @@ local _, ns = ...;
 if ns.blocked or ns.Compat.talentKind=="classic" then return; end
 local ex,C=ns.ex,ns.Compat;
 local mod=ex:CreateModule("Talents",TALENTS);
-mod.help=ns.L["The inspected character's talents"];
+mod.help=ns.L["Shows talent trees."];
+mod.toggleHelp=ns.L["Enable/disable the Talents module, which shows talent trees."];
+mod.cacheHelp=ns.L["Saves talent builds for later viewing. Requires Core Caching."];
 mod.canCache=true; mod:HasButton(true);
 mod:CreatePage(true);
 local page=mod.page;
@@ -63,6 +65,10 @@ copy:SetScript("OnClick",function()
     if not C.IsString(build.buildString) or build.buildString=="" then return; end
     copyMode="build"; build:Show(); mod:Draw(); build:SetFocus(); build:HighlightText();
 end);
+copy:SetScript("OnEnter",function(self)
+    GameTooltip:SetOwner(self,"ANCHOR_RIGHT"); GameTooltip:SetText(ns.L["Shows the talent import string for copying with Ctrl+C."]); GameTooltip:Show();
+end);
+copy:SetScript("OnLeave",ex.HideGTT);
 local copyLink=CreateFrame("Button",nil,page,"UIPanelButtonTemplate"); mod.copyLinkButton=copyLink;
 copyLink:SetSize(56,18); copyLink:SetPoint("TOPRIGHT",-10,-11); copyLink:SetText(ns.L["Copy link"]);
 copy:SetWidth(math.max(66,copy:GetFontString():GetStringWidth()+16));
@@ -76,7 +82,7 @@ copyLink:SetScript("OnClick",function()
     copyMode="link"; build:Show(); mod:Draw(); build:SetFocus(); build:HighlightText();
 end);
 copyLink:SetScript("OnEnter",function(self)
-    GameTooltip:SetOwner(self,"ANCHOR_RIGHT"); GameTooltip:SetText(ns.L["Ctrl+C to copy the Wowhead link, then paste it into your browser."]); GameTooltip:Show();
+    GameTooltip:SetOwner(self,"ANCHOR_RIGHT"); GameTooltip:SetText(ns.L["Shows the Wowhead talent link for copying with Ctrl+C."]); GameTooltip:Show();
 end);
 copyLink:SetScript("OnLeave",ex.HideGTT);
 local function Tooltip(button)

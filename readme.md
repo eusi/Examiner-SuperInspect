@@ -1,6 +1,7 @@
 # Examiner
+> **An Advanced Inspection Addon**
 
-With Examiner, you can check other players' gear, gear stats, talents, runes, achievements, guild information, honor, and arena details in one convenient window. Mouseover shortcuts, gear comparisons, a searchable inspection cache, and customizable settings make inspecting players quick and easy. Available features depend on your WoW version.
+With Examiner, you can inspect other players' gear, stats, item level/gearScore, talents, pvp details, achievements, guild information, and runes in one convenient window. Mouseover shortcuts, gear comparisons and a searchable inspection cache make inspecting players quick and comfortable.
 
 ## Installation
 
@@ -19,6 +20,7 @@ With Examiner, you can check other players' gear, gear stats, talents, runes, ac
 - **SoD runes:** Equipped runes across all Season of Discovery phases.
 - **Achievements:** Completion dates, points, and rewards (Retail/Mists).
 - **Auto-inspect:** Follow target changes while Examiner is open.
+- **Modules:** Enable/disable modules and tabs. Modules unavailable in your WoW version are greyed out.
 - **Gear comparison:** Stat differences between players or individual items.
 - **Customization:** Movable, scalable window; item-level, tooltip, and caching options.
 - **11 translations:** enUS, deDE, frFR, esES, esMX, itIT, ptBR, koKR, ruRU, zhCN, zhTW.
