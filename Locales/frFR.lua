@@ -1,3 +1,10 @@
+--------------------------------------------------------------------------------------------------------
+--
+-- Locales/frFR.lua
+-- Provides frFR interface translations for the locale resolver.
+--
+----------------------
+
 local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="frFR" then return; end
@@ -111,7 +118,7 @@ ns.locales.frFR={
     ["Stats"]="Caractéristiques",
     ["Gear Statistics"]="Caractéristiques de l’équipement",
     ["Item Levels"]="Niveaux d’objet",
-    ["Average Item Level"]="iLvl moyen (calculé)",
+    ["Average Item Level"]="Niveau moyen des objets",
     ["Blizzard Average Item Level"]="iLvl moyen (Blizzard)",
     ["Min / Max Item Levels"]="Niveaux d’objet min. / max.",
     ["Additional Stats"]="Caractéristiques supplémentaires",
@@ -153,7 +160,7 @@ ns.locales.frFR={
     ["Examiner Core Caching"]="Cache principal d’Examiner",
     ["Automatically saves inspected players' gear and basic details."]="Enregistre automatiquement l’équipement et les informations de base des joueurs inspectés.",
     ["Save this module's data with player profiles. Requires Core Caching."]="Enregistrer les données du module avec les profils. Nécessite le cache principal.",
-    ["Enabled Module Caching..."]="Modules mis en cache...",
+    ["Enabled Module Caching"]="Modules mis en cache",
     ["Make Examiner Movable"]="Déplacer Examiner librement",
     ["Lets you drag the window to a different position."]="Permet de déplacer la fenêtre en la faisant glisser.",
     ["Auto Inspect on Target Change"]="Inspecter au changement de cible",
@@ -218,4 +225,17 @@ ns.locales.frFR={
     ["Saves honor and PvP ratings for later viewing. Requires Core Caching."]="Enregistre l’honneur et les cotes JcJ pour les consulter plus tard. Nécessite le cache principal.",
     ["Saves honor ranks and honorable kills. Requires Core Caching."]="Enregistre les grades d’honneur et les victoires honorables. Nécessite le cache principal.",
     ["Saves guild details and the banner. Requires Core Caching."]="Enregistre les informations de guilde et la bannière. Nécessite le cache principal.",
+    ["Default"]="Par défaut",
+    ["Font"]="Police",
+    ["Calculated"]="Calculé",
+    ["Blizzard"]="Blizzard",
+    ["Uses Examiner's equipped item-level calculation."]="Utilise le calcul Examiner du niveau des objets équipés.",
+    ["Uses Blizzard's equipped item level. Missing values are shown as a dash."]="Utilise le niveau équipé fourni par Blizzard. Une valeur absente est indiquée par un tiret.",
+    ["Glyphs"]="Glyphes",
+    ["Shows equipped major and minor glyphs."]="Affiche les glyphes majeurs et mineurs équipés.",
+    ["Enable/disable the Glyphs module, which shows equipped major and minor glyphs."]="Active/désactive le module Glyphes, qui affiche les glyphes majeurs et mineurs équipés.",
+    ["Saves glyphs for later viewing. Requires Core Caching."]="Enregistre les glyphes pour les consulter plus tard. Nécessite le cache principal.",
+    ["Empty glyph slot"]="Emplacement de glyphe vide",
+    ["Locked glyph slot"]="Emplacement de glyphe verrouillé",
+    ["Glyph data unavailable"]="Données des glyphes indisponibles",
 };

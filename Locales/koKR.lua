@@ -1,3 +1,10 @@
+--------------------------------------------------------------------------------------------------------
+--
+-- Locales/koKR.lua
+-- Provides koKR interface translations for the locale resolver.
+--
+----------------------
+
 local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="koKR" then return; end
@@ -111,7 +118,7 @@ ns.locales.koKR={
     ["Stats"]="능력치",
     ["Gear Statistics"]="장비 능력치",
     ["Item Levels"]="아이템 레벨",
-    ["Average Item Level"]="평균 템렙 (계산)",
+    ["Average Item Level"]="평균 아이템 레벨",
     ["Blizzard Average Item Level"]="평균 템렙 (블리자드)",
     ["Min / Max Item Levels"]="최소 / 최대 아이템 레벨",
     ["Additional Stats"]="추가 능력치",
@@ -153,7 +160,7 @@ ns.locales.koKR={
     ["Examiner Core Caching"]="Examiner 기본 저장소",
     ["Automatically saves inspected players' gear and basic details."]="살펴본 플레이어의 장비와 기본 정보를 자동 저장합니다.",
     ["Save this module's data with player profiles. Requires Core Caching."]="플레이어 프로필에 모듈 정보를 저장합니다. 기본 캐시가 켜져 있어야 합니다.",
-    ["Enabled Module Caching..."]="저장할 모듈...",
+    ["Enabled Module Caching"]="저장할 모듈",
     ["Make Examiner Movable"]="Examiner 이동 허용",
     ["Lets you drag the window to a different position."]="창을 다른 위치로 끌어서 이동할 수 있습니다.",
     ["Auto Inspect on Target Change"]="대상 변경 시 자동 살펴보기",
@@ -218,4 +225,17 @@ ns.locales.koKR={
     ["Saves honor and PvP ratings for later viewing. Requires Core Caching."]="나중에 볼 수 있도록 명예와 PvP 평점을 저장합니다. 기본 캐시가 켜져 있어야 합니다.",
     ["Saves honor ranks and honorable kills. Requires Core Caching."]="명예 계급과 명예 승수를 저장합니다. 기본 캐시가 켜져 있어야 합니다.",
     ["Saves guild details and the banner. Requires Core Caching."]="길드 정보와 깃발을 저장합니다. 기본 캐시가 켜져 있어야 합니다.",
+    ["Default"]="기본값",
+    ["Font"]="글꼴",
+    ["Calculated"]="계산값",
+    ["Blizzard"]="Blizzard",
+    ["Uses Examiner's equipped item-level calculation."]="착용 장비의 아이템 레벨을 Examiner로 계산합니다.",
+    ["Uses Blizzard's equipped item level. Missing values are shown as a dash."]="Blizzard의 착용 아이템 레벨을 사용합니다. 값이 없으면 대시로 표시합니다.",
+    ["Glyphs"]="문양",
+    ["Shows equipped major and minor glyphs."]="장착한 주문양과 보조 문양을 표시합니다.",
+    ["Enable/disable the Glyphs module, which shows equipped major and minor glyphs."]="장착한 주문양과 보조 문양을 표시하는 문양 모듈을 켜거나 끕니다.",
+    ["Saves glyphs for later viewing. Requires Core Caching."]="나중에 볼 수 있도록 문양을 저장합니다. 기본 캐시가 필요합니다.",
+    ["Empty glyph slot"]="빈 문양 칸",
+    ["Locked glyph slot"]="잠긴 문양 칸",
+    ["Glyph data unavailable"]="문양 정보 없음",
 };

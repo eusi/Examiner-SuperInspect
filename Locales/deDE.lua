@@ -1,3 +1,10 @@
+--------------------------------------------------------------------------------------------------------
+--
+-- Locales/deDE.lua
+-- Provides deDE interface translations for the locale resolver.
+--
+----------------------
+
 local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="deDE" then return; end
@@ -111,7 +118,7 @@ ns.locales.deDE={
     ["Stats"]="Werte",
     ["Gear Statistics"]="Ausrüstungswerte",
     ["Item Levels"]="Gegenstandsstufen",
-    ["Average Item Level"]="Ø iLvl (berechnet)",
+    ["Average Item Level"]="Durchschnittliches Itemlevel",
     ["Blizzard Average Item Level"]="Ø iLvl (Blizzard)",
     ["Min / Max Item Levels"]="Min. / Max. Gegenstandsstufe",
     ["Additional Stats"]="Zusätzliche Werte",
@@ -153,7 +160,7 @@ ns.locales.deDE={
     ["Examiner Core Caching"]="Examiner-Spielerspeicher",
     ["Automatically saves inspected players' gear and basic details."]="Speichert Ausrüstung und Grunddaten betrachteter Spieler automatisch.",
     ["Save this module's data with player profiles. Requires Core Caching."]="Moduldaten mit Spielerprofilen speichern. Benötigt aktiviertes Core-Caching.",
-    ["Enabled Module Caching..."]="Gespeicherte Module...",
+    ["Enabled Module Caching"]="Gespeicherte Module",
     ["Make Examiner Movable"]="Examiner verschiebbar machen",
     ["Lets you drag the window to a different position."]="Erlaubt, das Fenster an eine andere Position zu ziehen.",
     ["Auto Inspect on Target Change"]="Bei Zielwechsel automatisch betrachten",
@@ -218,4 +225,17 @@ ns.locales.deDE={
     ["Saves honor and PvP ratings for later viewing. Requires Core Caching."]="Speichert Ehre und PvP-Wertungen zum späteren Ansehen. Benötigt aktiviertes Core-Caching.",
     ["Saves honor ranks and honorable kills. Requires Core Caching."]="Speichert Ehrenränge und ehrenhafte Siege. Benötigt aktiviertes Core-Caching.",
     ["Saves guild details and the banner. Requires Core Caching."]="Speichert Gildendetails und das Banner. Benötigt aktiviertes Core-Caching.",
+    ["Default"]="Standard",
+    ["Font"]="Schriftart",
+    ["Calculated"]="Berechnet",
+    ["Blizzard"]="Blizzard",
+    ["Uses Examiner's equipped item-level calculation."]="Verwendet Examiners Berechnung für angelegte Ausrüstung.",
+    ["Uses Blizzard's equipped item level. Missing values are shown as a dash."]="Verwendet Blizzards Wert für angelegte Ausrüstung. Fehlende Werte erscheinen als Strich.",
+    ["Glyphs"]="Glyphen",
+    ["Shows equipped major and minor glyphs."]="Zeigt eingesetzte erhebliche und geringe Glyphen.",
+    ["Enable/disable the Glyphs module, which shows equipped major and minor glyphs."]="Aktiviert/deaktiviert das Glyphen-Modul, das eingesetzte erhebliche und geringe Glyphen zeigt.",
+    ["Saves glyphs for later viewing. Requires Core Caching."]="Speichert Glyphen zum späteren Ansehen. Benötigt aktiviertes Core-Caching.",
+    ["Empty glyph slot"]="Leerer Glyphenplatz",
+    ["Locked glyph slot"]="Gesperrter Glyphenplatz",
+    ["Glyph data unavailable"]="Keine Glyphendaten verfügbar",
 };

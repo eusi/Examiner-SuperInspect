@@ -1,9 +1,20 @@
 ## Interface: 16001
-## Version: 1.0.3
+## Version: 1.0.4
 ## Title: Examiner
 ## Author: Aezay (Earthen Ring EU), sAks
-## Notes: Inspect equipment, compare gear stats, and view talents, PvP details, achievements, and cached profiles.
+## Notes: Inspect gear, item levels, talents, PvP details and more in one convenient window.
+## Notes-deDE: Ausrüstung, Itemlevel, Talente, PvP und mehr bequem in einem Fenster betrachten.
+## Notes-frFR: Équipement, niveaux des objets, talents, JcJ et plus dans une fenêtre pratique.
+## Notes-esES: Inspecciona equipo, niveles de objeto, talentos, JcJ y más en una cómoda ventana.
+## Notes-esMX: Inspecciona equipo, niveles de objeto, talentos, JcJ y más en una cómoda ventana.
+## Notes-itIT: Ispeziona equipaggiamento, livelli oggetti, talenti, PvP e altro in una comoda finestra.
+## Notes-ptBR: Inspecione equipamentos, níveis de item, talentos, JxJ e mais em uma janela prática.
+## Notes-ruRU: Экипировка, уровни предметов, таланты, PvP и другое в одном удобном окне.
+## Notes-koKR: 장비, 아이템 레벨, 특성, PvP 정보 등을 하나의 편리한 창에서 살펴보세요.
+## Notes-zhCN: 在一个便捷窗口中查看装备、物品等级、天赋、PvP详情等信息。
+## Notes-zhTW: 在一個便利視窗中查看裝備、物品等級、天賦、PvP詳情等資訊。
 ## SavedVariables: Examiner_Config, Examiner_Cache
+## OptionalDeps: LibSharedMedia-3.0, SharedMedia
 ## Category: User Interface
 
 Load.xml

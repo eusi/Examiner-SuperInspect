@@ -1,235 +1,271 @@
-local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
-local ex = Examiner;
-local GetItemInfo = ExaminerNS.Compat.GetItemInfo;
-local GetItemQualityColor = ExaminerNS.Compat.GetItemQualityColor;
-local GetDetailedItemLevelInfo = ExaminerNS.Compat.GetDetailedItemLevelInfo;
-local GetInventorySlotInfo = ExaminerNS.Compat.GetInventorySlotInfo;
-local cfg;
-local gtt = GameTooltip;
+--------------------------------------------------------------------------------------------------------
+--
+-- Modules/itemslots.lua
+-- Displays equipped items and item-level overlays around the character model.
+--
+----------------------
 
--- Module
-local mod = ex:CreateModule("ItemSlots");
-mod.slotBtns = {};
 
--- Variables
-local ITEM_ICON_UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark";
+--------------------------------------------------------------------------------------------------------
+--                                            Module Setup                                            --
+--------------------------------------------------------------------------------------------------------
 
--- Options
-mod:AddOption({ var = "alwaysShowItemLevel", default = true, label = ExaminerNS.L["Always Show Item Levels"], tip = ExaminerNS.L["Shows item levels without holding Alt."] });
+local _, ExaminerNS = ...
+if ExaminerNS.blocked then
+    return
+end
+local ex = Examiner
+local GetItemInfo = ExaminerNS.Compat.GetItemInfo
+local GetItemQualityColor = ExaminerNS.Compat.GetItemQualityColor
+local GetDetailedItemLevelInfo = ExaminerNS.Compat.GetDetailedItemLevelInfo
+local GetInventorySlotInfo = ExaminerNS.Compat.GetInventorySlotInfo
+local cfg
+local gtt = GameTooltip
+
+-- MODULE
+
+local mod = ex:CreateModule("ItemSlots")
+mod.slotBtns = {}
+
+-- VARIABLES
+
+local ITEM_ICON_UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark"
+
+-- OPTIONS
+
+mod:AddOption({
+    var = "alwaysShowItemLevel",
+    default = true,
+    label = ExaminerNS.L["Always Show Item Levels"],
+    tip = ExaminerNS.L["Shows item levels without holding Alt."],
+})
+
 
 --------------------------------------------------------------------------------------------------------
 --                                           Module Scripts                                           --
 --------------------------------------------------------------------------------------------------------
 
--- OnInitialize
+-- Initialize equipment controls and saved preferences.
 function mod:OnInitialize()
-	cfg = ex.cfg;
+    cfg = ex.cfg
 end
 
+-- Clear equipment data and hide stale controls.
 function mod:OnClearInspect()
-	for _,button in ipairs(self.slotBtns) do
-		if gtt:IsOwned(button) then gtt:Hide(); end
-		button.link,button.realLink=nil,nil;
-		button.texture:SetTexture(button.bgTexture);
-		button.border:Hide(); button.level:SetText(""); button.level:Hide(); button:Hide();
-	end
-	ex.tooltipSlot=nil;
+    for _, button in ipairs(self.slotBtns) do
+        if gtt:IsOwned(button) then
+            gtt:Hide()
+        end
+        button.link, button.realLink = nil, nil
+        button.texture:SetTexture(button.bgTexture)
+        button.border:Hide()
+        button.level:SetText("")
+        button.level:Hide()
+        button:Hide()
+    end
+    ex.tooltipSlot = nil
 end
 
--- OnInspectReady
-function mod:OnInspectReady(unit,guid)
-	self:UpdateItemSlots();
-	self:ShowItemSlotButtons();
+-- Read equipment data after the inspection reply.
+function mod:OnInspectReady(unit, guid)
+    self:UpdateItemSlots()
+    self:ShowItemSlotButtons()
 end
-mod.OnInspect = mod.OnInspectReady;
-mod.OnGearUpdated = mod.OnInspectReady;
+mod.OnInspect = mod.OnInspectReady
+mod.OnGearUpdated = mod.OnInspectReady
 
--- OnCacheLoaded
-function mod:OnCacheLoaded(entry,unit)
-	self:UpdateItemSlots();
-	self:ShowItemSlotButtons();
-end
-
--- OnPageChanged
-function mod:OnPageChanged(module,shown)
-	self:ShowItemSlotButtons();
+-- Restore equipment details from the saved player snapshot.
+function mod:OnCacheLoaded(entry, unit)
+    self:UpdateItemSlots()
+    self:ShowItemSlotButtons()
 end
 
--- OnConfigChanged
-function mod:OnConfigChanged(var,value)
-	if (var == "alwaysShowItemLevel") then
-		for index, button in ipairs(self.slotBtns) do
-			if (value) and (button.link) then
-				button.level:Show();
-			else
-				button.level:Hide();
-			end
-		end
-	end
+-- Update equipment controls when the active page changes.
+function mod:OnPageChanged(module, shown)
+    self:ShowItemSlotButtons()
 end
+
+-- Apply changed preferences to the equipment display.
+function mod:OnConfigChanged(var, value)
+    if var == "alwaysShowItemLevel" then
+        for index, button in ipairs(self.slotBtns) do
+            if value and button.link then
+                button.level:Show()
+            else
+                button.level:Hide()
+            end
+        end
+    end
+end
+
 
 --------------------------------------------------------------------------------------------------------
 --                                          Helper Functions                                          --
 --------------------------------------------------------------------------------------------------------
 
--- Show the Item Slot Buttons
+-- Show equipment controls only on pages that use them.
 function mod:ShowItemSlotButtons()
-	local shownMod = (cfg.activePage and ex.modules[cfg.activePage]);
-	local visible = ex.unitType~=1 and (ex.itemsLoaded) and (not shownMod or shownMod.showItems or not shownMod.page:IsShown());
-	for _, button in ipairs(self.slotBtns) do
-		if (visible) then
-			button:Show();
-		else
-			button:Hide();
-		end
-	end
+    local shownMod = (cfg.activePage and ex.modules[cfg.activePage])
+    local visible = ex.unitType ~= 1
+        and ex.itemsLoaded
+        and (not shownMod or shownMod.showItems or not shownMod.page:IsShown())
+    for _, button in ipairs(self.slotBtns) do
+        if visible then
+            button:Show()
+        else
+            button:Hide()
+        end
+    end
 end
 
--- UpdateSlot: Updates slot from "button.link"
+-- Refresh equipment icons and item-level overlays.
 function mod:UpdateItemSlots()
-	for index, button in ipairs(self.slotBtns) do
-		local link = ex.info.Items[button.slotName];
-		if (cfg.alwaysShowItemLevel) then
-			button.level:Show();
-		end
-		button.realLink = nil;
-		button.link = link;
-		if (not link) then
-			button.texture:SetTexture(button.bgTexture);
-			button.border:Hide();
-			button.level:SetText("");
-		else
-			local _, _, itemRarity, itemLevel, _, _, _, _, _, itemTexture = GetItemInfo(link);
-			if (itemTexture) then
-				button.texture:SetTexture(itemTexture or ITEM_ICON_UNKNOWN);
-				local r,g,b = GetItemQualityColor(itemRarity and itemRarity > 0 and itemRarity or 0);
-				button.border:SetVertexColor(r,g,b);
-				button.border:Show();
-				itemLevel = GetDetailedItemLevelInfo(link);
-				button.level:SetText(itemLevel);
-			else
-				button.realLink = link;
-				button.link = nil;
-				button.texture:SetTexture(ITEM_ICON_UNKNOWN);
-				button.border:Hide();
-				button.level:SetText("");
-			end
-		end
-	end
+    for index, button in ipairs(self.slotBtns) do
+        local link = ex.info.Items[button.slotName]
+        if cfg.alwaysShowItemLevel then
+            button.level:Show()
+        end
+        button.realLink = nil
+        button.link = link
+        if not link then
+            button.texture:SetTexture(button.bgTexture)
+            button.border:Hide()
+            button.level:SetText("")
+        else
+            local _, _, itemRarity, itemLevel, _, _, _, _, _, itemTexture = GetItemInfo(link)
+            if itemTexture then
+                button.texture:SetTexture(itemTexture or ITEM_ICON_UNKNOWN)
+                local r, g, b = GetItemQualityColor(itemRarity and itemRarity > 0 and itemRarity or 0)
+                button.border:SetVertexColor(r, g, b)
+                button.border:Show()
+                itemLevel = GetDetailedItemLevelInfo(link)
+                button.level:SetText(itemLevel)
+            else
+                button.realLink = link
+                button.link = nil
+                button.texture:SetTexture(ITEM_ICON_UNKNOWN)
+                button.border:Hide()
+                button.level:SetText("")
+            end
+        end
+    end
 end
 
+
 --------------------------------------------------------------------------------------------------------
---                                          Item Slot Scripts                                         --
+--                                         Item Slot Scripts                                          --
 --------------------------------------------------------------------------------------------------------
 
--- OnEvent -- MODIFIER_STATE_CHANGED
-local function OnEvent(self,event,key,state)
-	-- Update Tip
-	if (gtt:IsOwned(self)) then
-		self:GetScript("OnEnter")(self);
-	end
-	-- Toggle ItemLevel
-	if (not cfg.alwaysShowItemLevel) then
-		if (self.link) and (IsAltKeyDown()) then
-			self.level:Show();
-		else
-			self.level:Hide();
-		end
-	end
+-- Refresh item-level overlays after their relevant client event.
+local function OnEvent(self, event, key, state)
+
+    if gtt:IsOwned(self) then
+        self:GetScript("OnEnter")(self)
+    end
+    -- TOGGLE ITEMLEVEL
+
+    if not cfg.alwaysShowItemLevel then
+        if self.link and (IsAltKeyDown()) then
+            self.level:Show()
+        else
+            self.level:Hide()
+        end
+    end
 end
 
--- OnDrag
+-- Pick up an equipped item only when inspecting yourself.
 local function OnDrag(self)
-	if (ex:ValidateUnit() and UnitIsUnit(ex.unit,"player")) then
-		PickupInventoryItem(self.id);
-	end
+    if ex:ValidateUnit() and UnitIsUnit(ex.unit, "player") then
+        PickupInventoryItem(self.id)
+    end
 end
 
--- OnClick
-local function OnClick(self,button)
-	if (CursorHasItem()) then
-		OnDrag(self);
-	elseif (self.link) then
-		if (button == "LeftButton") then
-			local editBox = ChatEdit_GetActiveWindow();
-			if (IsModifiedClick("DRESSUP")) then
-				DressUpItemLink(self.link);
-			elseif (IsModifiedClick("CHATLINK")) and (editBox) and (editBox:IsVisible()) then
-				local _, itemLink = GetItemInfo(self.link);
-				editBox:Insert(itemLink);
-			else
-				OnDrag(self);
-			end
-		end
-	elseif (self.realLink) then
-		local entryName = ex:GetEntryName();
-		ex:ClearInspect();
-		ex:LoadPlayerFromCache(entryName);
-		self:GetScript("OnEnter")(self);
-	end
+-- Apply the selected equipment-slot shortcut.
+local function OnClick(self, button)
+    if CursorHasItem() then
+        OnDrag(self)
+    elseif self.link then
+        if button == "LeftButton" then
+            local editBox = ChatEdit_GetActiveWindow()
+            if IsModifiedClick("DRESSUP") then
+                DressUpItemLink(self.link)
+            elseif (IsModifiedClick("CHATLINK")) and editBox and (editBox:IsVisible()) then
+                local _, itemLink = GetItemInfo(self.link)
+                editBox:Insert(itemLink)
+            else
+                OnDrag(self)
+            end
+        end
+    elseif self.realLink then
+        local entryName = ex:GetEntryName()
+        ex:ClearInspect()
+        ex:LoadPlayerFromCache(entryName)
+        self:GetScript("OnEnter")(self)
+    end
 end
 
--- OnShow
+-- Refresh visible equipment controls and required events.
 local function OnShow(self)
-	self:RegisterEvent("MODIFIER_STATE_CHANGED");
+    self:RegisterEvent("MODIFIER_STATE_CHANGED")
 end
 
--- OnHide
+-- Unregister equipment updates while the controls are hidden.
 local function OnHide(self)
-	self:UnregisterEvent("MODIFIER_STATE_CHANGED");
-	if (not cfg.alwaysShowItemLevel) then
-		self.level:Hide();
-	end
+    self:UnregisterEvent("MODIFIER_STATE_CHANGED")
+    if not cfg.alwaysShowItemLevel then
+        self.level:Hide()
+    end
 end
+
 
 --------------------------------------------------------------------------------------------------------
---                                           Widget Creation                                          --
+--                                          Widget Creation                                           --
 --------------------------------------------------------------------------------------------------------
 
 for index, slot in ipairs(LibGearExam.Slots) do
-	local btn = CreateFrame("Button","ExaminerItemButton"..slot,ex.model); -- Some other mods bug if you create this nameless
-	btn:SetSize(37,37);
-	btn:RegisterForClicks("LeftButtonUp","RightButtonUp");
-	btn:RegisterForDrag("LeftButton");
-	btn:SetPushedTexture("Interface\\Buttons\\UI-Quickslot-Depress");
-	btn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square");
+    local btn = CreateFrame("Button", "ExaminerItemButton" .. slot, ex.model) -- Some other mods bug if you create this nameless
+    btn:SetSize(37, 37)
+    btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    btn:RegisterForDrag("LeftButton")
+    btn:SetPushedTexture("Interface\\Buttons\\UI-Quickslot-Depress")
+    btn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
 
-	btn:SetScript("OnShow",OnShow);
-	btn:SetScript("OnHide",OnHide);
-	btn:SetScript("OnClick",OnClick);
-	btn:SetScript("OnEnter",ex.ItemButton_OnEnter);
-	btn:SetScript("OnLeave",ex.ItemButton_OnLeave);
-	btn:SetScript("OnEvent",OnEvent);
-	btn:SetScript("OnDragStart",OnDrag);
-	btn:SetScript("OnReceiveDrag",OnDrag);
+    btn:SetScript("OnShow", OnShow)
+    btn:SetScript("OnHide", OnHide)
+    btn:SetScript("OnClick", OnClick)
+    btn:SetScript("OnEnter", ex.ItemButton_OnEnter)
+    btn:SetScript("OnLeave", ex.ItemButton_OnLeave)
+    btn:SetScript("OnEvent", OnEvent)
+    btn:SetScript("OnDragStart", OnDrag)
+    btn:SetScript("OnReceiveDrag", OnDrag)
 
-	btn.id, btn.bgTexture = GetInventorySlotInfo(slot);
-	btn.slotName = slot;
+    btn.id, btn.bgTexture = GetInventorySlotInfo(slot)
+    btn.slotName = slot
 
-	btn.texture = btn:CreateTexture(nil,"BACKGROUND");
-	btn.texture:SetAllPoints();
+    btn.texture = btn:CreateTexture(nil, "BACKGROUND")
+    btn.texture:SetAllPoints()
 
-	btn.border = btn:CreateTexture(nil,"OVERLAY");
-	btn.border:SetTexture(ExaminerNS.assetPath.."Textures\\Border");
-	btn.border:SetSize(41,41);
-	btn.border:SetPoint("CENTER");
+    btn.border = btn:CreateTexture(nil, "OVERLAY")
+    btn.border:SetTexture(ExaminerNS.assetPath .. "Textures\\Border")
+    btn.border:SetSize(41, 41)
+    btn.border:SetPoint("CENTER")
 
-	btn.level = btn:CreateFontString(nil,"ARTWORK","GameFontHighlight");
-	btn.level:SetFont(GameFontHighlight:GetFont(),12,"OUTLINE");
-	btn.level:SetPoint("BOTTOM",0,4);
-	btn.level:Hide();
+    btn.level = ExaminerNS.Fonts.Create(btn, nil, "ARTWORK", "GameFontHighlight")
+    btn.level:SetFont(GameFontHighlight:GetFont(), 12, "OUTLINE")
+    btn.level:SetPoint("BOTTOM", 0, 4)
+    btn.level:Hide()
 
-	if (index == 1) then
-		btn:SetPoint("TOPLEFT",4,-3);
-	elseif (index == 9) then
-		btn:SetPoint("TOPRIGHT",-4,-3);
-	elseif (index == 17) then
-		btn:SetPoint("BOTTOM",ExaminerNS.Compat.hasRangedSlot and -41.5 or -21,27);
-	elseif (index <= 16) then
-		btn:SetPoint("TOP",mod.slotBtns[index - 1],"BOTTOM",0,-4);
-	else
-		btn:SetPoint("LEFT",mod.slotBtns[index - 1],"RIGHT",5,0);
-	end
+    if index == 1 then
+        btn:SetPoint("TOPLEFT", 4, -3)
+    elseif index == 9 then
+        btn:SetPoint("TOPRIGHT", -4, -3)
+    elseif index == 17 then
+        btn:SetPoint("BOTTOM", ExaminerNS.Compat.hasRangedSlot and -41.5 or -21, 27)
+    elseif index <= 16 then
+        btn:SetPoint("TOP", mod.slotBtns[index - 1], "BOTTOM", 0, -4)
+    else
+        btn:SetPoint("LEFT", mod.slotBtns[index - 1], "RIGHT", 5, 0)
+    end
 
-	mod.slotBtns[index] = btn;
+    mod.slotBtns[index] = btn
 end

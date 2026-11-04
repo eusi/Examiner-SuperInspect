@@ -1,3 +1,10 @@
+--------------------------------------------------------------------------------------------------------
+--
+-- Locales/zhTW.lua
+-- Provides zhTW interface translations for the locale resolver.
+--
+----------------------
+
 local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="zhTW" then return; end
@@ -111,7 +118,7 @@ ns.locales.zhTW={
     ["Stats"]="屬性",
     ["Gear Statistics"]="裝備屬性",
     ["Item Levels"]="物品等級",
-    ["Average Item Level"]="平均裝等（計算）",
+    ["Average Item Level"]="平均物品等級",
     ["Blizzard Average Item Level"]="平均裝等（暴雪）",
     ["Min / Max Item Levels"]="最低 / 最高物品等級",
     ["Additional Stats"]="其他屬性",
@@ -153,7 +160,7 @@ ns.locales.zhTW={
     ["Examiner Core Caching"]="Examiner核心快取",
     ["Automatically saves inspected players' gear and basic details."]="自動儲存被觀察玩家的裝備與基本資訊。",
     ["Save this module's data with player profiles. Requires Core Caching."]="將此模組的資料儲存至玩家檔案。需要啟用核心快取。",
-    ["Enabled Module Caching..."]="啟用快取的模組...",
+    ["Enabled Module Caching"]="啟用快取的模組",
     ["Make Examiner Movable"]="允許移動Examiner",
     ["Lets you drag the window to a different position."]="可拖曳視窗以調整位置。",
     ["Auto Inspect on Target Change"]="切換目標時自動觀察",
@@ -218,4 +225,17 @@ ns.locales.zhTW={
     ["Saves honor and PvP ratings for later viewing. Requires Core Caching."]="儲存榮譽與PvP評分以便稍後查看。需要啟用核心快取。",
     ["Saves honor ranks and honorable kills. Requires Core Caching."]="儲存榮譽軍階與榮譽擊殺。需要啟用核心快取。",
     ["Saves guild details and the banner. Requires Core Caching."]="儲存公會詳細資訊與旗幟。需要啟用核心快取。",
+    ["Default"]="預設",
+    ["Font"]="字型",
+    ["Calculated"]="計算值",
+    ["Blizzard"]="Blizzard",
+    ["Uses Examiner's equipped item-level calculation."]="使用 Examiner 計算已裝備物品的等級。",
+    ["Uses Blizzard's equipped item level. Missing values are shown as a dash."]="使用暴雪提供的已裝備物品等級。缺失值顯示為破折號。",
+    ["Glyphs"]="雕紋",
+    ["Shows equipped major and minor glyphs."]="顯示已裝備的極效和初階雕紋。",
+    ["Enable/disable the Glyphs module, which shows equipped major and minor glyphs."]="啟用/停用雕紋模組，顯示已裝備的極效和初階雕紋。",
+    ["Saves glyphs for later viewing. Requires Core Caching."]="儲存雕紋以便日後查看。需要啟用核心快取。",
+    ["Empty glyph slot"]="空雕紋插槽",
+    ["Locked glyph slot"]="雕紋插槽尚未解鎖",
+    ["Glyph data unavailable"]="無雕紋資料",
 };

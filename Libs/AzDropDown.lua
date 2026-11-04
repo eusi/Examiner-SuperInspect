@@ -46,9 +46,10 @@ local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
 	header		If true, the item appears as a header item, and cannot be selected
 	checked		Item appears selected by having a checkmark next to it
 	tip			Tooltip will be shown when mouse is over item
+	font		Optional font file used to preview this entry's label
 --]]
 
-local REVISION = 15;
+local REVISION = 17;
 if (type(AzDropDown) == "table") and (AzDropDown.vers >= REVISION) then
 	return;
 end
@@ -144,6 +145,12 @@ function DropDownMenuMixin:UpdateItems()
 	-- Measure Width
 	local maxItemWidth = parent.minDropdownWidth or 0;
 	for _, tbl in ipairs(self.list) do
+		local face,size,flags=GameFontHighlightSmall:GetFont();
+		self.measure.examinerFontPreview=nil;
+		self.measure:SetFont(face,size,flags);
+		if ExaminerNS.Fonts then ExaminerNS.Fonts.Apply(self.measure); end
+		self.measure.examinerFontPreview=tbl.font;
+		if tbl.font then pcall(self.measure.SetFont,self.measure,tbl.font,size,flags); end
 		self.measure:SetText(tbl.text);
 		maxItemWidth = max(maxItemWidth,self.measure:GetWidth() + 10 + 38);
 	end
@@ -173,7 +180,7 @@ function DropDownMenuMixin:Initialize(parent,point,parentPoint)
 
 	-- Set DropDown Parent
 	self.parent = parent;
-	self:SetParent(parent);
+	self:SetParent(parent.menuRoot or parent);
 
 	-- Anchor to Parent
 	self:ClearAllPoints();
@@ -203,6 +210,32 @@ function DropDownMenuMixin:Initialize(parent,point,parentPoint)
 	end
 	-- updates the menu items
 	self:UpdateItems();
+	-- Settings menus stay close to the label and flip within the visible viewport.
+	if parent.menuAutoFlip then
+		local bounds=parent.menuBounds or UIParent;
+		local bottom,top=parent:GetBottom(),parent:GetTop();
+		local lower,upper=bounds:GetBottom(),bounds:GetTop();
+		local inset=parent.menuInset or 0;
+		self:ClearAllPoints();
+		if bottom and top and lower and upper then
+			local scale,boundScale=parent:GetEffectiveScale(),bounds:GetEffectiveScale();
+			local below=bottom*scale-lower*boundScale;
+			local above=upper*boundScale-top*scale;
+			local height=self:GetHeight()*self:GetEffectiveScale();
+			if below+inset*scale<height and above>below then
+				self:SetPoint("BOTTOMRIGHT",parent,"TOPRIGHT",0,-inset);
+				self.opensUp=true;
+			else
+				self:SetPoint("TOPRIGHT",parent,"BOTTOMRIGHT",0,inset);
+				self.opensUp=false;
+			end
+		else
+			self:SetPoint("TOPRIGHT",parent,"BOTTOMRIGHT",0,inset);
+			self.opensUp=false;
+		end
+	else
+		self.opensUp=nil;
+	end
 end
 
 function DropDownMenuMixin:GetMaxShownItems()
@@ -293,6 +326,13 @@ local function UpdateScroll(self)
 		local entry = menu.list[index];
 
 		item.index = index;
+		-- Preview fonts without changing the face used by other menu entries.
+		local face,size,flags=GameFontHighlightSmall:GetFont();
+		item.text.examinerFontPreview=nil;
+		item.text:SetFont(face,size,flags);
+		if ExaminerNS.Fonts then ExaminerNS.Fonts.Apply(item.text); end
+		item.text.examinerFontPreview=entry.font;
+		if entry.font then pcall(item.text.SetFont,item.text,entry.font,size,flags); end
 		item.text:SetText(entry.text);
 		item.text:SetTextColor(1,entry.header and 0.82 or 1,entry.header and 0 or 1);
 

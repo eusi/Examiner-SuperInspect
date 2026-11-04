@@ -15,17 +15,18 @@ With Examiner, you can inspect other players' gear, stats, item level/gearScore,
 - **3D model:** Rotate, move, zoom, and customize the background.
 - **Talents:** Interactive trees and spell tooltips; Retail/Forever build exports and Wowhead links.
 - **PvP:** Honor, kills, ranks, and arena/rated records; Forever rank progress.
-- **Player cache:** Keep inspected gear and optional talent, PvP, and guild snapshots for later; search, filter, and sort saved players.
+- **Player cache:** Keep inspected gear and optional talent, glyph, PvP, and guild snapshots for later; search, filter, and sort saved players.
 - **Guilds:** Guild details and crests where available.
 - **SoD runes:** Equipped runes across all Season of Discovery phases.
+- **Glyphs (Mists):** Major and minor glyphs in the Talents tab, including empty and locked slots.
 - **Achievements:** Completion dates, points, and rewards (Retail/Mists).
 - **Auto-inspect:** Follow target changes while Examiner is open.
 - **Modules:** Enable/disable modules and tabs. Modules unavailable in your WoW version are greyed out.
 - **Gear comparison:** Stat differences between players or individual items.
-- **Customization:** Movable, scalable window; item-level, tooltip, and caching options.
+- **Settings:** Movable, scalable, item-level, tooltip, caching options, font via LibSharedMedia support, and more.
 - **11 translations:** enUS, deDE, frFR, esES, esMX, itIT, ptBR, koKR, ruRU, zhCN, zhTW.
 
-Features depend on the client and available inspect data. Gear stats exclude base stats, talents, and buffs; some conditional bonuses are incomplete. Enable caching and choose which data to save in **Settings**; caching is off by default.
+Features depend on the client and available inspect data.
 
 ![Examiner screenshots](https://github.com/user-attachments/assets/8a99a3ae-c1f7-417a-a7d4-f01b86ce9cf9)
 
@@ -33,8 +34,9 @@ Features depend on the client and available inspect data. Gear stats exclude bas
 
 ## Quick start
 
-- Inspect through the player's unit menu or `/ex inspect target`.
+- **Inspect** through the player's unit menu or via `/ins [unit]`.
 - Assign shortcuts under **Key Bindings > Examiner**.
+- Only equipped items are **cached** by default. Enable talent, glyph, PvP or guild caching via **More > Settings**.
 
 ## Controls
 
@@ -48,7 +50,7 @@ Features depend on the client and available inspect data. Gear stats exclude bas
 
 | Command | Action |
 | --- | --- |
-| `/ex inspect [unit]` | Inspect `target`, `player`, `focus`, `party3`, etc. Defaults to your target, or yourself without a target. |
+| `/ex inspect [unit]` or `/ins [unit]` | Inspect `target`, `player`, `focus`, `party3`, etc. Defaults to your target, or yourself without a target. |
 | `/ex si <itemLink>` | Print an item's gear stats. |
 | `/ex compare <itemLink1> <itemLink2>` | Print item stat differences. |
 | `/ex scale <value>` | Window scale: `0.75`–`1.50`; default `1.00`. |
