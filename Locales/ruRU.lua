@@ -1,3 +1,10 @@
+--------------------------------------------------------------------------------------------------------
+--
+-- Locales/ruRU.lua
+-- Provides ruRU interface translations for the locale resolver.
+--
+----------------------
+
 local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="ruRU" then return; end
@@ -111,7 +118,7 @@ ns.locales.ruRU={
     ["Stats"]="Характеристики",
     ["Gear Statistics"]="Характеристики экипировки",
     ["Item Levels"]="Уровни предметов",
-    ["Average Item Level"]="Ср. iLvl (расчёт)",
+    ["Average Item Level"]="Средний уровень предметов",
     ["Blizzard Average Item Level"]="Ср. iLvl (Blizzard)",
     ["Min / Max Item Levels"]="Мин. / макс. уровень предметов",
     ["Additional Stats"]="Дополнительные характеристики",
@@ -153,7 +160,7 @@ ns.locales.ruRU={
     ["Examiner Core Caching"]="Основной кэш Examiner",
     ["Automatically saves inspected players' gear and basic details."]="Автоматически сохраняет экипировку и основные данные осматриваемых игроков.",
     ["Save this module's data with player profiles. Requires Core Caching."]="Сохранять данные модуля в профилях игроков. Требуется основное кэширование.",
-    ["Enabled Module Caching..."]="Кэшируемые модули...",
+    ["Enabled Module Caching"]="Кэшируемые модули",
     ["Make Examiner Movable"]="Разрешить перемещение Examiner",
     ["Lets you drag the window to a different position."]="Позволяет перетаскивать окно в другое место.",
     ["Auto Inspect on Target Change"]="Осматривать при смене цели",
@@ -218,4 +225,17 @@ ns.locales.ruRU={
     ["Saves honor and PvP ratings for later viewing. Requires Core Caching."]="Сохраняет честь и рейтинги PvP для просмотра позже. Требуется основное кэширование.",
     ["Saves honor ranks and honorable kills. Requires Core Caching."]="Сохраняет почётные звания и победы. Требуется основное кэширование.",
     ["Saves guild details and the banner. Requires Core Caching."]="Сохраняет данные гильдии и знамя. Требуется основное кэширование.",
+    ["Default"]="По умолчанию",
+    ["Font"]="Шрифт",
+    ["Calculated"]="Расчёт",
+    ["Blizzard"]="Blizzard",
+    ["Uses Examiner's equipped item-level calculation."]="Использует расчёт Examiner для надетых предметов.",
+    ["Uses Blizzard's equipped item level. Missing values are shown as a dash."]="Использует уровень надетых предметов от Blizzard. Если данных нет, отображается прочерк.",
+    ["Glyphs"]="Символы",
+    ["Shows equipped major and minor glyphs."]="Показывает установленные большие и малые символы.",
+    ["Enable/disable the Glyphs module, which shows equipped major and minor glyphs."]="Включает/выключает модуль символов, показывающий установленные большие и малые символы.",
+    ["Saves glyphs for later viewing. Requires Core Caching."]="Сохраняет символы для последующего просмотра. Требуется основной кэш.",
+    ["Empty glyph slot"]="Пустая ячейка символа",
+    ["Locked glyph slot"]="Ячейка символа заблокирована",
+    ["Glyph data unavailable"]="Данные о символах недоступны",
 };

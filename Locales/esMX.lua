@@ -1,3 +1,10 @@
+--------------------------------------------------------------------------------------------------------
+--
+-- Locales/esMX.lua
+-- Provides esMX interface translations for the locale resolver.
+--
+----------------------
+
 local _,ns=...;
 if ns.blocked or GetLocale()~="esMX" then return; end
 ns.locales.esMX={
@@ -110,7 +117,7 @@ ns.locales.esMX={
     ["Stats"]="Estad.",
     ["Gear Statistics"]="Estadísticas del equipo",
     ["Item Levels"]="Niveles de objeto",
-    ["Average Item Level"]="iLvl medio (calculado)",
+    ["Average Item Level"]="Nivel de objeto medio",
     ["Blizzard Average Item Level"]="iLvl medio (Blizzard)",
     ["Min / Max Item Levels"]="Niveles de objeto mín. / máx.",
     ["Additional Stats"]="Estadísticas adicionales",
@@ -152,7 +159,7 @@ ns.locales.esMX={
     ["Examiner Core Caching"]="Caché principal de Examiner",
     ["Automatically saves inspected players' gear and basic details."]="Guarda automáticamente equipo y datos básicos de los jugadores inspeccionados.",
     ["Save this module's data with player profiles. Requires Core Caching."]="Guarda datos del módulo con los perfiles. Requiere la caché principal.",
-    ["Enabled Module Caching..."]="Módulos en caché...",
+    ["Enabled Module Caching"]="Módulos en caché",
     ["Make Examiner Movable"]="Permitir mover Examiner",
     ["Lets you drag the window to a different position."]="Permite arrastrar la ventana a otra posición.",
     ["Auto Inspect on Target Change"]="Inspeccionar al cambiar de objetivo",
@@ -217,4 +224,17 @@ ns.locales.esMX={
     ["Saves honor and PvP ratings for later viewing. Requires Core Caching."]="Guarda honor e índices JcJ para verlos más tarde. Requiere la caché principal.",
     ["Saves honor ranks and honorable kills. Requires Core Caching."]="Guarda rangos de honor y muertes con honor. Requiere la caché principal.",
     ["Saves guild details and the banner. Requires Core Caching."]="Guarda detalles de la hermandad y el estandarte. Requiere la caché principal.",
+    ["Default"]="Predeterminada",
+    ["Font"]="Fuente",
+    ["Calculated"]="Calculado",
+    ["Blizzard"]="Blizzard",
+    ["Uses Examiner's equipped item-level calculation."]="Usa el cálculo de Examiner para los objetos equipados.",
+    ["Uses Blizzard's equipped item level. Missing values are shown as a dash."]="Usa el nivel equipado de Blizzard. Los valores no disponibles se muestran con una raya.",
+    ["Glyphs"]="Glifos",
+    ["Shows equipped major and minor glyphs."]="Muestra los glifos sublimes y menores equipados.",
+    ["Enable/disable the Glyphs module, which shows equipped major and minor glyphs."]="Activa/desactiva el módulo Glifos, que muestra los glifos sublimes y menores equipados.",
+    ["Saves glyphs for later viewing. Requires Core Caching."]="Guarda los glifos para verlos después. Requiere la caché principal.",
+    ["Empty glyph slot"]="Ranura de glifo vacía",
+    ["Locked glyph slot"]="Ranura de glifo bloqueada",
+    ["Glyph data unavailable"]="Datos de glifos no disponibles",
 };

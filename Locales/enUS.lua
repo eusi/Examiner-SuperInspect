@@ -1,3 +1,10 @@
+--------------------------------------------------------------------------------------------------------
+--
+-- Locales/enUS.lua
+-- Provides enUS interface translations for the locale resolver.
+--
+----------------------
+
 local _,ns=...;
 if ns.blocked then return; end
 ns.locales.enUS={
@@ -110,7 +117,7 @@ ns.locales.enUS={
     ["Stats"]="Stats",
     ["Gear Statistics"]="Gear Statistics",
     ["Item Levels"]="Item Levels",
-    ["Average Item Level"]="Avg. iLvl (calculated)",
+    ["Average Item Level"]="Average Item Level",
     ["Blizzard Average Item Level"]="Avg. iLvl (Blizzard)",
     ["Min / Max Item Levels"]="Min / Max Item Levels",
     ["Additional Stats"]="Additional Stats",
@@ -152,7 +159,7 @@ ns.locales.enUS={
     ["Examiner Core Caching"]="Examiner Core Caching",
     ["Automatically saves inspected players' gear and basic details."]="Automatically saves inspected players' gear and basic details.",
     ["Save this module's data with player profiles. Requires Core Caching."]="Save this module's data with player profiles. Requires Core Caching.",
-    ["Enabled Module Caching..."]="Enabled Module Caching...",
+    ["Enabled Module Caching"]="Enabled Module Caching",
     ["Make Examiner Movable"]="Make Examiner Movable",
     ["Lets you drag the window to a different position."]="Lets you drag the window to a different position.",
     ["Auto Inspect on Target Change"]="Auto Inspect on Target Change",
@@ -217,4 +224,17 @@ ns.locales.enUS={
     ["Saves honor and PvP ratings for later viewing. Requires Core Caching."]="Saves honor and PvP ratings for later viewing. Requires Core Caching.",
     ["Saves honor ranks and honorable kills. Requires Core Caching."]="Saves honor ranks and honorable kills. Requires Core Caching.",
     ["Saves guild details and the banner. Requires Core Caching."]="Saves guild details and the banner. Requires Core Caching.",
+    ["Default"]="Default",
+    ["Font"]="Font",
+    ["Calculated"]="Calculated",
+    ["Blizzard"]="Blizzard",
+    ["Uses Examiner's equipped item-level calculation."]="Uses Examiner's equipped item-level calculation.",
+    ["Uses Blizzard's equipped item level. Missing values are shown as a dash."]="Uses Blizzard's equipped item level. Missing values are shown as a dash.",
+    ["Glyphs"]="Glyphs",
+    ["Shows equipped major and minor glyphs."]="Shows equipped major and minor glyphs.",
+    ["Enable/disable the Glyphs module, which shows equipped major and minor glyphs."]="Enable/disable the Glyphs module, which shows equipped major and minor glyphs.",
+    ["Saves glyphs for later viewing. Requires Core Caching."]="Saves glyphs for later viewing. Requires Core Caching.",
+    ["Empty glyph slot"]="Empty glyph slot",
+    ["Locked glyph slot"]="Locked glyph slot",
+    ["Glyph data unavailable"]="Glyph data unavailable",
 };
