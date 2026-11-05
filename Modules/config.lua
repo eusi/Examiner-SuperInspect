@@ -29,6 +29,7 @@ local modName = ex:GetName()
 local vers = ExaminerNS.Fonts.Create(mod.page, nil, "ARTWORK", "GameFontHighlightSmall")
 vers:SetText("Examiner |cffffff80" .. (GetAddOnMetadata(modName, "Version") or "") .. "|r by sAks")
 vers:SetPoint("BOTTOM", 0, 14)
+mod.versionText = vers
 
 -- VARIABLES
 
@@ -196,12 +197,15 @@ function mod:OnInitialize()
     local scroll =
         CreateFrame("ScrollFrame", "ExaminerSettingsScroll", self.page, "UIPanelScrollFrameTemplate")
     self.settingsScroll = scroll
-    scroll:SetSize(self.page:GetWidth(), self.page:GetHeight() - 68)
+    scroll:SetSize(self.page:GetWidth(), self.page:GetHeight() - 44)
     scroll:SetPoint("TOPLEFT", 0, -34)
-    scroll:SetPoint("BOTTOMRIGHT", 0, 34)
+    scroll:SetPoint("BOTTOMRIGHT", 0, 10)
     local content = CreateFrame("Frame", nil, scroll)
     self.settingsContent = content
-    content:SetSize(self.page:GetWidth(), 284)
+    content:SetSize(self.page:GetWidth(), 310)
+    vers:SetParent(content)
+    vers:ClearAllPoints()
+    vers:SetPoint("TOP", content, "TOP", 0, -286)
     scroll:SetScrollChild(content)
     local bar = scroll.ScrollBar or _G[scroll:GetName() .. "ScrollBar"]
     self.settingsScrollBar = bar
@@ -211,7 +215,7 @@ function mod:OnInitialize()
     bar:ClearAllPoints()
     bar:SetWidth(SCROLLBAR_WIDTH)
     bar:SetPoint("TOPRIGHT", self.page, "TOPRIGHT", -SCROLLBAR_MARGIN, -50)
-    bar:SetPoint("BOTTOMRIGHT", self.page, "BOTTOMRIGHT", -SCROLLBAR_MARGIN, 50)
+    bar:SetPoint("BOTTOMRIGHT", self.page, "BOTTOMRIGHT", -SCROLLBAR_MARGIN, 26)
 
     -- Clamp wheel and slider input to the available settings content.
     local function ScrollTo(value)
@@ -239,7 +243,7 @@ function mod:OnInitialize()
         ScrollTo(value)
     end)
     scroll:EnableMouseWheel(true)
-    -- Scroll settings without moving the fixed heading or version footer.
+    -- Scroll settings and version credits while keeping the heading fixed.
     scroll:SetScript("OnMouseWheel", function(_, delta)
         ScrollTo(scroll:GetVerticalScroll() - delta * 24)
     end)

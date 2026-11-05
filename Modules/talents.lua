@@ -24,6 +24,7 @@ end
 
 local mod = ex:CreateModule("Talents", TALENTS)
 mod.help = ExaminerNS.L["Shows talent trees."]
+    .. "\n" .. ExaminerNS.L["Right-click: choose which talents/specialization to view."]
 mod.toggleHelp = ExaminerNS.L["Enable/disable the Talents module, which shows talent trees."]
 mod.cacheHelp = ExaminerNS.L["Saves talent builds for later viewing. Requires Core Caching."]
 mod.page = CreateFrame("Frame", nil, ex)
@@ -223,7 +224,7 @@ function mod.MenuInit(parent, list)
     if cached then
         list[1].text = ExaminerNS.L["Shown Spec"]
         list[1].header = 1
-        list[2].text = ExaminerNS.L["Active"]
+        list[2].text = "|cff80ff80" .. ExaminerNS.L["Active"] .. "|r"
         list[2].checked = true
         return
     end
@@ -232,14 +233,16 @@ function mod.MenuInit(parent, list)
     list[1].header = 1
     local selected = (cfg.shownSpec == 1 or cfg.shownSpec == 2) and cfg.shownSpec <= groups and cfg.shownSpec
         or nil
-    list[2].text = ExaminerNS.L["Active"]
+    list[2].text = "|cff80ff80" .. ExaminerNS.L["Active"] .. "|r"
     list[2].value = nil
     list[2].checked = (selected == nil)
-    list[3].text = (group == 1 and "|cff80ff80" or "") .. ExaminerNS.L["Primary"]
+    list[3].text = group == 1 and ExaminerNS.F("%s (active)", ExaminerNS.L["Primary"])
+        or ExaminerNS.L["Primary"]
     list[3].value = 1
     list[3].checked = (selected == 1)
     if groups > 1 then
-        list[4].text = (group == 2 and "|cff80ff80" or "") .. ExaminerNS.L["Secondary"]
+        list[4].text = group == 2 and ExaminerNS.F("%s (active)", ExaminerNS.L["Secondary"])
+            or ExaminerNS.L["Secondary"]
         list[4].value = 2
         list[4].checked = (selected == 2)
     end

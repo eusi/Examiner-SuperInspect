@@ -1,7 +1,7 @@
 # Examiner
 > **An Advanced Inspection Addon**
 
-With Examiner, you can inspect other players' gear, stats, item level/gearScore, talents, pvp details, achievements, guild information, and runes in one convenient window. Mouseover shortcuts, gear comparisons and a searchable inspection cache make inspecting players quick and comfortable.
+With Examiner, you can inspect other players' gear, stats, item level/gearScore, talents, pvp details, achievements, guild information, professions, glyphs and runes in one convenient window. Mouseover shortcuts, gear comparisons and a searchable inspection cache make inspecting players quick and comfortable.
 
 ## Installation
 
@@ -10,16 +10,17 @@ With Examiner, you can inspect other players' gear, stats, item level/gearScore,
 
 ## Features
 
-- **Gear overview:** Equipped items, individual and average item levels, GearScore, and combined gear stats.
-- **Inspect keybindings:** Mouseover (without selecting the player), target, and yourself; toggle Examiner.
-- **3D model:** Rotate, move, zoom, and customize the background.
-- **Talents:** Interactive trees and spell tooltips; Retail/Forever build exports and Wowhead links.
-- **PvP:** Honor, kills, ranks, and arena/rated records; Forever rank progress.
-- **Player cache:** Keep inspected gear and optional talent, glyph, PvP, and guild snapshots for later; search, filter, and sort saved players.
+- **Gear overview:** Equipped items, item levels, GearScore, and combined gear stats.
+- **3D model:** Rotate, move, and zoom, even NPCs and player from other faction.
+- **Inspect keybindings:** Inspect mouseover, your target, and yourself.
+- **Talents:** Interactive trees and spell tooltips. Retail/Forever build exports and Wowhead links.
+- **PvP:** Honor, kills, ranks, and arena/rated records. Forever rank progress.
+- **Player cache:** Keep inspected gear and optional talent, glyph, PvP, guild, and profession snapshots for later; search, filter, and sort saved players.
 - **Guilds:** Guild details and crests where available.
-- **SoD runes:** Equipped runes across all Season of Discovery phases.
-- **Glyphs (Mists):** Major and minor glyphs in the Talents tab, including empty and locked slots.
 - **Achievements:** Completion dates, points, and rewards (Retail/Mists).
+- **Professions:** Shows profession skill levels (Forever).
+- **Runes:** Equipped runes across all Season of Discovery phases (SoD).
+- **Glyphs:** Major and minor glyphs in the Talents tab, including empty and locked slots (Mists).
 - **Auto-inspect:** Follow target changes while Examiner is open.
 - **Modules:** Enable/disable modules and tabs. Modules unavailable in your WoW version are greyed out.
 - **Gear comparison:** Stat differences between players or individual items.
@@ -36,7 +37,7 @@ Features depend on the client and available inspect data.
 
 - **Inspect** through the player's unit menu or via `/ins [unit]`.
 - Assign shortcuts under **Key Bindings > Examiner**.
-- Only equipped items are **cached** by default. Enable talent, glyph, PvP or guild caching via **More > Settings**.
+- Only gear is **cached** by default. Enable optional caching under **More > Settings**.
 
 ## Controls
 
