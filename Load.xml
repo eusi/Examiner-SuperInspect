@@ -41,6 +41,7 @@
     <Script file="Modules\guild.lua"/>
     <Script file="Modules\achievements.lua"/>
     <Script file="Modules\glyphs.lua"/>
+    <Script file="Modules\professions.lua"/>
     <Script file="Modules\modlist.lua"/>
     <Script file="Services\Inspector.lua"/>
     <Script file="InspectEntry.lua"/>

@@ -188,7 +188,7 @@ function DropDownMenuMixin:Initialize(parent,point,parentPoint)
 	self:SetFrameLevel(parent:GetFrameLevel() + 4);
 
 	-- Copy Backdrop from parent, or use default
-	local backdrop = parent:GetBackdrop();
+	local backdrop = type(parent.GetBackdrop) == "function" and parent:GetBackdrop();
 	if (backdrop) then
 		local r1, g1, b1 = parent:GetBackdropColor()
 		local r2, g2, b2, a2 = parent:GetBackdropBorderColor()

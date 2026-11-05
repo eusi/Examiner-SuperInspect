@@ -45,6 +45,7 @@ local catalog = {
         L["Shows guild details, such as rank, member count, and banner."],
     },
     { "Runes", "SoD Runes", "INV_Misc_Rune_01", L["Shows equipped runes for each gear slot."] },
+    { "Professions", "Professions", "Trade_BlackSmithing", L["Shows profession skill levels."] },
     {
         "Achievements",
         "Achievements",
@@ -179,7 +180,8 @@ local function Tooltip(row)
         text = module.toggleHelp or ns.F("Enable/disable: %s", text:match("^[^\n]+"))
     end
     if text then
-        GameTooltip:AddLine(text, 1, 1, 1, true)
+        -- Let navigation descriptions determine their width; keep long module-switch help wrapped.
+        GameTooltip:AddLine(text, 1, 1, 1, row.check ~= nil)
     end
     if not module then
         GameTooltip:AddLine(L["Not available in this WoW version."], 1, 0.82, 0, true)

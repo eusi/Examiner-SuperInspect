@@ -103,7 +103,7 @@ local function ReadBanner(unit)
     local api = C_GuildInfo or {}
     local info = C.Try(api.GetGuildTabardInfo, unit)
     if C.IsTable(info) then
-        local emblem = C.Icon(info.emblemFileID)
+        local emblem = C.Icon(info.emblemFileID) or C.Icon(info.emblemFilename)
         local backgroundColor, borderColor, emblemColor =
             Color(info.backgroundColor), Color(info.borderColor), Color(info.emblemColor)
         if emblem and backgroundColor and borderColor and emblemColor then

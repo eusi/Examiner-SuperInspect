@@ -42,6 +42,9 @@ end
 -- VARIABLES
 
 local ITEM_HEIGHT = 12
+local TOP_INSET = ExaminerNS.Compat.isRetail and 12 or 46
+-- Keep the final row and scroll arrow clear of the panel's bottom border on every client.
+local ROW_COUNT = math.floor((mod.page:GetHeight() - TOP_INSET - 12) / ITEM_HEIGHT)
 local displayList = {}
 mod.displayList = displayList
 local resists = {}
@@ -609,13 +612,13 @@ local StatEntry_OnEnter = function(self, motion)
         gtt:Show()
     end
 end
-for i = 1, 20 do
+for i = 1, ROW_COUNT do
     local t = CreateFrame("Frame", nil, mod.page)
     t:SetSize(200, ITEM_HEIGHT)
     t.id = i
 
     if i == 1 then
-        t:SetPoint("TOPLEFT", 10, ExaminerNS.Compat.isRetail and -12 or -46)
+        t:SetPoint("TOPLEFT", 10, -TOP_INSET)
     else
         t:SetPoint("TOPLEFT", entries[i - 1], "BOTTOMLEFT")
         t:SetPoint("TOPRIGHT", entries[i - 1], "BOTTOMRIGHT")
@@ -650,6 +653,13 @@ mod.scroll =
     CreateFrame("ScrollFrame", "Examiner" .. mod.token .. "Scroll", mod.page, "FauxScrollFrameTemplate")
 mod.scroll:SetPoint("TOPLEFT", entries[1])
 mod.scroll:SetPoint("BOTTOMRIGHT", entries[#entries], -3, -1)
+local scrollbar = mod.scroll.ScrollBar or _G[mod.scroll:GetName() .. "ScrollBar"]
+local up = scrollbar.ScrollUpButton or _G[scrollbar:GetName() .. "ScrollUpButton"]
+local down = scrollbar.ScrollDownButton or _G[scrollbar:GetName() .. "ScrollDownButton"]
+-- Include the full native arrow heights inside the stats viewport.
+scrollbar:ClearAllPoints()
+scrollbar:SetPoint("TOPLEFT", mod.scroll, "TOPRIGHT", 6, -(up and up:GetHeight() or 16))
+scrollbar:SetPoint("BOTTOMLEFT", mod.scroll, "BOTTOMRIGHT", 6, down and down:GetHeight() or 16)
 -- Update visible rows for the new scroll position.
 mod.scroll:SetScript("OnVerticalScroll", function(self, offset)
     FauxScrollFrame_OnVerticalScroll(self, offset, ITEM_HEIGHT, UpdateShownItems)

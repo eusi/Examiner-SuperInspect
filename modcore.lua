@@ -217,11 +217,12 @@ local function Buttons_OnEnter(self, motion)
     gtt:ClearLines()
     gtt:AddLine(module.title)
     if module.help then
-        gtt:AddLine(module.help, 1, 1, 1, true)
+        -- Size navigation help to its longest line while preserving explicit shortcut breaks.
+        gtt:AddLine(module.help, 1, 1, 1, false)
     end
     local active = ex.modules[ex.cfg.activePage]
     if module.token == "More" and active and active.token == "Cache" then
-        gtt:AddLine(ExaminerNS.L["Right-click: filter, sort, or delete saved players."], 1, 1, 1, true)
+        gtt:AddLine(ExaminerNS.L["Right-click: filter, sort, or delete saved players."], 1, 1, 1, false)
     end
     gtt:Show()
 end

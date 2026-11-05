@@ -231,7 +231,7 @@ function ex:VARIABLES_LOADED(event)
     cfg = _G[ExaminerNS.configKey]
     if type(cfg.caching) ~= "table" then
         -- Apply defaults only before cache preferences have been saved.
-        cfg.caching = { Core = true, Talents = false, PvP = false, Guild = false, Glyphs = false }
+        cfg.caching = { Core = true, Talents = false, PvP = false, Guild = false, Glyphs = false, Professions = false }
     end
     self.cfg = cfg
     if cfg.itemLevelSource ~= "blizzard" then
