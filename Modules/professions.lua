@@ -38,6 +38,8 @@ mod.worker = worker
 local rows, entries = {}, {}
 mod.rows, mod.entries = rows, entries
 local ROWS, HEIGHT = 8, 25
+-- Overall Forever profession progress, independent of the currently learned training tier.
+local MAX_PROFESSION_SKILL = 300
 local lastRequest = -100
 local definitions = {
     { 1527, 2259, 171, "Alchemy", "Trade_Alchemy", true },
@@ -165,9 +167,19 @@ function mod:Read(session, own)
     if not Valid(session) then
         return
     end
-    local data = { skills = {}, guid = session.guid, time = time(), complete = true }
+    local data = { skills = {}, guid = session.guid, time = time(), complete = true, progressBasis = "overall" }
     for _, definition in ipairs(definitions) do
         local value = Skill(C.Try(own and GetStatistic or GetComparisonStatistic, definition[1]))
+        if own then
+            -- Read our own base rank without using its temporary training-tier ceiling.
+            local info = C.Try(C_SkillInfo and C_SkillInfo.GetSkillLineInfoByID, definition[3])
+            if C.IsTable(info) and info.skillID == definition[3] and not info.isHeader then
+                local rank = Skill(info.rank)
+                if rank then
+                    value = rank
+                end
+            end
+        end
         if value == nil then
             data.complete = false
         elseif value > 0 then
@@ -175,6 +187,7 @@ function mod:Read(session, own)
                 id = definition[1],
                 name = L[definition[4]],
                 value = value,
+                maximum = MAX_PROFESSION_SKILL,
             }
         end
     end
@@ -341,6 +354,15 @@ function mod:Draw()
             row.icon:SetTexture(definition and ("Interface\\Icons\\" .. definition[5]))
             row.icon:SetShown(definition ~= nil)
             row.value:SetText(item.value and C.FormatNumber(item.value) or "")
+            local hasMaximum = not item.header and item.value
+                and ns.ProgressBars.Set(row.progress, item.value, MAX_PROFESSION_SKILL)
+            row.progress:SetShown(not not hasMaximum)
+            row.value:SetShown(not hasMaximum)
+            -- Use the free right margin while keeping it clear when scrolling is needed.
+            local barOffset = #entries > ROWS and 0 or 16
+            row.progress:ClearAllPoints()
+            row.progress:SetPoint("RIGHT", row, "RIGHT", barOffset, 0)
+            row.name:SetPoint("RIGHT", hasMaximum and (barOffset - 100) or -35, 0)
             row:EnableMouse(not item.header and CanBrowse(item))
         end
     end
@@ -391,11 +413,15 @@ for index = 1, ROWS do
     row.icon:SetPoint("LEFT")
     row.name = ns.Fonts.Create(row, nil, "ARTWORK", "GameFontHighlightSmall")
     row.name:SetPoint("LEFT", 24, 0)
-    row.name:SetPoint("RIGHT", -35, 0)
+    row.name:SetPoint("RIGHT", -96, 0)
     row.name:SetJustifyH("LEFT")
     row.name:SetWordWrap(false)
     row.value = ns.Fonts.Create(row, nil, "ARTWORK", "GameFontNormalSmall")
     row.value:SetPoint("RIGHT")
+    row.progress = ns.ProgressBars.Create(row)
+    row.progress:SetWidth(90)
+    row.progress:SetPoint("RIGHT")
+    row.progress:Hide()
 end
 mod.scroll =
     CreateFrame("ScrollFrame", "ExaminerProfessionsScroll", mod.page, "FauxScrollFrameTemplate")
@@ -474,6 +500,11 @@ function mod:OnCacheLoaded(entry)
     local data = C.IsTable(entry.Professions) and entry.Professions
     if data and C.IsTable(data.skills) then
         self.data = ns.Cache.Copy(data)
+        -- Old snapshots may contain a learned tier such as 75 or no maximum at all.
+        self.data.progressBasis = "overall"
+        for _, skill in ipairs(self.data.skills) do
+            skill.maximum = MAX_PROFESSION_SKILL
+        end
         self.data.cached = true
         self.state = "ready"
         self:Draw()

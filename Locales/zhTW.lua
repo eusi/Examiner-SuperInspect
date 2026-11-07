@@ -264,4 +264,6 @@ ns.locales.zhTW={
     ["First Aid"]="急救",
     ["Right-click: choose which talents/specialization to view."]="右鍵點擊：選擇要查看的天賦/專精。",
     ["%s (active)"]="%s（目前啟用）",
+    ["Rank point cap"]="本週總上限",
+    ["Cap increase this week"]="本週上限提升",
 };

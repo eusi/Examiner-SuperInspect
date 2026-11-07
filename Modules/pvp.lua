@@ -55,17 +55,10 @@ extraHonor:SetPoint("TOPRIGHT", -16, -88)
 extraHonor:SetJustifyH("LEFT")
 local progress
 if C.isEra then
-    progress = CreateFrame("StatusBar", nil, mod.page)
+    progress = ExaminerNS.ProgressBars.Create(mod.page)
     mod.rankProgressBar = progress
     progress:SetPoint("TOPLEFT", extraHonor, "BOTTOMLEFT", 0, -4)
     progress:SetPoint("TOPRIGHT", extraHonor, "BOTTOMRIGHT", 0, -4)
-    progress:SetHeight(10)
-    progress:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-    progress:SetStatusBarColor(0.2, 0.55, 0.85)
-    progress:SetMinMaxValues(0, 100)
-    local background = progress:CreateTexture(nil, "BACKGROUND")
-    background:SetAllPoints()
-    background:SetColorTexture(0, 0, 0, 0.65)
     progress:Hide()
 end
 
@@ -231,7 +224,8 @@ function mod:UpdateHonor()
         local value = C.Number(hd.rankProgress)
         local valid = value and value >= 0 and value <= 100
         hd.rankProgress = valid and value or nil
-        progress:SetValue(valid and value or 0)
+        ExaminerNS.ProgressBars.Set(progress, valid and value or 0, 100,
+            valid and string.format("%.1f%%", value):gsub("%.0%%", "%%") or "")
         progress:SetShown(valid and true or false)
     end
     -- SHOW RANK

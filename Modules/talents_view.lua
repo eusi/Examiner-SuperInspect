@@ -557,16 +557,53 @@ end
 --                                            Build Links                                             --
 --------------------------------------------------------------------------------------------------------
 
+-- Encode Forever ranks in calculator row/column order, independently of Blizzard exports.
+local function ForeverBuildLink(data, classToken)
+    local classes = { [1482] = "mage", [1484] = "druid", [1485] = "hunter", [1486] = "paladin",
+        [1487] = "priest", [1488] = "rogue", [1489] = "shaman", [1490] = "warlock", [1491] = "warrior" }
+    local class = C.IsTable(data) and classes[data.specID]
+    if not class and C.IsString(classToken) then
+        for _, slug in pairs(classes) do
+            if classToken:lower() == slug then class = slug; break end
+        end
+    end
+    if not class or not C.IsTable(data) or not C.IsTable(data.trees) or #data.trees ~= 3 or data.state ~= "ready" then
+        return
+    end
+    local parts = {}
+    for index, tree in ipairs(data.trees) do
+        if not C.IsTable(tree.nodes) or #tree.nodes == 0 then return end
+        local nodes, ranks = {}, {}
+        for _, node in ipairs(tree.nodes) do
+            if not C.IsNumber(node.x) or not C.IsNumber(node.y) or not C.IsNumber(node.rank)
+                or not C.IsNumber(node.max) or node.rank < 0 or node.rank > node.max
+                or node.rank > 9 or node.rank % 1 ~= 0 then return end
+            nodes[#nodes + 1] = node
+        end
+        table.sort(nodes, function(a, b)
+            return a.y < b.y or (a.y == b.y and a.x < b.x)
+        end)
+        for _, node in ipairs(nodes) do ranks[#ranks + 1] = tostring(node.rank) end
+        parts[index] = table.concat(ranks):gsub("0+$", "")
+    end
+    local hash = table.concat(parts, "-"):gsub("-+$", "")
+    -- Wowhead's Forever layout stamp, checked against the live calculator on 2026-11-05.
+    return "https://www.wowhead.com/forever/talent-calc/" .. class
+        .. (hash ~= "" and ("/vkndmh" .. hash) or "")
+end
+
 -- Create a supported Wowhead URL for the selected build.
-function ns.TalentBuildLink(value)
+function ns.TalentBuildLink(value, data, classToken)
+    if C.isForever then
+        return ForeverBuildLink(data, classToken)
+    end
     if
-        (C.isRetail or C.isForever)
+        C.isRetail
         and C.IsString(value)
         and value ~= ""
         and value:match("^[A-Za-z0-9+/=]+$")
     then
         return "https://www.wowhead.com/"
-            .. (C.isForever and "forever/" or "")
             .. "talent-calc/blizzard/"
             .. value
     end

@@ -264,4 +264,6 @@ ns.locales.koKR={
     ["First Aid"]="응급치료",
     ["Right-click: choose which talents/specialization to view."]="우클릭: 표시할 특성/전문화를 선택합니다.",
     ["%s (active)"]="%s (활성)",
+    ["Rank point cap"]="이번 주 총 상한",
+    ["Cap increase this week"]="이번 주 상한 증가",
 };

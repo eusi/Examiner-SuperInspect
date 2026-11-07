@@ -264,4 +264,6 @@ ns.locales.ruRU={
     ["First Aid"]="Первая помощь",
     ["Right-click: choose which talents/specialization to view."]="Щелчок правой кнопкой: выбрать отображаемые таланты или специализацию.",
     ["%s (active)"]="%s (активная)",
+    ["Rank point cap"]="Общий предел на этой неделе",
+    ["Cap increase this week"]="Повышение предела за неделю",
 };

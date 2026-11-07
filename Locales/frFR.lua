@@ -264,4 +264,6 @@ ns.locales.frFR={
     ["First Aid"]="Secourisme",
     ["Right-click: choose which talents/specialization to view."]="Clic droit : choisir les talents/la spécialisation à afficher.",
     ["%s (active)"]="%s (active)",
+    ["Rank point cap"]="Plafond total cette semaine",
+    ["Cap increase this week"]="Hausse du plafond cette semaine",
 };

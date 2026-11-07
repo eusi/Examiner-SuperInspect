@@ -21,9 +21,11 @@
     <Script file="Libs\LibTableRecycler.lua"/>
     <Script file="Libs\LibItemString.lua"/>
     <Script file="Services\Fonts.lua"/>
+    <Script file="Services\ProgressBars.lua"/>
     <Script file="Services\Gear.lua"/>
     <Script file="Services\Cache.lua"/>
     <Script file="Services\Talents.lua"/>
+    <Script file="Services\ForeverTalents.lua"/>
     <Script file="Services\Glyphs.lua"/>
     <Script file="Services\PvP.lua"/>
     <Script file="Examiner.lua"/>

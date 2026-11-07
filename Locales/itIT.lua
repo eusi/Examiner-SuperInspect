@@ -263,4 +263,6 @@ ns.locales.itIT={
     ["First Aid"]="Primo Soccorso",
     ["Right-click: choose which talents/specialization to view."]="Clic destro: scegli i talenti o la specializzazione da visualizzare.",
     ["%s (active)"]="%s (attiva)",
+    ["Rank point cap"]="Limite totale questa settimana",
+    ["Cap increase this week"]="Aumento del limite questa settimana",
 };
