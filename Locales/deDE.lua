@@ -264,4 +264,6 @@ ns.locales.deDE={
     ["First Aid"]="Erste Hilfe",
     ["Right-click: choose which talents/specialization to view."]="Rechtsklick: angezeigte Talente/Spezialisierung auswählen.",
     ["%s (active)"]="%s (aktiv)",
+    ["Rank point cap"]="Gesamtlimit diese Woche",
+    ["Cap increase this week"]="Erhöhung diese Woche",
 };

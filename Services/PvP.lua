@@ -110,6 +110,8 @@ function P.Allows(key)
             or key == "honorCurrent"
             or key == "honorNextLevel"
             or key == "todayHK"
+            or key == "weeklyRankCap"
+            or key == "weeklyRankCapIncrease"
         )
 end
 
@@ -129,6 +131,8 @@ function P.Filter(data)
         "honorCurrent",
         "honorNextLevel",
         "todayHK",
+        "weeklyRankCap",
+        "weeklyRankCapIncrease",
         "todayHonor",
         "yesterdayHK",
         "yesterdayHonor",
@@ -203,6 +207,18 @@ function P.Honor(unit, isSelf)
                 data.honorCurrent, data.honorNextLevel =
                     P.Count(info.renownReputationEarned), P.Count(info.renownLevelThreshold)
                 data.rankProgress = P.RankProgress(data.honorCurrent, data.honorNextLevel)
+                -- Use the same progression levels as Blizzard's own PvP detail pane.
+                local currentLevel = P.Count(info.currentWeekProgressiveMaxLevel)
+                local previousLevel = P.Count(info.previousWeekProgressiveMaxLevel)
+                if currentLevel then
+                    data.weeklyRankCap = P.Count(C.Try(C_MajorFactions.GetTotalReputationForRenownLevel, 2800, currentLevel))
+                end
+                if data.weeklyRankCap and previousLevel then
+                    local previousCap = P.Count(C.Try(C_MajorFactions.GetTotalReputationForRenownLevel, 2800, previousLevel))
+                    if previousCap and data.weeklyRankCap >= previousCap then
+                        data.weeklyRankCapIncrease = data.weeklyRankCap - previousCap
+                    end
+                end
                 if
                     data.foreverRank
                     and data.foreverRank > 0

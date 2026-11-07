@@ -135,6 +135,8 @@ local fields = {
     { "todayHonor", "Today's honor" },
     { "yesterdayHK", "Yesterday's honorable kills" },
     { "yesterdayHonor", "Yesterday's honor" },
+    { "weeklyRankCap", "Rank point cap" },
+    { "weeklyRankCapIncrease", "Cap increase this week" },
 }
 local rows = {}
 mod.rows = rows
@@ -159,17 +161,10 @@ for i = 1, #fields do
 end
 local progress
 if C.isForever then
-    progress = CreateFrame("StatusBar", nil, rows[9])
+    progress = ns.ProgressBars.Create(rows[9])
     mod.rankProgressBar = progress
     progress:SetPoint("TOPLEFT", 0, -17)
     progress:SetPoint("TOPRIGHT", 0, -17)
-    progress:SetHeight(10)
-    progress:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-    progress:SetStatusBarColor(0.2, 0.55, 0.85)
-    progress:SetMinMaxValues(0, 100)
-    local background = progress:CreateTexture(nil, "BACKGROUND")
-    background:SetAllPoints()
-    background:SetColorTexture(0, 0, 0, 0.65)
     progress:Hide()
 end
 local honor = ns.Fonts.Create(content, nil, "ARTWORK", "GameFontNormalSmall")
@@ -308,7 +303,7 @@ function mod:Draw(data)
     local group
     honor:Hide()
     ratings:Hide()
-    for _, index in ipairs({ 1, 2, 9, 10, 11, 12, 13, 14, 3, 4, 8, 5, 6, 7 }) do
+    for _, index in ipairs({ 1, 2, 9, 10, 15, 16, 11, 12, 13, 14, 3, 4, 8, 5, 6, 7 }) do
         local field = fields[index]
         local key, label = field[1], field[2]
         local row = rows[index]
@@ -370,9 +365,10 @@ function mod:Draw(data)
             progress:ClearAllPoints()
             progress:SetPoint("TOPLEFT", 0, -progressTop)
             progress:SetPoint("TOPRIGHT", 0, -progressTop)
-            progress:SetValue(value)
+            ns.ProgressBars.Set(progress, value, 100, string.format("%.1f%%", value):gsub("%.0%%", "%%"))
+            row.value:SetText("")
             progress:Show()
-            row:SetHeight(math.max(36, progressTop + 14))
+            row:SetHeight(math.max(38, progressTop + 20))
         end
         row:SetShown(supported)
         if supported then
@@ -505,7 +501,7 @@ function mod:Read(unit)
         data.lifetimeHK = honorData.lifetimeHK
         data.honorLevel = C.Number(honorData.honorLevel, data.honorLevel)
         if C.isForever then
-            for _, key in ipairs({ "foreverRank", "rankProgress", "honorCurrent", "honorNextLevel", "todayHK" }) do
+            for _, key in ipairs({ "foreverRank", "rankProgress", "honorCurrent", "honorNextLevel", "todayHK", "weeklyRankCap", "weeklyRankCapIncrease" }) do
                 data[key] = honorData[key]
             end
             data.honorLevel = nil

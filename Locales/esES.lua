@@ -264,4 +264,6 @@ ns.locales.esES={
     ["First Aid"]="Primeros auxilios",
     ["Right-click: choose which talents/specialization to view."]="Clic derecho: elegir los talentos o la especialización que se muestra.",
     ["%s (active)"]="%s (activa)",
+    ["Rank point cap"]="Límite total esta semana",
+    ["Cap increase this week"]="Aumento del límite esta semana",
 };

@@ -263,4 +263,6 @@ ns.locales.ptBR={
     ["First Aid"]="Primeiros Socorros",
     ["Right-click: choose which talents/specialization to view."]="Clique direito: escolher os talentos ou a especialização exibidos.",
     ["%s (active)"]="%s (ativa)",
+    ["Rank point cap"]="Limite total nesta semana",
+    ["Cap increase this week"]="Aumento do limite nesta semana",
 };

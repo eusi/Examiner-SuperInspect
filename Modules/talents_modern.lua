@@ -16,6 +16,9 @@ end
 local ex, C = ns.ex, ns.Compat
 local mod = ex:CreateModule("Talents", TALENTS)
 mod.help = ns.L["Shows talent trees."]
+if C.isForever then
+    mod.help = mod.help .. "\n" .. ns.L["Right-click: choose which talents/specialization to view."]
+end
 mod.toggleHelp = ns.L["Enable/disable the Talents module, which shows talent trees."]
 mod.cacheHelp = ns.L["Saves talent builds for later viewing. Requires Core Caching."]
 mod.canCache = true
@@ -106,6 +109,43 @@ local selected, selectedKey = 1, nil
 local copyMode = "build"
 mod.navigation = {}
 
+-- Show only the active build, including snapshots saved before group selection was disabled.
+function mod:GetSelectedData()
+    local data = ex.talentData
+    if C.isForever and data and data.groups then
+        return data.groups[data.activeGroup] or { state = "unavailable", trees = {} }
+    end
+    return data
+end
+
+if C.isForever then
+-- Keep unverified group choices visible while allowing only the active build.
+function mod.MenuInit(parent, list)
+    if not ex.talentData then return end
+    list[1].text, list[1].header = ns.L["Shown Spec"], 1
+    list[2].text, list[2].value, list[2].checked = "|cff00ff00" .. ns.L["Active"] .. "|r", "active", true
+    for group = 1, 2 do
+        local entry = list[group + 2]
+        entry.text = "|cff808080" .. ns.L[group == 1 and "Primary" or "Secondary"] .. "|r"
+        entry.value, entry.checked, entry.disabled = group, false, true
+        entry.header, entry.tip = 1, ns.L["Not available"]
+    end
+end
+
+-- Reset the view only for the active entry; reject disabled group actions.
+function mod.MenuSelect(parent, entry)
+    if not mod:IsEnabled() or not ex.talentData or not entry
+        or entry.disabled or entry.value ~= "active" then return end
+    mod.selectedGroup = nil
+    selected, selectedKey, copyMode = 1, nil, "build"
+    build:ClearFocus()
+    build:Hide()
+    scroll:SetVerticalScroll(0)
+    scroll:SetHorizontalScroll(0)
+    mod:Draw()
+end
+end
+
 --------------------------------------------------------------------------------------------------------
 --                                       View State And Export                                        --
 --------------------------------------------------------------------------------------------------------
@@ -185,7 +225,7 @@ copyLink:GetFontString():SetFont(copyFont, 9)
 copyLink:Hide()
 -- Apply the selected control action.
 copyLink:SetScript("OnClick", function()
-    if not ns.TalentBuildLink(build.buildString) then
+    if not ns.TalentBuildLink(build.buildString, mod:GetSelectedData(), ex.info.classFixed) then
         return
     end
     copyMode = "link"
@@ -356,7 +396,7 @@ end
 
 -- Render the available talent snapshot.
 function mod:Draw()
-    local data = ex.talentData or { trees = {}, state = "loading", message = "Waiting for talent data." }
+    local data = self:GetSelectedData() or { trees = {}, state = "loading", message = "Waiting for talent data." }
     local trees = ns.TalentTabs(data, ex.info.classFixed)
     self.displayTrees = trees
     if selectedKey then
@@ -511,7 +551,7 @@ function mod:Draw()
         row:Hide()
     end
     build.buildString = C.Text(data.loadout) or ""
-    local link = ns.TalentBuildLink(build.buildString)
+    local link = ns.TalentBuildLink(build.buildString, data, ex.info.classFixed)
     copyLink:SetShown(link ~= nil)
     copy:ClearAllPoints()
     copy:SetPoint("TOPRIGHT", link and (-14 - copyLink:GetWidth()) or -10, -11)
@@ -532,7 +572,7 @@ function mod:Draw()
         build:SetText(build.copyText)
     end
     copy:SetShown(build.buildString ~= "")
-    if build.buildString == "" then
+    if build.buildString == "" and (copyMode ~= "link" or not link) then
         build:Hide()
     end
     local tree = trees[selected]
@@ -615,6 +655,7 @@ end)
 
 -- Prepare talent data for a new inspected player.
 function mod:OnInspect(unit)
+    self.selectedGroup = nil
     wipe(ns.Talents.requested)
     selected, selectedKey = 1, nil
     copyMode = "build"
@@ -651,6 +692,7 @@ end
 
 -- Clear talent data and hide stale controls.
 function mod:OnClearInspect()
+    self.selectedGroup = nil
     ex.talentData = nil
     if C.isMists then
         local glyphs = ex:GetModuleFromToken("Glyphs")
@@ -715,6 +757,8 @@ function mod:OnCache(entry)
     useful = useful and (data.state == "partial" or data.state == "loading")
     if
         data.state == "ready"
+        or (C.isForever and data.groups and data.groups[data.activeGroup]
+            and data.groups[data.activeGroup].state == "ready")
         or (
             useful
             and (
@@ -729,6 +773,18 @@ function mod:OnCache(entry)
             stored.state = "partial"
         end
         stored.cached = nil
+        -- Preserve previously complete groups only inside this same player's saved snapshot.
+        if C.isForever and stored.groups and C.IsTable(previous) and previous.groups
+            and stored.guid and stored.guid == previous.guid and stored.specID == previous.specID
+            and stored.build == previous.build then
+            for group = 1, stored.numGroups or 1 do
+                local current, old = stored.groups[group], previous.groups[group]
+                if (not current or current.state ~= "ready") and old and old.state == "ready" then
+                    stored.groups[group] = ns.Cache.Copy(old)
+                    stored.groups[group].cached = true
+                end
+            end
+        end
         if C.isMists then
             stored.extraTrees = nil
         end
@@ -738,6 +794,7 @@ end
 
 -- Restore talent details from the saved player snapshot.
 function mod:OnCacheLoaded(entry)
+    self.selectedGroup = nil
     selected, selectedKey = 1, nil
     copyMode = "build"
     local snapshot = entry.Talents

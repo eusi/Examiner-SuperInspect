@@ -391,7 +391,7 @@ end
 --------------------------------------------------------------------------------------------------------
 
 -- Read inspected trait nodes and track incomplete spell data.
-function T.ReadTraits(unit, isSelf)
+function T.ReadTraits(unit, isSelf, configOverride)
     local locked = T.LowLevelData(unit)
     if locked then
         return locked
@@ -420,15 +420,19 @@ function T.ReadTraits(unit, isSelf)
             and Constants.TraitConsts
             and Constants.TraitConsts.INSPECT_TRAIT_CONFIG_ID
         )
+    if C.isForever and isSelf and C.IsNumber(configOverride) then
+        configID = configOverride
+    end
     if not C.IsNumber(configID) then
         data.state = "unavailable"
         data.message = "No active talent configuration is available."
         return data
     end
-    data.loadout = C.Text(
-        isSelf and C.Try(C_Traits.GenerateImportString, configID)
-            or C.Try(C_Traits.GenerateInspectImportString, unit)
-    )
+    if isSelf then
+        data.loadout = C.Text(C.Try(C_Traits.GenerateImportString, configID))
+    else
+        data.loadout = C.Text(C.Try(C_Traits.GenerateInspectImportString, unit))
+    end
     local config = C.Try(C_Traits.GetConfigInfo, configID)
     if not C.IsTable(config) or not C.IsTable(config.treeIDs) then
         data.message = "Waiting for tree metadata."
@@ -764,6 +768,9 @@ end
 function T.Read(unit, isSelf)
     if C.isMists then
         return T.ReadMists(unit, isSelf)
+    end
+    if C.isForever then
+        return T.ReadForever(unit, isSelf)
     end
     return T.ReadTraits(unit, isSelf)
 end

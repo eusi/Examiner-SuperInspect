@@ -263,4 +263,6 @@ ns.locales.enUS={
     ["First Aid"]="First Aid",
     ["Right-click: choose which talents/specialization to view."]="Right-click: choose which talents/specialization to view.",
     ["%s (active)"]="%s (active)",
+    ["Rank point cap"]="Total cap this week",
+    ["Cap increase this week"]="Cap increase this week",
 };
