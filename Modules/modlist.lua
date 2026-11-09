@@ -24,13 +24,14 @@ controls:CreatePage(false, L["Modules"])
 local catalog = {
     {
         "Stats",
-        "Gear Statistics",
-        "INV_Chest_Plate01",
+        "Gear Stats",
+        "INV_Chest_Plate16",
         L["Shows gear statistics, item levels, bonuses and more.\nShift-click: mark this player for comparison.\nShift-right-click: clear comparison."]:match(
             "^[^\n]+"
         ),
     },
-    { "Talents", "Talents", "Spell_Holy_MagicalSentry", L["Shows talent trees."] },
+    { "Equipment", "Gear List", "INV_Misc_Note_01", L["Shows equipped items, item levels and available enhancements."] },
+    { "Talents", "Talents", "INV_Misc_Book_11", L["Shows talent trees."] },
     {
         "PvP",
         "PvP",
@@ -44,7 +45,7 @@ local catalog = {
         "INV_Shirt_GuildTabard_01",
         L["Shows guild details, such as rank, member count, and banner."],
     },
-    { "Runes", "SoD Runes", "INV_Misc_Rune_01", L["Shows equipped runes for each gear slot."] },
+    { "Runes", "SoD Runes", "INV_Misc_Rune_06", L["Shows equipped runes for each gear slot."] },
     { "Professions", "Professions", "Trade_BlackSmithing", L["Shows profession skill levels."] },
     {
         "Achievements",
@@ -55,7 +56,7 @@ local catalog = {
 }
 controls.catalog = catalog
 local navigation = {
-    { "Config", "Settings", "INV_Misc_Gear_01" },
+    { "Config", "Settings", "INV_Misc_Wrench_01" },
     { "Cache", "Cached Players", "INV_Misc_Book_09" },
     { "Modules", "Modules", "INV_Misc_EngGizmos_19" },
 }
@@ -75,7 +76,7 @@ local function PaintRow(row, entry)
     row.id = module and module.index
     row.name:SetText(module and module.title or L[entry[2]])
     row.name:SetTextColor(module and 1 or 0.5, module and 1 or 0.5, module and 1 or 0.5)
-    row.icon:SetTexture(ns.Compat.Icon(module and module.icon) or "Interface\\Icons\\" .. entry[3])
+    row.icon:SetTexture(ns.Compat.Icon(module and module.icon) or "Interface\\Icons\\" .. ex:GetModuleIcon(entry[1], entry[3]))
     row.icon:SetDesaturated(not module)
     if row.check then
         row.check:SetChecked(module ~= nil and module:IsEnabled())
@@ -265,6 +266,18 @@ controls.scroll:SetPoint("BOTTOMRIGHT", rows[count], -6, -1)
 controls.scroll:SetScript("OnVerticalScroll", function(self, offset)
     FauxScrollFrame_OnVerticalScroll(self, offset, height, Paint)
 end)
+
+-- Distribute module switches across the full available viewport after changing navigation.
+function controls:OnLayoutChanged()
+    height = (self.page:GetHeight() - 47) / count
+    for index, row in ipairs(rows) do
+        row:SetHeight(height)
+        row:ClearAllPoints()
+        row:SetPoint("TOPLEFT", 8, -38 - (index - 1) * height)
+        row:SetPoint("TOPRIGHT", -28, -38 - (index - 1) * height)
+    end
+    Paint()
+end
 
 -- Refresh this view when its controls become visible.
 mod.page:SetScript("OnShow", function()

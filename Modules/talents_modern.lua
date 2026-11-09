@@ -387,6 +387,8 @@ local function CreateTreeTab(index)
         end
     end)
     tab:SetScript("OnLeave", ex.HideGTT)
+    -- Register native tab art before generic style discovery can apply flat button surfaces.
+    ns.Appearance.TalentTab(tab, false)
     return tab
 end
 
@@ -499,6 +501,7 @@ function mod:Draw()
         tabX = tabX + width
         tab.selected = index == selected
         local offset = 0
+        tab.talentAnchorX = tabX - width
         for part, texture in ipairs(tab.pieces) do
             texture:SetTexture(
                 "Interface\\HelpFrame\\HelpFrameTab-" .. (tab.selected and "Active" or "Inactive")
@@ -534,6 +537,7 @@ function mod:Draw()
         else
             tab:Hide()
         end
+        ns.Appearance.TalentTab(tab, tab.selected)
     end
     for index = #trees + 1, #tabs do
         tabs[index]:Hide()
@@ -614,6 +618,11 @@ function mod:Draw()
     self.treeWidth = width
     self.treeHeight = height
     ns.DrawTalentTree(self, tree, canvas, width, height, Button, lines, 1)
+end
+
+-- Refit the selected talent tree when navigation releases or restores the footer area.
+function mod:OnLayoutChanged()
+    if self.page:IsShown() then self:Draw() end
 end
 
 -- Select a child view without adding another main tab.

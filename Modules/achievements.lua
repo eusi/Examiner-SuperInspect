@@ -494,6 +494,18 @@ end
 mod.scroll = CreateFrame("ScrollFrame", "ExaminerAchievementsScroll", page, "FauxScrollFrameTemplate")
 mod.scroll:SetPoint("TOPLEFT", rows[1])
 mod.scroll:SetPoint("BOTTOMRIGHT", rows[ROWS], -6, -1)
+
+-- Keep achievement rows fitted to the taller content area used by icon navigation.
+function mod:OnLayoutChanged(extra)
+    HEIGHT = 27 + extra / ROWS
+    for index, row in ipairs(rows) do
+        row:SetHeight(HEIGHT)
+        row:ClearAllPoints()
+        row:SetPoint("TOPLEFT", 9, -53 - (index - 1) * HEIGHT)
+        row:SetPoint("TOPRIGHT", -28, -53 - (index - 1) * HEIGHT)
+    end
+    FauxScrollFrame_Update(self.scroll, #list, ROWS, HEIGHT)
+end
 -- Update visible rows for the new scroll position.
 mod.scroll:SetScript("OnVerticalScroll", function(self, offset)
     -- Redraw the visible rows after scrolling.

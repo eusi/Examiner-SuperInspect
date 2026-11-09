@@ -25,6 +25,7 @@ With Examiner, you can inspect other players' gear, stats, item level/gearScore,
 - **Modules:** Enable/disable modules and tabs. Modules unavailable in your WoW version are greyed out.
 - **Gear comparison:** Stat differences between players or individual items.
 - **Settings:** Movable, scalable, item-level, tooltip, caching options, font via LibSharedMedia support, and more.
+- **Appearance:** Classic, Modern, and Forever styles. Bottom icon menus by default; text and right-side icon menus remain available.
 - **11 translations:** enUS, deDE, frFR, esES, esMX, itIT, ptBR, koKR, ruRU, zhCN, zhTW.
 
 Features depend on the client and available inspect data.
@@ -36,14 +37,16 @@ Features depend on the client and available inspect data.
 ## Quick start
 
 - **Inspect** through the player's unit menu or via `/ins [unit]`.
-- Assign shortcuts under **Key Bindings > Examiner**.
+- Assign shortcuts under **Key Bindings > Examiner** if needed.
 - Only gear is **cached** by default. Enable optional caching under **More > Settings**.
 
 ## Controls
 
 - **Gear comparison:** Shift-left-click **Stats** to mark a reference; Shift-right-click to clear it.
-- **Cache filters:** Shift-click **Cache**. Examples: `1-79`, `class:deathknight`, `class:hunter guild:awesome`.
+- **Cache filters:** Open **More > Cached Players**, then right-click **More** and choose **Set Filter...**. Examples: `1-79`, `class:deathknight`, `class:hunter guild:awesome`.
 - **Model:** Left-drag to rotate, right-drag to move, scroll to zoom. Ctrl-left-click changes the background; Ctrl-right-click toggles it; Shift-left-click resets the model.
+- **Gear List:** Enable it under **More > Modules** (disabled by default).
+- **Style / menu:** Choose these independently under **More > Settings**.
 
 ## Commands
 

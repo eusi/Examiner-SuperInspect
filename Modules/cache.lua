@@ -547,3 +547,10 @@ mod.scroll:SetPoint("BOTTOMRIGHT", buttons[#buttons], -3, -1)
 mod.scroll:SetScript("OnVerticalScroll", function(self, offset)
     FauxScrollFrame_OnVerticalScroll(self, offset, BUTTON_HEIGHT, UpdateShownItems)
 end)
+
+-- Let cached-player rows use the footer area reclaimed by either icon menu.
+function mod:OnLayoutChanged(extra)
+    BUTTON_HEIGHT = (240 + extra) / NUM_BUTTONS
+    for _, button in ipairs(buttons) do button:SetHeight(BUTTON_HEIGHT) end
+    UpdateShownItems(self.scroll)
+end

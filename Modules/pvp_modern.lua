@@ -82,6 +82,7 @@ function mod:LayoutScroll()
     content:SetWidth(scroll:GetWidth())
     self:RefreshScroll()
 end
+mod.OnLayoutChanged = mod.LayoutScroll
 
 -- Synchronize the displayed value with the control.
 scrollbar:SetScript("OnValueChanged", function(_, value)

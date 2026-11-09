@@ -176,3 +176,10 @@ mod.scroll:SetPoint("BOTTOMRIGHT", buttons[NUM_BUTTONS], -6, -1)
 mod.scroll:SetScript("OnVerticalScroll", function(self, offset)
     FauxScrollFrame_OnVerticalScroll(self, offset, BUTTON_HEIGHT, UpdateShownItems)
 end)
+
+-- Use the full rune viewport after moving navigation outside the main frame.
+function mod:OnLayoutChanged()
+    BUTTON_HEIGHT = (self.page:GetHeight() - 47) / NUM_BUTTONS
+    for _, button in ipairs(buttons) do button:SetHeight(BUTTON_HEIGHT) end
+    UpdateShownItems(self.scroll)
+end

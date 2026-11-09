@@ -36,6 +36,7 @@ mod.details = ex:CreateDetailObject()
 
 local cfg, cache
 local activeTab = 1
+mod.treeTabs = {}
 local activeSpec
 local isInspect
 local arrowIndex, branchIndex
@@ -401,6 +402,13 @@ local sc = CreateFrame("ScrollFrame", "ExaminerTalentsScrollChild", mod.page, "U
 sc:SetPoint("TOPLEFT", ex.model, 0, -2)
 sc:SetPoint("BOTTOMRIGHT", ex.model, -25, 25)
 
+-- Extend the legacy talent viewport into the old footer area for either icon menu.
+function mod:OnLayoutChanged(extra)
+    sc:ClearAllPoints()
+    sc:SetPoint("TOPLEFT", ex.model, 0, -2)
+    sc:SetPoint("BOTTOMRIGHT", ex.model, -25, 25 - extra)
+end
+
 -- SCROLL CHILD FRAME
 
 local scf = CreateFrame("Frame", "ExaminerScrollChildFrame")
@@ -413,6 +421,8 @@ sc:SetScrollChild(scf)
 for i = 1, 3 do
     local tab = CreateFrame("Button", "ExaminerTab" .. i, mod.page, "TabButtonTemplate")
     tab.id = i
+    if i == 1 then tab.talentAnchorX, tab.talentLegacy = 45, true end
+    mod.treeTabs[i] = tab
     tab:SetScript("OnClick", TalentsTab_OnClick)
     if i == 1 then
         tab:SetPoint("TOPLEFT", 45, 36)
@@ -632,6 +642,7 @@ function mod:UpdateTalents()
         end
         tab:SetFormattedText("%s |cff00ff00%d", tabName, pointsSpent)
         PanelTemplates_TabResize(tab, -18)
+        ExaminerNS.Appearance.TalentTab(tab, i == activeTab)
     end
     -- RESET PREREQ
 

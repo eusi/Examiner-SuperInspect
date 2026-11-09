@@ -153,6 +153,31 @@ local function FontMenuSelect(parent, entry)
     end
 end
 
+-- Refresh the settings viewport after the footer space becomes available or is restored.
+function mod:OnLayoutChanged()
+    if not self.settingsScroll then return end
+    self.settingsScroll:SetHeight(self.page:GetHeight() - 44)
+    local changed = self.settingsScroll:GetScript("OnSizeChanged")
+    if changed then changed(self.settingsScroll) end
+end
+
+-- Offer independent style and navigation choices with Classic selected by default.
+local function AppearanceMenuInit(parent, list)
+    local style = parent.appearanceSetting == "style"
+    local choices = style and {{"classic", "Classic"}, {"modern", "Modern"}, {"forever", "Forever"}}
+        or {{"classic", "Classic"}, {"iconsRight", "Icons on the right"}, {"iconsBottom", "Icons at the bottom"}}
+    for index, choice in ipairs(choices) do
+        local row = list[index]
+        row.text, row.value = ExaminerNS.L[choice[2]], choice[1]
+        row.checked = cfg[parent.appearanceSetting] == choice[1]
+    end
+end
+
+-- Apply one appearance choice without changing the other dropdown's setting.
+local function AppearanceMenuSelect(parent, entry)
+    if not entry.header then ExaminerNS.Appearance.Select(parent.appearanceSetting, entry.value) end
+end
+
 -- Fill the closed selector behind its label and arrow.
 local function AddSelectorBackground(dropdown)
     local background = dropdown:CreateTexture(nil, "BACKGROUND")
@@ -383,8 +408,16 @@ function mod:OnInitialize()
     slider:SetScript("OnLeave", ex.HideGTT)
     self:OnConfigChanged("scale", cfg.scale)
     self.sourceDropDown =
-        CreateSelector(content, -216, ExaminerNS.L["Average Item Level"], SourceMenuInit, SourceMenuSelect)
-    self.fontDropDown = CreateSelector(content, -248, ExaminerNS.L["Font"], FontMenuInit, FontMenuSelect)
+        CreateSelector(content, -312, ExaminerNS.L["Average Item Level"], SourceMenuInit, SourceMenuSelect)
+    self.fontDropDown = CreateSelector(content, -280, ExaminerNS.L["Font"], FontMenuInit, FontMenuSelect)
+    self.styleDropDown = CreateSelector(content, -248, ExaminerNS.L["Style"], AppearanceMenuInit, AppearanceMenuSelect)
+    self.styleDropDown.appearanceSetting = "style"
+    self.menuDropDown = CreateSelector(content, -216, ExaminerNS.L["Menu"], AppearanceMenuInit, AppearanceMenuSelect)
+    self.menuDropDown.appearanceSetting = "menuStyle"
+    content:SetHeight(374)
+    vers:ClearAllPoints()
+    vers:SetPoint("TOP", content, "TOP", 0, -350)
+    ScrollTo(scroll:GetVerticalScroll())
     self:OnConfigChanged("itemLevelSource", cfg.itemLevelSource)
     self:OnConfigChanged("font", cfg.font)
     -- Close floating options when the settings page is left.

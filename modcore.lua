@@ -25,10 +25,25 @@ ex.ModuleCore = ModuleCore
 
 ex.modules = {}
 ex.buttons = {}
+local moduleIcons = {
+    Stats = "INV_Chest_Plate16", Equipment = "INV_Misc_Note_01", PvP = "INV_BannerPVP_02",
+    Talents = "INV_Misc_Book_11", Guild = "INV_Shirt_GuildTabard_01", Runes = "INV_Misc_Rune_06",
+    Professions = "Trade_BlackSmithing", Achievements = "Achievement_General", More = "INV_Misc_Gear_01",
+    Config = "INV_Misc_Wrench_01", Cache = "INV_Misc_Book_09", Modules = "INV_Misc_EngGizmos_19",
+}
 
 --------------------------------------------------------------------------------------------------------
 --                                          Helper Functions                                          --
 --------------------------------------------------------------------------------------------------------
+
+-- Share menu artwork and use the local player's faction for the PvP navigation banner.
+function ex:GetModuleIcon(token, fallback)
+    if token == "PvP" then
+        local C = ExaminerNS.Compat
+        return C.Text(C.Try(UnitFactionGroup, "player")) == "Horde" and "INV_BannerPVP_01" or "INV_BannerPVP_02"
+    end
+    return moduleIcons[token] or fallback or "INV_Misc_QuestionMark"
+end
 
 -- Find a registered module by its stable token.
 function ex:GetModuleFromToken(token)
@@ -57,6 +72,9 @@ function ex:SendModuleEvent(event, ...)
     if event == "OnConfigChanged" and (...) == "font" then
         ExaminerNS.Fonts.Refresh(self)
     end
+    if ExaminerNS.Appearance and self.cfg and self.cfg.style ~= "classic" then
+        ExaminerNS.Appearance.RefreshLabels()
+    end
 end
 
 -- Keep core navigation available and respect saved module choices.
@@ -65,14 +83,17 @@ function ModuleCore:IsEnabled()
         local parent = ex:GetModuleFromToken(self.parentToken)
         return parent and parent:IsEnabled() or false
     end
-    return self.token == "More"
+    local required = self.token == "More"
         or self.token == "Config"
         or self.token == "Cache"
         or self.token == "Modules"
         or self.token == "ItemSlots"
-        or not ex.cfg
-        or type(ex.cfg.disabledModules) ~= "table"
-        or ex.cfg.disabledModules[self.token] ~= true
+    if required then return true end
+    local choices = ex.cfg and ex.cfg.disabledModules
+    if type(choices) == "table" and type(choices[self.token]) == "boolean" then
+        return not choices[self.token]
+    end
+    return not self.defaultDisabled
 end
 
 -- Toggle a feature and synchronize its page and current data.
@@ -109,6 +130,7 @@ function ex:SetModuleEnabled(token, enabled)
             self:SendModuleEvent("OnPageChanged", module, false)
         end
     else
+        if module.OnLayoutChanged then module:OnLayoutChanged(self.navigationContentExtra or 0) end
         if module.OnConfigChanged then
             for _, option in ipairs(self.options) do
                 module:OnConfigChanged(option.var, self.cfg[option.var])
@@ -200,7 +222,11 @@ local function Buttons_OnClick(self, button, down)
             elseif module.MenuInit and module.MenuSelect then
                 self.initFunc = module.MenuInit
                 self.selectValueFunc = module.MenuSelect
-                AzDropDown:ToggleMenu(self, "TOPLEFT", "BOTTOMLEFT")
+                if self.navigationIconMode then
+                    AzDropDown:ToggleMenu(self, "TOPRIGHT", "TOPLEFT")
+                else
+                    AzDropDown:ToggleMenu(self, "TOPLEFT", "BOTTOMLEFT")
+                end
             end
         end
     end
@@ -213,7 +239,14 @@ local function Buttons_OnEnter(self, motion)
         return
     end
     gtt:SetOwner(self, "ANCHOR_NONE")
-    gtt:SetPoint("BOTTOMLEFT", self, "TOPLEFT")
+    gtt:ClearAllPoints()
+    if self.navigationIconPosition == "bottom" then
+        gtt:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 0, -6)
+    elseif self.navigationIconMode then
+        gtt:SetPoint("TOPLEFT", self, "TOPRIGHT", 6, 0)
+    else
+        gtt:SetPoint("BOTTOMLEFT", self, "TOPLEFT")
+    end
     gtt:ClearLines()
     gtt:AddLine(module.title)
     if module.help then
@@ -290,21 +323,55 @@ function ModuleCore:HasData(value)
     end
     if changed and ex.cfg then
         ex:SendModuleEvent("OnDataChanged", self)
+        ExaminerNS.Appearance.UpdateSelection()
     end
 end
 
 -- Rebuild visible tabs and fit their localized labels.
 function ex:RefreshModuleButtons()
     local count = 0
+    -- Change presentation order without moving module indices or saved page identities.
+    local ordered, gearList = {}, self:GetModuleFromToken("Equipment")
+    for _, module in ipairs(self.modules) do
+        if module ~= gearList then
+            ordered[#ordered + 1] = module
+            if module.token == "Stats" and gearList then ordered[#ordered + 1] = gearList end
+        end
+    end
+    local iconsRight = self.cfg and self.cfg.menuStyle == "iconsRight"
+    local iconsBottom = self.cfg and self.cfg.menuStyle == "iconsBottom"
+    local iconMode = iconsRight or iconsBottom
+    local navigationCount = 0
+    for _, module in ipairs(self.modules) do
+        if module.hasButton and module:IsEnabled() then navigationCount = navigationCount + 1 end
+    end
+    local iconHeight = math.max(32, math.min(40, math.floor((self:GetHeight() - 86) / math.max(1, navigationCount)) - 2))
+    if iconsBottom then iconHeight = math.min(40, math.floor((self.model:GetWidth() - 4) / math.max(1, navigationCount)) - 2) end
+    local compactIcons = iconMode and self.cfg.style == "modern"
+    local iconGap = compactIcons and 8 or 2
+    local iconSize = iconHeight - 8
+    if compactIcons then
+        -- Leave room for the shared silver frame, grey padding and the icon's own black outline.
+        local available = iconsBottom and self.model:GetWidth() or (self:GetHeight() - 86)
+        local fitted = math.floor((available - math.max(0, navigationCount - 1) * iconGap) / math.max(1, navigationCount))
+        iconSize = math.max(12, math.min(44, fitted) - 12)
+    end
+    local iconWidth = compactIcons and (iconSize + 12) or iconsBottom and iconHeight or (iconHeight + 6)
+    local iconButtonHeight = compactIcons and (iconSize + 12) or iconsBottom and (iconHeight + 6) or iconHeight
     for _, module in ipairs(self.modules) do
         module.button = nil
     end
-    for _, module in ipairs(self.modules) do
+    for _, module in ipairs(ordered) do
         if module.hasButton and module:IsEnabled() then
             count = count + 1
             local button = self.buttons[count] or CreateModuleButton()
             button:ClearAllPoints()
-            if count == 1 then
+            if iconsRight then
+                button:SetPoint("TOPLEFT", self, "TOPRIGHT", -35, -78 - (count - 1) * (iconButtonHeight + iconGap))
+            elseif iconsBottom then
+                local totalWidth = navigationCount * (iconWidth + iconGap) - iconGap
+                button:SetPoint("TOPLEFT", self, "BOTTOMLEFT", 21 + (self.model:GetWidth() - totalWidth) / 2 + (count - 1) * (iconWidth + iconGap), self.cfg.style == "classic" and 4 or 2)
+            elseif count == 1 then
                 button:SetPoint("BOTTOMLEFT", 24, 13)
             else
                 button:SetPoint("LEFT", self.buttons[count - 1], "RIGHT", 1, 0)
@@ -312,6 +379,20 @@ function ex:RefreshModuleButtons()
             button.id = module.index
             module.button = button
             button:SetText(module.buttonLabel or ExaminerNS.L[module.token])
+            button:SetHeight(iconMode and iconButtonHeight or 21)
+            button.navigationIconMode = iconMode
+            button.navigationIconPosition = iconsBottom and "bottom" or iconsRight and "right" or nil
+            local label = button:GetFontString()
+            label:SetShown(not iconMode)
+            if not button.navigationIcon then
+                button.navigationIcon = button:CreateTexture(nil, "ARTWORK")
+            end
+            button.navigationIcon:ClearAllPoints()
+            button.navigationIcon:SetPoint("CENTER", compactIcons and 0 or iconsBottom and 0 or -2, compactIcons and 0 or iconsBottom and 2 or 0)
+            button.navigationIcon:SetSize(iconSize, iconSize)
+            button.navigationIcon:SetTexture("Interface\\Icons\\" .. self:GetModuleIcon(module.token))
+            button.navigationIcon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+            button.navigationIcon:SetShown(iconMode)
             if module.hasData then
                 button:Enable()
             else
@@ -323,7 +404,7 @@ function ex:RefreshModuleButtons()
     for index, button in ipairs(self.buttons) do
         if index <= count then
             local width = (self.model:GetWidth() - 4) / math.max(1, count) - 1
-            button:SetWidth(width)
+            button:SetWidth(iconMode and iconWidth or width)
             local label = button:GetFontString()
             label:SetFont(button.labelFont, button.labelSize, button.labelFlags)
             local measured = label:GetStringWidth()
@@ -341,6 +422,10 @@ function ex:RefreshModuleButtons()
             button.id = nil
             button:Hide()
         end
+    end
+    if ExaminerNS.Appearance then
+        ExaminerNS.Appearance.UpdateLayout()
+        ExaminerNS.Appearance.UpdateSelection()
     end
 end
 
@@ -384,6 +469,7 @@ function ModuleCore:CreatePage(full, header)
         page.header:SetText(header)
     end
     self.page = page
+    ExaminerNS.Appearance.RegisterPage(page)
     self.showItems = (not full or nil)
     return page
 end

@@ -427,6 +427,18 @@ mod.scroll =
     CreateFrame("ScrollFrame", "ExaminerProfessionsScroll", mod.page, "FauxScrollFrameTemplate")
 mod.scroll:SetPoint("TOPLEFT", rows[1])
 mod.scroll:SetPoint("BOTTOMRIGHT", rows[ROWS], -6, -1)
+
+-- Extend profession rows and their scrollbar into the space freed by icon navigation.
+function mod:OnLayoutChanged(extra)
+    HEIGHT = 25 + extra / ROWS
+    for index, row in ipairs(rows) do
+        row:SetHeight(HEIGHT)
+        row:ClearAllPoints()
+        row:SetPoint("TOPLEFT", self.page, "TOPLEFT", 10, -36 - (index - 1) * HEIGHT)
+        row:SetPoint("TOPRIGHT", self.page, "TOPRIGHT", -30, -36 - (index - 1) * HEIGHT)
+    end
+    FauxScrollFrame_Update(self.scroll, #entries, ROWS, HEIGHT)
+end
 -- Redraw skill rows after scrolling through the profession snapshot.
 mod.scroll:SetScript("OnVerticalScroll", function(self, offset)
     -- Refresh the visible portion after the native scroll offset changes.

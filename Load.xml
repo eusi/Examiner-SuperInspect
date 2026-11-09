@@ -30,6 +30,9 @@
     <Script file="Services\PvP.lua"/>
     <Script file="Examiner.lua"/>
     <Script file="modcore.lua"/>
+    <Script file="Services\Appearance.lua"/>
+    <Script file="Services\FrameArt.lua"/>
+    <Script file="Services\ClassIcon.lua"/>
     <Script file="Modules\itemslots.lua"/>
     <Script file="Modules\config.lua"/>
     <Script file="Modules\cache.lua"/>
@@ -45,6 +48,7 @@
     <Script file="Modules\glyphs.lua"/>
     <Script file="Modules\professions.lua"/>
     <Script file="Modules\modlist.lua"/>
+    <Script file="Modules\equipment.lua"/>
     <Script file="Services\Inspector.lua"/>
     <Script file="InspectEntry.lua"/>
     <Script file="Diagnostics.lua"/>

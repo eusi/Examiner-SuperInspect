@@ -85,6 +85,19 @@ function mod:OnPageChanged(module, shown)
     self:ShowItemSlotButtons()
 end
 
+-- Move the weapon row and spread the side columns into the space released by icon navigation.
+function mod:OnLayoutChanged(extra)
+    for index, button in ipairs(self.slotBtns) do
+        if index == 17 then
+            button:ClearAllPoints()
+            button:SetPoint("BOTTOM", ExaminerNS.Compat.hasRangedSlot and -41.5 or -21, 27 - extra)
+        elseif index > 1 and index <= 16 and index ~= 9 then
+            button:ClearAllPoints()
+            button:SetPoint("TOP", self.slotBtns[index - 1], "BOTTOM", 0, -4 - extra / 7)
+        end
+    end
+end
+
 -- Apply changed preferences to the equipment display.
 function mod:OnConfigChanged(var, value)
     if var == "alwaysShowItemLevel" then

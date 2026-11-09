@@ -164,8 +164,32 @@ UISpecialFrames[#UISpecialFrames + 1] = modName
 --                                          Examiner Scripts                                          --
 --------------------------------------------------------------------------------------------------------
 
--- Listen for changes affecting the displayed player.
+-- Register a persistent announcement with the native, automatically sized popup system.
+local appearanceNoticeKey = modName .. "_APPEARANCE_107"
+StaticPopupDialogs[appearanceNoticeKey] = {
+    text = "Examiner 1.0.7\n\n" .. ExaminerNS.F("New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s.",
+        ExaminerNS.L["More"], ExaminerNS.L["Settings"]),
+    button1 = OKAY,
+    -- Remember acknowledgement only when the player presses OK.
+    OnAccept = function(self, savedConfig)
+        savedConfig.appearanceNotice107Acknowledged = true
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = false,
+}
+
+-- Apply the one-time menu migration and explain it when the window first opens.
 local function Examiner_OnShow(self)
+    if cfg then
+        if not cfg.appearanceMenu107Migrated then
+            ExaminerNS.Appearance.Select("menuStyle", "iconsBottom")
+            cfg.appearanceMenu107Migrated = true
+        end
+        if not cfg.appearanceNotice107Acknowledged and not StaticPopup_Visible(appearanceNoticeKey) then
+            StaticPopup_Show(appearanceNoticeKey, nil, nil, cfg)
+        end
+    end
     self:RegisterEvent("PLAYER_TARGET_CHANGED")
     self:RegisterEvent("UNIT_MODEL_CHANGED")
     self:RegisterEvent("UNIT_PORTRAIT_UPDATE")
@@ -234,6 +258,7 @@ function ex:VARIABLES_LOADED(event)
         cfg.caching = { Core = true, Talents = false, PvP = false, Guild = false, Glyphs = false, Professions = false }
     end
     self.cfg = cfg
+    ExaminerNS.Appearance.Normalize(cfg)
     if cfg.itemLevelSource ~= "blizzard" then
         cfg.itemLevelSource = "calculated"
     end
@@ -302,6 +327,7 @@ function ex:VARIABLES_LOADED(event)
         end
     end
     self:RefreshModuleButtons()
+    ExaminerNS.Appearance.Apply()
     if cfg.activePage and self.modules[cfg.activePage] and not self.modules[cfg.activePage]:IsEnabled() then
         cfg.activePage = nil
         cfg.activePageToken = nil
@@ -872,6 +898,7 @@ function ex:ShowBackground(show)
     ex.bgTopRight:SetShown(show)
     ex.bgBottomLeft:SetShown(show)
     ex.bgBottomRight:SetShown(show)
+    if cfg.style ~= "classic" then ExaminerNS.Appearance.UpdateBackground() end
 end
 
 -- Refresh player labels, portrait and equipment controls.
@@ -896,6 +923,7 @@ function ex:UpdateObjects()
     ex.title:SetText(info.pvpName or info.name)
     ex:SetUnitDetailString()
     ex:SetUnitGuildString()
+    ExaminerNS.Appearance.UpdatePortrait()
 end
 
 -- Display the selected available module page.
@@ -974,6 +1002,7 @@ function ex:ShowModulePage(index)
         end
         self:SendModuleEvent("OnPageChanged", shownMod, true)
     end
+    ExaminerNS.Appearance.UpdateSelection()
 end
 
 -- Choose the character background and its texture coordinates.

@@ -22,11 +22,12 @@ local gtt = GameTooltip
 
 -- MODULE
 
-local mod = ex:CreateModule("Stats", ExaminerNS.L["Gear Statistics"])
+local mod = ex:CreateModule("Stats", ExaminerNS.L["Gear Stats"])
+mod.buttonLabel = ExaminerNS.L["Stats"]
 mod.help =
     ExaminerNS.L["Shows gear statistics, item levels, bonuses and more.\nShift-click: mark this player for comparison.\nShift-right-click: clear comparison."]
 mod.toggleHelp =
-    ExaminerNS.L["Enable/disable the Stats module, which shows gear statistics, item levels, bonuses and more."]
+    ExaminerNS.L["Enable/disable the Gear Stats module, which shows gear statistics, item levels, bonuses and more."]
 mod:CreatePage(false)
 mod:HasButton(true)
 mod.details = ex:CreateDetailObject()
@@ -272,7 +273,7 @@ function mod.MenuInit(parent, list)
     -- STATS
 
     local tbl = list[#list + 1]
-    tbl.text = ExaminerNS.L["Stats"]
+    tbl.text = ExaminerNS.L["Gear Stats"]
     tbl.header = 1
     tbl = list[#list + 1]
     tbl.text = ExaminerNS.L["Cache Player"]
@@ -612,7 +613,8 @@ local StatEntry_OnEnter = function(self, motion)
         gtt:Show()
     end
 end
-for i = 1, ROW_COUNT do
+-- Create a statistics row that can be reused as the content viewport grows.
+local function CreateStatRow(i)
     local t = CreateFrame("Frame", nil, mod.page)
     t:SetSize(200, ITEM_HEIGHT)
     t.id = i
@@ -646,6 +648,7 @@ for i = 1, ROW_COUNT do
 
     entries[i] = t
 end
+for i = 1, ROW_COUNT do CreateStatRow(i) end
 
 -- SCROLL
 
@@ -664,3 +667,23 @@ scrollbar:SetPoint("BOTTOMLEFT", mod.scroll, "BOTTOMRIGHT", 6, down and down:Get
 mod.scroll:SetScript("OnVerticalScroll", function(self, offset)
     FauxScrollFrame_OnVerticalScroll(self, offset, ITEM_HEIGHT, UpdateShownItems)
 end)
+
+local spareRows = {}
+-- Add real statistics rows when icon navigation releases the old footer area.
+function mod:OnLayoutChanged()
+    local count = math.floor((self.page:GetHeight() - TOP_INSET - 12) / ITEM_HEIGHT)
+    for index = #entries + 1, count do
+        if spareRows[index] then entries[index] = spareRows[index] else CreateStatRow(index) end
+    end
+    for index = #entries, count + 1, -1 do
+        entries[index]:Hide()
+        entries[index].tip:Hide()
+        spareRows[index], entries[index] = entries[index], nil
+    end
+    self.scroll:ClearAllPoints()
+    self.scroll:SetPoint("TOPLEFT", entries[1])
+    self.scroll:SetPoint("BOTTOMRIGHT", entries[#entries], -3, -1)
+    displayList.count = displayList.count or 0
+    self.scroll.offset = math.max(0, math.min(self.scroll.offset or 0, displayList.count - count))
+    UpdateShownItems(self.scroll)
+end

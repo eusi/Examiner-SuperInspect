@@ -70,6 +70,12 @@ end
 --                                           Glyph Display                                            --
 --------------------------------------------------------------------------------------------------------
 
+-- Keep the embedded glyph rows aligned with the enlarged talent content area.
+function mod:OnLayoutChanged(extra)
+    self.page:SetHeight(280 + extra)
+    if self.page:IsShown() then self:Draw() end
+end
+
 -- Show six glyph slots, including empty, locked and unknown entries.
 function mod:Draw()
     local data = ex.glyphData or G.Empty()
