@@ -30,7 +30,7 @@ With Examiner, you can inspect other players' gear, stats, item level/gearScore,
 
 Features depend on the client and available inspect data.
 
-![Examiner screenshots](https://github.com/user-attachments/assets/8a99a3ae-c1f7-417a-a7d4-f01b86ce9cf9)
+![Examiner screenshots](https://github.com/user-attachments/assets/ce5fcfd7-b708-41de-8b65-bfaf9b6ae6fb)
 
 **Supported versions:** Retail, Forever, Classic Era, Hardcore, Season of Discovery, TBC Classic, and Mists of Pandaria Classic.
 
