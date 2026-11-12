@@ -99,7 +99,7 @@ mod.FitLabel = FitLabel
 -- STAT ORDER
 
 local StatEntryOrder = {
-    { [0] = PLAYERSTAT_BASE_STATS, "STR", "AGI", "STA", "INT", "SPI", "ARMOR", "MASTERY" },
+    { [0] = PLAYERSTAT_BASE_STATS, "STR", "AGI", "STA", "INT", "SPI", "MASTERY" },
     {
         [0] = STAT_CATEGORY_GENERAL,
         "CRIT",
@@ -146,6 +146,7 @@ local StatEntryOrder = {
     },
     {
         [0] = PLAYERSTAT_DEFENSES,
+        "ARMOR",
         "DEFENSE",
         "DODGE",
         "PARRY",
@@ -366,14 +367,14 @@ end
 --------------------------------------------------------------------------------------------------------
 
 -- Update resistance values against the optional reference player.
-local function UpdateResistances()
+local function UpdateResistances(unitStats, compareStats)
     for i = 1, 5 do
         local statToken = (LibGearExam.MagicSchools[i] .. "RESIST")
-        if ex.unitStats[statToken] or (ex.isComparing and ex.compareStats[statToken]) then
+        if unitStats[statToken] or (ex.isComparing and compareStats[statToken]) then
             local statText = LibGearExam:GetStatValue(
                 statToken,
-                ex.unitStats,
-                ex.isComparing and ex.compareStats,
+                unitStats,
+                ex.isComparing and compareStats,
                 ex.info.level,
                 cfg.combineAdditiveStats,
                 cfg.percentRatings
@@ -464,6 +465,8 @@ end
 
 -- Build item-level, gear-stat and set-summary rows.
 local function BuildStatList()
+    local unitStats = ExaminerNS.Gear.CanonicalStats(ex.unitStats)
+    local compareStats = ExaminerNS.Gear.CanonicalStats(ex.compareStats)
     displayList.count = 0
     AddListEntry(ExaminerNS.L["Item Levels"])
     AddListEntry(ExaminerNS.L["Average Item Level"], mod:GetAverageItemLevel())
@@ -487,14 +490,39 @@ local function BuildStatList()
     end
     local needHeader
     local shown = {}
+    local available = {}
+    for token in pairs(unitStats) do available[token] = true end
+    if ex.isComparing then
+        for token in pairs(compareStats) do available[token] = true end
+    end
+    -- The five resistance icons already display these values and comparisons.
+    if not ExaminerNS.Compat.isRetail then
+        for index = 1, 5 do shown[LibGearExam.MagicSchools[index] .. "RESIST"] = true end
+    end
+    local extraCategories = {
+        HITRATING = 2, CRITRATING = 2, HASTERATING = 2,
+        SPELLCRIT = 3, SPELLHIT = 3, SPELLCRITRATING = 3, SPELLHITRATING = 3,
+        SPELLHASTERATING = 3, APFERAL = 4, HOLYRESIST = 5,
+    }
     -- BUILD DISPLAY TABLE
 
-    for _, statCat in ipairs(StatEntryOrder) do
+    for category, statCat in ipairs(StatEntryOrder) do
+        local tokens, included, extra = {}, {}, {}
+        for _, token in ipairs(statCat) do
+            tokens[#tokens + 1], included[token] = token, true
+        end
+        for token in pairs(available) do
+            local assigned = extraCategories[token]
+            if token:match("^ITEM_MOD_ATTACK_POWER_VS_.+_SHORT$") then assigned = 4 end
+            if not included[token] and assigned == category then extra[#extra + 1] = token end
+        end
+        table.sort(extra)
+        for _, token in ipairs(extra) do tokens[#tokens + 1] = token end
         needHeader = 1
-        for _, statToken in ipairs(statCat) do
+        for _, statToken in ipairs(tokens) do
             if
                 not shown[statToken]
-                and (ex.unitStats[statToken] or (ex.isComparing and ex.compareStats[statToken]))
+                and (unitStats[statToken] or (ex.isComparing and compareStats[statToken]))
             then
                 shown[statToken] = true
                 if needHeader then
@@ -503,30 +531,18 @@ local function BuildStatList()
                 end
                 local value, tip = LibGearExam:GetStatValue(
                     statToken,
-                    ex.unitStats,
-                    ex.isComparing and ex.compareStats,
+                    unitStats,
+                    ex.isComparing and compareStats,
                     ex.info.level,
                     cfg.combineAdditiveStats,
                     cfg.percentRatings
                 )
-                AddListEntry(LibGearExam:FormatStatName(statToken, cfg.percentRatings), value, tip)
+                AddListEntry(ExaminerNS.Gear.labels[statToken]
+                    or LibGearExam.StatNames[statToken] or statToken, value, tip)
             end
         end
     end
     local ratingTokens = {}
-    local available = {}
-    for token, value in pairs(ex.unitStats) do
-        if ExaminerNS.Compat.IsNumber(value) then
-            available[token] = true
-        end
-    end
-    if ex.isComparing then
-        for token, value in pairs(ex.compareStats) do
-            if ExaminerNS.Compat.IsNumber(value) then
-                available[token] = true
-            end
-        end
-    end
     for token in pairs(available) do
         if not shown[token] and token ~= "SANCTIFIED-SET" and token ~= "DPS" then
             ratingTokens[#ratingTokens + 1] = token
@@ -539,8 +555,8 @@ local function BuildStatList()
     for _, token in ipairs(ratingTokens) do
         local value, tip = LibGearExam:GetStatValue(
             token,
-            ex.unitStats,
-            ex.isComparing and ex.compareStats,
+            unitStats,
+            ex.isComparing and compareStats,
             ex.info.level,
             cfg.combineAdditiveStats
         )
@@ -557,7 +573,7 @@ local function BuildStatList()
     -- REFRESH DISPLAY
 
     AddListEntry()
-    UpdateResistances()
+    UpdateResistances(unitStats, compareStats)
     UpdateShownItems(mod.scroll)
 end
 

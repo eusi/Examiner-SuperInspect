@@ -9,6 +9,7 @@ local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="zhCN" then return; end
 ns.locales.zhCN={
+    ["Mana Regen / 5 sec"]="法力回复 / 5秒",
     ["Sanctified"]="圣化",
     ["Increased Daggers Skill"]="匕首技能",
     ["Increased Axes Skill"]="斧技能",
@@ -284,4 +285,6 @@ ns.locales.zhCN={
     ["Enable/disable the Gear List module, which shows equipped items, item levels and available enhancements."]="启用/禁用装备列表模块，显示已装备的物品、物品等级及可用的强化信息。",
     ["Icons at the bottom"]="底部图标",
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="新增样式和图标菜单！菜单已切换为底部图标。你可以随时在 %s > %s 中更改并查看更多选项。",
+    ["Slot"]="部位",
+    ["Hit Rating"]="命中等级",
 };

@@ -14,52 +14,11 @@ mod.buttonLabel = L["List"]
 mod.help = L["Shows equipped items, item levels and available enhancements."]
 mod.toggleHelp = L["Enable/disable the Gear List module, which shows equipped items, item levels and available enhancements."]
 mod.icon = "Interface\\Icons\\INV_Misc_Note_01"
-mod:CreatePage(false)
+mod:CreatePage(true)
 mod:HasButton(true)
-local ROW_HEIGHT = 48
+local ROW_HEIGHT = 14
+local SIDE_PADDING, SCROLLBAR_SPACE = 8, 18
 mod.equipmentRows = {}
-
---------------------------------------------------------------------------------------------------------
---                                          Item Summaries                                            --
---------------------------------------------------------------------------------------------------------
-
--- Read confirmed enchant text and gems from the same links used by the gear snapshot.
-local function ItemDetails(link, slotName)
-    local details = {}
-    local enchant = tonumber(link:match("item:%d+:(%d+)"))
-    if enchant and enchant > 0 then
-        local lines = ns.Gear.Tooltip(link)
-        local prefix = (ENCHANTED_TOOLTIP_LINE or "Enchanted: %s"):gsub("%%s", "")
-        for _, line in ipairs(lines or {}) do
-            local text = C.IsTable(line) and C.Text(line.leftText)
-            if text and text:find(prefix, 1, true) then
-                details[#details + 1] = text
-                break
-            end
-        end
-    end
-    local gems = ns.Gear.ReadGems({[slotName] = link})
-    local raw = C.Try((C_Item and C_Item.GetItemStats) or GetItemStats, link)
-    local sockets = 0
-    if C.IsTable(raw) then
-        for key, value in pairs(raw) do
-            if C.IsString(key) and key:match("^EMPTY_SOCKET_") and C.IsNumber(value)
-                and value >= 0 and value <= 8 and value % 1 == 0 then
-                sockets = sockets + value
-            end
-        end
-    end
-    local names = {}
-    for _, gem in ipairs(gems.items) do
-        if gem.name then names[#names + 1] = gem.name end
-    end
-    local socketText = sockets > 0 and ns.F("Sockets: %d", sockets) or nil
-    local gemText = #names > 0 and (L["Gems"] .. ": " .. table.concat(names, ", ")) or nil
-    if socketText or gemText then
-        details[#details + 1] = (socketText or "") .. (socketText and gemText and " | " or "") .. (gemText or "")
-    end
-    return #details > 0 and table.concat(details, "\n") or (_G[slotName:upper()] or ""), gems.pending
-end
 
 --------------------------------------------------------------------------------------------------------
 --                                          List Controls                                             --
@@ -73,23 +32,52 @@ list:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8X8"})
 list:SetBackdropColor(0, 0, 0, 0)
 list:Hide()
 mod.equipmentPane = list
+local summary = ns.Fonts.Create(list, nil, "ARTWORK", "GameFontNormalSmall")
+summary:SetJustifyH("LEFT")
+summary:SetWordWrap(false)
+summary:SetMaxLines(1)
+summary:SetTextColor(1, 1, 1)
+local summaryTitle = ns.Fonts.Create(list, nil, "ARTWORK", "GameFontNormalSmall")
+summaryTitle:SetPoint("TOPLEFT", SIDE_PADDING, -8)
+summaryTitle:SetText(L["Average Item Level"] .. ":")
+summaryTitle:SetTextColor(1, 0.82, 0)
+summaryTitle:SetJustifyH("LEFT")
+summaryTitle:SetWordWrap(false)
+summaryTitle:SetMaxLines(1)
+local summaryMeasure = ns.Fonts.Create(list, nil, "ARTWORK", "GameFontNormalSmall")
+summaryMeasure:SetText(L["Average Item Level"] .. ":")
+summaryMeasure:Hide()
+summary:SetPoint("LEFT", summaryTitle, "RIGHT", 4, 0)
+local score = ns.Fonts.Create(list, nil, "ARTWORK", "GameFontNormalSmall")
+score:SetPoint("TOPRIGHT", -SIDE_PADDING, -8)
+score:SetJustifyH("RIGHT")
+score:SetWordWrap(false)
+local scoreTitle = ns.Fonts.Create(list, nil, "ARTWORK", "GameFontNormalSmall")
+scoreTitle:SetPoint("RIGHT", score, "LEFT", -4, 0)
+scoreTitle:SetText("GearScore:")
+scoreTitle:SetTextColor(1, 0.82, 0)
+mod.equipmentSummary, mod.equipmentScore = summary, score
+mod.equipmentSummaryTitle, mod.equipmentScoreTitle = summaryTitle, scoreTitle
+local slotHeading = ns.Fonts.Create(list, nil, "ARTWORK", "GameFontNormalSmall")
+slotHeading:SetPoint("TOPLEFT", SIDE_PADDING + 58, -27)
+slotHeading:SetText(L["Slot"])
 local heading = ns.Fonts.Create(list, nil, "ARTWORK", "GameFontNormalSmall")
-heading:SetPoint("TOPLEFT", 40, -8)
+heading:SetPoint("TOPLEFT", SIDE_PADDING + 144, -27)
 heading:SetText(L["Item"])
 local levelHeading = ns.Fonts.Create(list, nil, "ARTWORK", "GameFontNormalSmall")
-levelHeading:SetPoint("TOPRIGHT", -26, -8)
+levelHeading:SetPoint("TOPLEFT", SIDE_PADDING, -27)
 levelHeading:SetText(L["iLevel"])
 mod.equipmentItemHeading, mod.equipmentLevelHeading = heading, levelHeading
 local status = ns.Fonts.Create(list, nil, "ARTWORK", "GameFontHighlightSmall")
-status:SetPoint("TOPLEFT", 9, -35)
-status:SetPoint("TOPRIGHT", -25, -35)
+status:SetPoint("TOPLEFT", SIDE_PADDING, -51)
+status:SetPoint("TOPRIGHT", -SIDE_PADDING, -51)
 status:SetJustifyH("LEFT")
 status:SetWordWrap(true)
 mod.equipmentStatus = status
 local scroll = CreateFrame("ScrollFrame", "ExaminerEquipmentScroll", list, "UIPanelScrollFrameTemplate")
-scroll:SetPoint("TOPLEFT", 7, -27)
-scroll:SetPoint("BOTTOMRIGHT", -25, 10)
-scroll:SetSize(mod.page:GetWidth() - 32, mod.page:GetHeight() - 37)
+scroll:SetPoint("TOPLEFT", SIDE_PADDING, -46)
+scroll:SetPoint("BOTTOMRIGHT", -SIDE_PADDING, 8)
+scroll:SetSize(mod.page:GetWidth() - 2 * SIDE_PADDING, mod.page:GetHeight() - 54)
 local content = CreateFrame("Frame", nil, scroll)
 content:SetSize(scroll:GetWidth(), 1)
 scroll:SetScrollChild(content)
@@ -98,13 +86,37 @@ local up = bar.ScrollUpButton or _G[bar:GetName() .. "ScrollUpButton"]
 local down = bar.ScrollDownButton or _G[bar:GetName() .. "ScrollDownButton"]
 bar.scrollStep = ROW_HEIGHT
 bar:ClearAllPoints()
-bar:SetPoint("TOPRIGHT", list, "TOPRIGHT", -6, -43)
-bar:SetPoint("BOTTOMRIGHT", list, "BOTTOMRIGHT", -6, 26)
+bar:SetPoint("TOPRIGHT", list, "TOPRIGHT", -SIDE_PADDING, -62)
+bar:SetPoint("BOTTOMRIGHT", list, "BOTTOMRIGHT", -SIDE_PADDING, 24)
 mod.equipmentScroll, mod.equipmentContent, mod.equipmentBar = scroll, content, bar
+
+-- Spread equipped rows across the viewport while keeping sparse snapshots compact.
+local function LayoutRows(count)
+    local height = math.max(ROW_HEIGHT, math.min(22,
+        math.floor(scroll:GetHeight() / math.max(1, count) * 100) / 100))
+    mod.equipmentRowHeight = height
+    bar.scrollStep = height
+    for index, row in ipairs(mod.equipmentRows) do
+        row:SetSize(content:GetWidth(), height)
+        row:ClearAllPoints()
+        row:SetPoint("TOPLEFT", 0, -(index - 1) * height)
+    end
+    content:SetHeight(math.max(1, count * height))
+end
 
 -- Keep native scrollbar controls synchronized with a clamped list position.
 local function ScrollTo(value)
     local maximum = math.max(0, content:GetHeight() - scroll:GetHeight())
+    -- Reclaim the scrollbar gutter whenever the complete list fits vertically.
+    local gutter = maximum > 0 and SCROLLBAR_SPACE or 0
+    local width = mod.page:GetWidth() - 2 * SIDE_PADDING - gutter
+    if mod.equipmentGutter ~= gutter or scroll:GetWidth() ~= width then
+        mod.equipmentGutter = gutter
+        scroll:SetPoint("BOTTOMRIGHT", -SIDE_PADDING - gutter, 8)
+        scroll:SetWidth(width)
+        content:SetWidth(width)
+        for _, row in ipairs(mod.equipmentRows) do row:SetWidth(width) end
+    end
     value = math.max(0, math.min(maximum, value or 0))
     mod.equipmentMaxScroll = maximum
     bar:SetMinMaxValues(0, maximum)
@@ -121,7 +133,9 @@ bar:SetScript("OnValueChanged", function(_, value) ScrollTo(value) end)
 scroll:SetScript("OnScrollRangeChanged", function() ScrollTo(scroll:GetVerticalScroll()) end)
 scroll:EnableMouseWheel(true)
 -- Scroll one item per wheel step.
-scroll:SetScript("OnMouseWheel", function(_, delta) ScrollTo(scroll:GetVerticalScroll() - delta * ROW_HEIGHT) end)
+scroll:SetScript("OnMouseWheel", function(_, delta)
+    ScrollTo(scroll:GetVerticalScroll() - delta * (mod.equipmentRowHeight or ROW_HEIGHT))
+end)
 
 -- Create one reusable item row with its original item-link interactions.
 local function CreateRow(index)
@@ -133,24 +147,24 @@ local function CreateRow(index)
     row.hover:SetAllPoints()
     row.hover:Hide()
     row.icon = row:CreateTexture(nil, "ARTWORK")
-    row.icon:SetSize(28, 28)
-    row.icon:SetPoint("TOPLEFT", 0, -3)
+    row.icon:SetSize(12, 12)
+    row.icon:SetPoint("LEFT", 40, 0)
+    row.slot = ns.Fonts.Create(row, nil, "ARTWORK", "GameFontHighlightSmall")
+    row.slot:SetPoint("LEFT", 58, 0)
+    row.slot:SetWidth(80)
+    row.slot:SetJustifyH("LEFT")
+    row.slot:SetWordWrap(false)
+    row.slot:SetMaxLines(1)
     row.name = ns.Fonts.Create(row, nil, "ARTWORK", "GameFontHighlightSmall")
-    row.name:SetPoint("TOPLEFT", 33, -2)
-    row.name:SetPoint("TOPRIGHT", -29, -2)
+    row.name:SetPoint("LEFT", 144, 0)
+    row.name:SetPoint("RIGHT", -1, 0)
     row.name:SetJustifyH("LEFT")
     row.name:SetWordWrap(false)
+    row.name:SetMaxLines(1)
     row.level = ns.Fonts.Create(row, nil, "ARTWORK", "GameFontNormalSmall")
-    row.level:SetPoint("TOPRIGHT", -1, -2)
-    row.level:SetWidth(28)
+    row.level:SetPoint("LEFT", 0, 0)
+    row.level:SetWidth(32)
     row.level:SetJustifyH("RIGHT")
-    row.detail = ns.Fonts.Create(row, nil, "ARTWORK", "GameFontHighlightSmall")
-    row.detail:SetFont(select(1, GameFontHighlightSmall:GetFont()), 9, "")
-    row.detail:SetPoint("TOPLEFT", 33, -17)
-    row.detail:SetPoint("BOTTOMRIGHT", -2, 3)
-    row.detail:SetJustifyH("LEFT")
-    row.detail:SetJustifyV("TOP")
-    row.detail:SetWordWrap(true)
     local separator = row:CreateTexture(nil, "BORDER")
     separator:SetColorTexture(0.5, 0.5, 0.5, 0.15)
     separator:SetHeight(1)
@@ -201,6 +215,7 @@ function mod:BuildEquipmentList()
             row.hover:Hide()
             if GameTooltip:IsOwned(row) then GameTooltip:Hide() end
             row.slotName, row.id, row.link = slotName, LibGearExam.SlotIDs[slotName], link
+            row.slot:SetText(_G[slotName:upper()] or slotName)
             local name, _, quality, baseLevel, _, _, _, _, _, texture = C.Try(C.GetItemInfo, link)
             name, quality = C.Text(name), C.Number(quality)
             row.name:SetText(name or L["Item data is still loading."])
@@ -214,13 +229,6 @@ function mod:BuildEquipmentList()
             local level = C.Number(C.Try(C.GetDetailedItemLevelInfo, link), C.Number(baseLevel))
             if level and (level < 0 or level ~= level or level == math.huge) then level = nil end
             row.level:SetText(level and C.FormatNumber(level) or "-")
-            local detail, pending
-            if name then detail, pending = ItemDetails(link, slotName) end
-            row.detail:SetText(detail or (_G[slotName:upper()] or ""))
-            for _, missing in ipairs(pending or {}) do
-                local itemID = tonumber(missing:match("item:(%d+)"))
-                if itemID then self.equipmentPending[itemID] = true end
-            end
             row:Show()
         end
     end
@@ -232,9 +240,21 @@ function mod:BuildEquipmentList()
         row:Hide()
     end
     self.equipmentCount = count
+    local average = ex.averageItemLevel or "—"
+    if ex.cfg.itemLevelSource == "blizzard" then
+        local value = C.Number(ex.info.blizzardItemLevel)
+        average = value and value >= 0 and value < math.huge and C.FormatNumber(value) or "—"
+    end
+    summary:SetText(tostring(average))
+    score:SetText(C.IsNumber(ex.gs) and C.FormatNumber(ex.gs) or "—")
+    local r, g, b = C.Try(ex.gsQualityColor and ex.gsQualityColor.GetRGB, ex.gsQualityColor)
+    score:SetTextColor(C.Number(r, 1), C.Number(g, 0.82), C.Number(b, 0))
+    local titleWidth = self.page:GetWidth() - 2 * SIDE_PADDING - scoreTitle:GetStringWidth()
+        - score:GetStringWidth() - summary:GetStringWidth() - 16
+    summaryTitle:SetWidth(math.max(1, math.min(titleWidth, summaryMeasure:GetStringWidth())))
     status:SetText(count == 0 and (ex.gear and ex.gear.state == "loading"
         and L["Item data is still loading."] or L["No equipment available."]) or "")
-    content:SetHeight(math.max(1, count * ROW_HEIGHT))
+    LayoutRows(count)
     ScrollTo(scroll:GetVerticalScroll())
 end
 
@@ -254,7 +274,7 @@ list:SetScript("OnHide", function(self)
     end
 end)
 
--- Resolve only metadata requested by the current list, including cached gem names.
+-- Resolve only item metadata requested by the current list.
 list:SetScript("OnEvent", function(self, event, itemID, success)
     if success ~= false and self:IsVisible() and mod:IsShown()
         and mod.equipmentPending and mod.equipmentPending[itemID] then
@@ -275,6 +295,7 @@ function mod:RefreshEquipmentView()
     -- The parent page already provides the translucent styled fill; avoid stacking two overlays.
     list:SetBackdropColor(0, 0, 0, 0)
     heading:SetTextColor(unpack(palette and palette.label or {1,0.82,0,1}))
+    slotHeading:SetTextColor(unpack(palette and palette.label or {1,0.82,0,1}))
     levelHeading:SetTextColor(unpack(palette and palette.label or {1,0.82,0,1}))
 end
 
@@ -304,6 +325,8 @@ function mod:OnClearInspect()
     end
     self.equipmentCount = 0
     self.equipmentPending = {}
+    summary:SetText("")
+    score:SetText("")
     content:SetHeight(1)
     ScrollTo(0)
 end
@@ -315,7 +338,9 @@ end
 
 -- Resize the equipment viewport and clamp its scroll range after changing navigation.
 function mod:OnLayoutChanged()
-    scroll:SetHeight(self.page:GetHeight() - 37)
+    scroll:SetSize(self.page:GetWidth() - 2 * SIDE_PADDING, self.page:GetHeight() - 54)
+    content:SetWidth(scroll:GetWidth())
+    LayoutRows(self.equipmentCount or 0)
     ScrollTo(scroll:GetVerticalScroll())
 end
 

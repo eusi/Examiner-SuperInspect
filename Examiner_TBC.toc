@@ -1,5 +1,5 @@
 ## Interface: 20506
-## Version: 1.0.7
+## Version: 1.8.0
 ## Title: Examiner
 ## Author: Aezay (Earthen Ring EU), sAks
 ## Notes: Inspect gear, item levels, talents, PvP details and more in one convenient window.

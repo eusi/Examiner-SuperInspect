@@ -57,6 +57,8 @@ for suffix, token in pairs(map) do
     G.labels[token] = _G[key] or suffix:gsub("_", " ")
 end
 G.statMap.RESISTANCE0_NAME = "ARMOR"
+-- Armor's native label does not consistently have an ITEM_MOD_* alias.
+G.labels.ARMOR = C.Text(_G.ARMOR, C.Text(_G.RESISTANCE0_NAME, LibGearExam.StatNames.ARMOR))
 -- These client keys do not follow ITEM_MOD_<name>_SHORT.
 local aliases = {
     ITEM_MOD_VERSATILITY = "VERSATILITYRATING",
@@ -83,7 +85,10 @@ for index, school in ipairs({ "HOLY", "FIRE", "NATURE", "FROST", "SHADOW", "ARCA
     G.statMap["RESISTANCE" .. index .. "_NAME"] = token
     G.statMap["ITEM_MOD_" .. school .. "_RESISTANCE_SHORT"] = token
     G.labels[token] = _G["RESISTANCE" .. index .. "_NAME"] or school
+    local damageKey = "ITEM_MOD_" .. school .. "_DAMAGE_DONE_SHORT"
+    G.statMap[damageKey] = school .. "DMG"
 end
+if C.isForever then G.labels.HITRATING = ns.L["Hit Rating"] end
 for token, label in pairs(G.labels) do
     if not LibGearExam.StatNames[token] then
         LibGearExam.StatNames[token] = label
@@ -119,6 +124,19 @@ function G.ResolveStat(key)
     LibGearExam.StatNames[token] = G.labels[token]
     LibGearExam.StatNamesSorted[#LibGearExam.StatNamesSorted + 1] = token
     return token
+end
+
+-- Resolve older snapshot keys without rewriting the saved inspection.
+function G.CanonicalStats(stats)
+    local result = {}
+    for key, value in pairs(stats or {}) do
+        if C.IsNumber(value) then
+            local token = G.statMap[key]
+                or (C.IsString(key) and key:match("^ITEM_MOD_") and not G.labels[key] and G.ResolveStat(key)) or key
+            result[token] = (result[token] or 0) + value
+        end
+    end
+    return result
 end
 
 -- Accumulate numeric item bonuses by stat token.
@@ -221,7 +239,7 @@ function G.ParseLine(text)
         -- Match the whole line to exclude stat amounts inside proc descriptions.
         local exact = false
         for _, pattern in ipairs(LibGearExam.Patterns) do
-            local first, last = text:find(pattern.p)
+            local first, last = text:find(LibGearExam:GetScanPattern(pattern))
             if first == 1 and last == #text then
                 exact = true
                 break
@@ -383,6 +401,12 @@ function G.Item(link, unit, slot, result)
                     end
                 end
             end
+        end
+    end
+    -- Forever tooltip percentages are authoritative; raw ratings are different units.
+    if C.isForever then
+        for _, token in ipairs({"HIT", "SPELLHIT", "CRIT", "SPELLCRIT", "DODGE", "PARRY", "BLOCK"}) do
+            if baseSeen[token] then base[token .. "RATING"] = nil end
         end
     end
     -- Tooltip totals replace structured amounts to avoid counting base stats twice.

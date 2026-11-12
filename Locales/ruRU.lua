@@ -9,6 +9,7 @@ local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="ruRU" then return; end
 ns.locales.ruRU={
+    ["Mana Regen / 5 sec"]="Рег. маны / 5 сек.",
     ["Sanctified"]="Освящение",
     ["Increased Daggers Skill"]="Навык: кинжалы",
     ["Increased Axes Skill"]="Навык: топоры",
@@ -284,4 +285,6 @@ ns.locales.ruRU={
     ["Enable/disable the Gear List module, which shows equipped items, item levels and available enhancements."]="Включает/отключает модуль «Список экипировки», показывающий надетые предметы, их уровень и доступные улучшения.",
     ["Icons at the bottom"]="Значки снизу",
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="Доступны новые стили и меню со значками! Меню переключено на значки внизу. Вы можете изменить его в любое время и найти другие настройки в %s > %s.",
+    ["Slot"]="Ячейка",
+    ["Hit Rating"]="Рейтинг меткости",
 };

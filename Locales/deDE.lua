@@ -9,6 +9,7 @@ local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="deDE" then return; end
 ns.locales.deDE={
+    ["Mana Regen / 5 sec"]="Manareg. / 5 Sek.",
     ["Sanctified"]="Geweiht",
     ["Increased Daggers Skill"]="Fertigkeit: Dolche",
     ["Increased Axes Skill"]="Fertigkeit: Äxte",
@@ -284,4 +285,6 @@ ns.locales.deDE={
     ["Enable/disable the Gear List module, which shows equipped items, item levels and available enhancements."]="Aktiviert/deaktiviert das Modul Gear List, das angelegte Gegenstände, Itemlevel und verfügbare Verbesserungen zeigt.",
     ["Icons at the bottom"]="Icons unten",
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="Neue Styles und Icon-Menüs verfügbar! Das Menü wurde auf Icons unten umgestellt. Du kannst es jederzeit ändern und weitere Optionen unter %s > %s auswählen.",
+    ["Slot"]="Platz",
+    ["Hit Rating"]="Trefferwertung",
 };

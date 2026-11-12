@@ -718,6 +718,15 @@ function ex:OpenSimple()
     end
 end
 
+-- Toggle the visible self inspection without changing other inspection entry points.
+function ex:InspectSelf()
+    if self:IsVisible() and self.isSelf and not self.isCacheEntry then
+        self:Display(false)
+    else
+        self:DoInspect("player")
+    end
+end
+
 -- Inspect a hovered player without changing the target.
 function ex:InspectMouseover()
     local unit = "mouseover"

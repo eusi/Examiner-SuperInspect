@@ -8,6 +8,7 @@
 local _,ns=...;
 if ns.blocked or GetLocale()~="itIT" then return; end
 ns.locales.itIT={
+    ["Mana Regen / 5 sec"]="Rig. mana / 5 s",
     ["Sanctified"]="Consacrato",
     ["Increased Daggers Skill"]="Abilità con i pugnali aumentata",
     ["Increased Axes Skill"]="Abilità con le asce aumentata",
@@ -283,4 +284,6 @@ ns.locales.itIT={
     ["Enable/disable the Gear List module, which shows equipped items, item levels and available enhancements."]="Attiva/disattiva il modulo Lista equipaggiamento, che mostra gli oggetti equipaggiati, i livelli e i potenziamenti disponibili.",
     ["Icons at the bottom"]="Icone in basso",
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="Sono disponibili nuovi stili e menu a icone! Il menu è stato impostato sulle icone in basso. Puoi cambiarlo in qualsiasi momento e trovare altre opzioni in %s > %s.",
+    ["Slot"]="Scomparto",
+    ["Hit Rating"]="Indice di impatto",
 };

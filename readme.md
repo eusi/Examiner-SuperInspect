@@ -16,6 +16,7 @@ With Examiner, you can inspect other players' gear, stats, item level/gearScore,
 - **Talents:** Interactive trees and spell tooltips. Retail/Forever build exports and Wowhead links.
 - **PvP:** Honor, kills, ranks, arena/rated records, and rank progress.
 - **Player cache:** Keep inspected gear and optional talent, glyph, PvP, guild, and profession snapshots for later; search, filter, and sort saved players.
+- **Gear List:** A compact list of all items, item levels, and an overall score (hidden by default).
 - **Guilds:** Guild details and crests where available.
 - **Achievements:** Completion dates, points, and rewards (Retail/Mists).
 - **Professions:** Shows profession skill levels (Forever).

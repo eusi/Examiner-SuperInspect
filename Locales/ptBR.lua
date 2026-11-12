@@ -8,6 +8,7 @@
 local _,ns=...;
 if ns.blocked or GetLocale()~="ptBR" then return; end
 ns.locales.ptBR={
+    ["Mana Regen / 5 sec"]="Regen. mana / 5 s",
     ["Sanctified"]="Santificado",
     ["Increased Daggers Skill"]="Perícia com Adagas aumentada",
     ["Increased Axes Skill"]="Perícia com Machados aumentada",
@@ -283,4 +284,6 @@ ns.locales.ptBR={
     ["Enable/disable the Gear List module, which shows equipped items, item levels and available enhancements."]="Ativa/desativa o módulo Lista de equipamentos, que mostra itens equipados, níveis e melhorias disponíveis.",
     ["Icons at the bottom"]="Ícones embaixo",
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="Novos estilos e menus de ícones estão disponíveis! O menu foi alterado para ícones na parte inferior. Você pode alterá-lo a qualquer momento e encontrar mais opções em %s > %s.",
+    ["Slot"]="Espaço",
+    ["Hit Rating"]="Taxa de acerto",
 };

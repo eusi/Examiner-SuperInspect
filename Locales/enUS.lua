@@ -8,6 +8,7 @@
 local _,ns=...;
 if ns.blocked then return; end
 ns.locales.enUS={
+    ["Mana Regen / 5 sec"]="Mana Regen / 5 sec",
     ["Sanctified"]="Sanctified",
     ["Increased Daggers Skill"]="Increased Daggers Skill",
     ["Increased Axes Skill"]="Increased Axes Skill",
@@ -283,4 +284,6 @@ ns.locales.enUS={
     ["Enable/disable the Gear List module, which shows equipped items, item levels and available enhancements."]="Enable/disable the Gear List module, which shows equipped items, item levels and available enhancements.",
     ["Icons at the bottom"]="Icons at the bottom",
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s.",
+    ["Slot"]="Slot",
+    ["Hit Rating"]="Hit Rating",
 };

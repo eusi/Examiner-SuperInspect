@@ -1,5 +1,5 @@
 local _, ExaminerNS = ...; if ExaminerNS.blocked then return; end
-local REVISION = 8;
+local REVISION = 9;
 local Compat = ExaminerNS.Compat;
 local GetItemInfo = Compat.GetItemInfo;
 local GetInventorySlotInfo = Compat.GetInventorySlotInfo;
@@ -116,7 +116,7 @@ LGE.StatNames = {
 	MP = MANA,
 
 	HP5 = ITEM_MOD_HEALTH_REGEN_SHORT,
-	MP5 = ITEM_MOD_POWER_REGEN0_SHORT,
+	MP5 = ExaminerNS.L["Mana Regen / 5 sec"],
 
 	-- Further
 	SANCTIFIED = ExaminerNS.L["Sanctified"],
@@ -297,13 +297,25 @@ end
 --------------------------------------------------------------------------------------------------------
 --                                 Checks a Single Line for Patterns                                  --
 --------------------------------------------------------------------------------------------------------
+-- Accept fractional Forever percentages in the existing localized tooltip rules.
+function LGE:GetScanPattern(pattern)
+    if Compat.isForever and pattern.p:find("%%", 1, true) then
+        return (pattern.p:gsub("%%d%+", function() return "[%d%.,]+"; end));
+    end
+    return pattern.p;
+end
+
 function LGE:ScanLineForPatterns(text,statTable)
 	if( SanctifiedSetBonus == nil or SanctifiedSetBonus == "" ) then
 		SanctifiedSetBonus = getSanctifiedSetBonusText() or ""
 	end
 
 	for index, pattern in ipairs(self.Patterns) do
-		local pos, _, value1, value2 = text:find(pattern.p);
+		local pos, _, value1, value2 = text:find(self:GetScanPattern(pattern));
+		if Compat.isForever and pattern.p:find("%%", 1, true) then
+			value1 = type(value1)=="string" and tonumber((value1:gsub(",", "."))) or value1;
+			value2 = type(value2)=="string" and tonumber((value2:gsub(",", "."))) or value2;
+		end
 
 		-- Sanctiefied / Scarlet Uniform
 		if (isSanctifiedOrScarletTag(pattern.p) and trim2(text) == trim2(pattern.p)) then
@@ -357,7 +369,7 @@ function LGE:GetStatValue(token,stats,compare,level,combine,percentRatings)
     if compare==true then return value; end
     local text=Compat.FormatNumber(value);
     local percentages={CRIT=true,HIT=true,SPELLCRIT=true,SPELLHIT=true,DODGE=true,PARRY=true,BLOCK=true};
-    if (Compat.isEra or Compat.isTBC) and percentages[token] then text=text.."%"; end
+    if (Compat.isEra or Compat.isTBC or Compat.isForever) and percentages[token] then text=text.."%"; end
     if type(compare)=="table" and math.abs(value)>=0.005 then text=(value>0 and "|cff80ff80+" or "|cffff8080")..text.."|r"; end
     return text,token=="DPS" and "Sum of DPS reported by equipped item data (normally weapons). Not your character's damage output." or nil;
 end

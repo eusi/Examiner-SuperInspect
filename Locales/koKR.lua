@@ -9,6 +9,7 @@ local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="koKR" then return; end
 ns.locales.koKR={
+    ["Mana Regen / 5 sec"]="마나 회복 / 5초",
     ["Sanctified"]="신성화",
     ["Increased Daggers Skill"]="단검 숙련",
     ["Increased Axes Skill"]="도끼 숙련",
@@ -284,4 +285,6 @@ ns.locales.koKR={
     ["Enable/disable the Gear List module, which shows equipped items, item levels and available enhancements."]="장비 목록 모듈을 켜거나 끕니다. 착용한 아이템, 아이템 레벨 및 확인 가능한 강화 정보를 표시합니다.",
     ["Icons at the bottom"]="하단 아이콘",
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="새로운 스타일과 아이콘 메뉴가 추가되었습니다! 메뉴가 하단 아이콘으로 변경되었습니다. 언제든지 %s > %s에서 변경하고 다른 옵션을 선택할 수 있습니다.",
+    ["Slot"]="장비 칸",
+    ["Hit Rating"]="적중도",
 };
