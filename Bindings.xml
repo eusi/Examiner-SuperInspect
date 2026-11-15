@@ -1,14 +1,14 @@
 <Bindings>
-	<Binding name="EXAMINER_OPEN" header="EXAMINER">
+	<Binding name="EXAMINER_OPEN" header="EXAMINER" category="BINDING_HEADER_EXAMINER">
 		Examiner:OpenSimple();
 	</Binding>
-	<Binding name="EXAMINER_TARGET">
+	<Binding name="EXAMINER_TARGET" category="BINDING_HEADER_EXAMINER">
 		Examiner:DoInspect("target");
 	</Binding>
-	<Binding name="EXAMINER_SELF">
+	<Binding name="EXAMINER_SELF" category="BINDING_HEADER_EXAMINER">
 		Examiner:InspectSelf();
 	</Binding>
-	<Binding name="EXAMINER_MOUSEOVER">
+	<Binding name="EXAMINER_MOUSEOVER" category="BINDING_HEADER_EXAMINER">
 		Examiner:InspectMouseover();
 	</Binding>
 </Bindings>

@@ -609,7 +609,7 @@ function ex:SetUnitDetailString()
     )
     -- Classification (non players only, so ok to use ex.unit)
     if not info.raceFixed then
-        local classification = UnitClassification(ex.unit)
+        local classification = Compat.Text(Compat.Try(UnitClassification,ex.unit))
         if CLASSIFICATION_NAMES[classification] then
             uDetails[#uDetails + 1] = "(" .. CLASSIFICATION_NAMES[classification] .. ")"
         end
@@ -654,13 +654,15 @@ function ex:SetUnitGuildString()
     -- NPC's only, so ok to use 'ex.unit' here
     else
         LibGearExamTip:ClearLines()
-        LibGearExamTip:SetUnit(ex.unit)
+        Compat.Try(LibGearExamTip.SetUnit,LibGearExamTip,ex.unit)
         local line
-        for i = 2, LibGearExamTip:NumLines() - 1 do
-            line = _G["LibGearExamTipTextLeft" .. i]:GetText()
+        for i = 2, Compat.Number(Compat.Try(LibGearExamTip.NumLines,LibGearExamTip),0) - 1 do
+            local label = _G["LibGearExamTipTextLeft" .. i]
+            line = label and Compat.Text(Compat.Try(label.GetText,label))
             if line and TOOLTIP_UNIT_LEVEL and line:find("^" .. TOOLTIP_UNIT_LEVEL:gsub("%%s", ".+")) then
-                line = _G["LibGearExamTipTextLeft" .. (i + 1)]:GetText()
-                if line ~= PVP_ENABLED then
+                label = _G["LibGearExamTipTextLeft" .. (i + 1)]
+                line = label and Compat.Text(Compat.Try(label.GetText,label))
+                if line and line ~= PVP_ENABLED then
                     self.guild:SetText(line)
                     return
                 end
@@ -914,7 +916,12 @@ end
 function ex:UpdateObjects()
     -- TEXTURES & MODEL
 
-    if ex.unit and Compat.IsTrue(UnitIsVisible(ex.unit)) then
+    if ex.unit and ex.unitType == 1 then
+        Compat.Try(SetPortraitTexture,ex.portrait,ex.unit)
+        Compat.Try(ex.model.ClearModel,ex.model)
+        Compat.Try(ex.model.SetUnit,ex.model,ex.unit)
+        ex.model.cleared = nil
+    elseif ex.unit and Compat.IsTrue(UnitIsVisible(ex.unit)) then
         SetPortraitTexture(ex.portrait, ex.unit)
         if ex.unitType == 1 then
             ex.model:ClearModel()

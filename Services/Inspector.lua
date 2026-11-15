@@ -60,6 +60,7 @@ end
 -- Cancel the session and clear all inspected player data.
 function I:Clear()
     self:Cancel()
+    ns.ClassIcon.ClearSpecialization()
     ex.unit, ex.guid, ex.isSelf, ex.unitType, ex.canInspect = nil, nil, nil, nil, nil
     ex.itemsLoaded, ex.isCacheEntry, ex.gear = nil, nil, nil
     ex.averageItemLevel, ex.gs, ex.gsQualityColor = nil, nil, nil
@@ -108,6 +109,9 @@ function I:Start(unit, open)
         unit = "player"
     end
     unit = StaticUnit(unit)
+    if C.Safe(C.Try(UnitIsPlayer,unit)) == false then
+        return self:ShowNPC(unit,open)
+    end
     local guid = UnitGUID(unit)
     if not C.IsString(guid) then
         ns.Record("inspect", "unit identity restricted")
@@ -196,6 +200,25 @@ function I:Start(unit, open)
     return true
 end
 
+-- Show available NPC details without requiring a GUID or requesting player inspection data.
+function I:ShowNPC(unit, open)
+    self:Clear()
+    ex.unit, ex.unitType, ex.canInspect = unit, 1, false
+    local info = ex.info
+    info.name = C.Text(C.Try(UnitName,unit),UNKNOWN or "Unknown")
+    info.pvpName = info.name
+    info.level = C.Number(C.Try(UnitLevel,unit),-1)
+    info.sex = C.Number(C.Try(UnitSex,unit),1)
+    info.race = C.Text(C.Try(UnitCreatureFamily,unit)) or C.Text(C.Try(UnitCreatureType,unit))
+    info.time, info.zone = time(), C.Text(C.Try(GetRealZoneText),"")
+    ex:RefreshModuleButtons()
+    ex:UpdateObjects()
+    local mod = ex.modules[ex.cfg.activePage]
+    if mod and mod.page then mod.page:Hide() end
+    if open ~= false then ex:Display(true) end
+    return true
+end
+
 
 --------------------------------------------------------------------------------------------------------
 --                                           Item Requests                                            --
@@ -266,6 +289,7 @@ function I:Refresh(session)
     else
         ex.info.time = time()
         ex:SendModuleEvent("OnInspectReady", session.unit, session.guid)
+        ns.ClassIcon.CaptureSpecialization(session.unit)
         ex:CachePlayer()
     end
     ex:ShowModulePage()
@@ -288,7 +312,7 @@ function I:Ready(guid)
     local session = self.active
     if
         not session
-        or session.done
+        or (session.done and (not session.serverReady or not ex:IsShown()))
         or session.cached
         or (not ex.isSelf and session.requests == 0)
         or not C.IsString(guid)
@@ -303,6 +327,16 @@ function I:Ready(guid)
     session.serverReady = true
     ns.Record("inspect-ready", guid)
     self:Refresh(session)
+end
+
+-- Reinspect only the displayed player after a supported specialization-change event.
+function I:SpecializationChanged(unit)
+    local session = self.active
+    if not ex:IsShown() or not session or session.cached or not self:Valid(session)
+        or not C.IsString(unit) or not C.IsTrue(UnitIsUnit(unit,session.unit)) then return end
+    ns.ClassIcon.ClearSpecialization()
+    ns.ClassIcon.Update()
+    if session.done or session.serverReady or ex.isSelf then self:InventoryChanged(unit) end
 end
 
 
@@ -475,6 +509,10 @@ end)
 timer:SetScript("OnEvent", function(_, event, ...)
     if event == "INSPECT_READY" then
         I:Ready(...)
+    elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
+        I:SpecializationChanged(...)
+    elseif event == "ACTIVE_TALENT_GROUP_CHANGED" then
+        I:SpecializationChanged("player")
     elseif event == "UNIT_INVENTORY_CHANGED" then
         I:InventoryChanged(...)
     elseif
@@ -501,6 +539,9 @@ for _, event in ipairs({
     "PLAYER_TALENT_UPDATE",
 }) do
     timer:RegisterEvent(event)
+end
+for _, event in ipairs({"PLAYER_SPECIALIZATION_CHANGED","ACTIVE_TALENT_GROUP_CHANGED"}) do
+    C.Try(timer.RegisterEvent,timer,event)
 end
 if C_Traits then
     C.Try(timer.RegisterEvent, timer, "TRAIT_CONFIG_UPDATED")

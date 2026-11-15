@@ -580,6 +580,7 @@ local function ForeverBuildLink(data, classToken)
                 or node.rank > 9 or node.rank % 1 ~= 0 then return end
             nodes[#nodes + 1] = node
         end
+        -- Encode talent ranks in the calculator's row and column order.
         table.sort(nodes, function(a, b)
             return a.y < b.y or (a.y == b.y and a.x < b.x)
         end)

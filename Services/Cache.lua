@@ -201,6 +201,7 @@ function Cache.Load(ex, key, keepSession)
     ex:SetBackgroundVertex(1, 1, 0.4)
     ex:UpdateObjects()
     ex:SendModuleEvent("OnCacheLoaded", entry, nil)
+    ns.ClassIcon.LoadSpecialization(entry)
     ex:ShowModulePage()
     if not keepSession and (#ex.gear.pending > 0 or (ex.gear.gems and ex.gear.gems.state == "loading")) then
         ns.Inspector:LoadCachedItems(entry)

@@ -3,10 +3,19 @@
 
 With Examiner, you can inspect other players' gear, stats, item level/gearScore, talents, pvp details, achievements, guild information, professions, glyphs and runes in one convenient window. Mouseover shortcuts, gear comparisons and a searchable inspection cache make inspecting players quick and comfortable.
 
+Originally developed by Aezay, Examiner has been maintained and extensively enhanced by me since 2024.
+
 ## Installation
 
 - **Automatic:** Install via [CurseForge](https://www.curseforge.com/wow/addons/examiner-classic-sod)
 - **Manual:** Download the addon ZIP from [GitHub Releases](https://github.com/eusi/Examiner-SoD-/releases), extract the `Examiner` folder into your WoW client's `Interface/AddOns`. Then restart WoW and enable Examiner in **AddOns**.
+
+<br>
+<br>
+
+![Examiner screenshots](https://github.com/user-attachments/assets/ce5fcfd7-b708-41de-8b65-bfaf9b6ae6fb)
+
+**Supported versions:** Retail, Forever, Classic Era, Hardcore, Season of Discovery, TBC Classic, and Mists of Pandaria Classic.
 
 ## Features
 
@@ -30,10 +39,6 @@ With Examiner, you can inspect other players' gear, stats, item level/gearScore,
 - **11 translations:** enUS, deDE, frFR, esES, esMX, itIT, ptBR, koKR, ruRU, zhCN, zhTW.
 
 Features depend on the client and available inspect data.
-
-![Examiner screenshots](https://github.com/user-attachments/assets/ce5fcfd7-b708-41de-8b65-bfaf9b6ae6fb)
-
-**Supported versions:** Retail, Forever, Classic Era, Hardcore, Season of Discovery, TBC Classic, and Mists of Pandaria Classic.
 
 ## Quick start
 
