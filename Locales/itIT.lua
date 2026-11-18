@@ -286,4 +286,12 @@ ns.locales.itIT={
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="Sono disponibili nuovi stili e menu a icone! Il menu è stato impostato sulle icone in basso. Puoi cambiarlo in qualsiasi momento e trovare altre opzioni in %s > %s.",
     ["Slot"]="Scomparto",
     ["Hit Rating"]="Indice di impatto",
+    ["Add to friends list"]="Aggiungi alla lista amici",
+    ["Already on your friends list"]="Già nella tua lista amici",
+    ["Invite to group"]="Invita nel gruppo",
+    ["Already in your group"]="Già nel tuo gruppo",
+    ["You cannot invite players right now."]="Al momento non puoi invitare giocatori.",
+    ["Show Player Actions"]="Mostra azioni del giocatore",
+    ["Shows friend, group invite and whisper buttons for the displayed player."]="Mostra i pulsanti per aggiungere agli amici, invitare nel gruppo e sussurrare al giocatore visualizzato.",
+    ["Whisper"]="Sussurra",
 };

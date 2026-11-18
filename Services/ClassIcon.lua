@@ -242,6 +242,7 @@ function P.Update()
     local hasSpec = P.specIcon ~= nil and ex.unitType ~= 1 and coords ~= nil
     UpdateTabSpecialization(hasSpec)
     UpdateStyle()
+    if ns.Friends then ns.Friends.Update() end
     if ex.unitType == 1 or not coords then
         button.className = nil
         if GameTooltip:GetOwner() == button then GameTooltip:Hide() end

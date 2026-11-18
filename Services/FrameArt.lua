@@ -106,19 +106,23 @@ local function ModernTab(button, tab, active, hover)
         tab.modernEdges, tab.modernIconEdges, tab.modernHighlight = {}, {}, {}
         for _, side in ipairs({"TOP", "BOTTOM", "LEFT", "RIGHT"}) do
             tab.modernEdges[#tab.modernEdges + 1] = Strip(button, button, side, 1, 0, ns.Appearance.palettes.modern.frameEdge)
-            tab.modernIconEdges[#tab.modernIconEdges + 1] = Strip(button, button.navigationIcon, side, 1, -1, {0,0,0,1})
+            tab.modernIconEdges[#tab.modernIconEdges + 1] = Strip(button, button.navigationIcon, side, 1, button.actionDock and 0 or -1, {0,0,0,1})
         end
         -- Adjacent one-pixel rings avoid a dark gap and keep the fade portable across clients.
         for layer, alpha in ipairs({1, 0.42, 0.18, 0.06}) do
             for _, side in ipairs({"TOP", "BOTTOM", "LEFT", "RIGHT"}) do
-                tab.modernHighlight[#tab.modernHighlight + 1] = Strip(button, button.navigationIcon, side, 1, layer - 2, {0.6,0.6,0.6,alpha})
+                -- Compact action icons need their hover rings fully inside the tab.
+                local inset = button.actionDock and layer or layer - 2
+                tab.modernHighlight[#tab.modernHighlight + 1] = Strip(button, button.navigationIcon, side, 1, inset, {0.6,0.6,0.6,alpha})
             end
         end
     end
     tab.modernFill:SetColorTexture(unpack(ns.Appearance.palettes.modern.background))
     tab.modernFill:Show()
     Art.Show(tab.modernEdges, true)
-    tab.modernEdges[button.navigationIconPosition == "bottom" and 1 or 3]:Hide()
+    tab.modernEdges[button.navigationIconPosition == "bottom" and 1
+        or button.navigationIconPosition == "top" and 2
+        or button.navigationIconPosition == "left" and 4 or 3]:Hide()
     Art.Show(tab.modernIconEdges, true)
     Art.Show(tab.modernHighlight, active or hover)
 end
@@ -135,6 +139,8 @@ function Art.SideTab(button, active, hover)
     end
     local enabled = button.navigationIconMode
     local bottom = button.navigationIconPosition == "bottom"
+    local top = button.navigationIconPosition == "top"
+    local left = button.navigationIconPosition == "left"
     local style = ns.ex.cfg and ns.ex.cfg.style or "classic"
     if tab.modernFill then
         tab.modernFill:Hide()
@@ -143,8 +149,10 @@ function Art.SideTab(button, active, hover)
         Art.Show(tab.modernHighlight, false)
     end
     for _, texture in ipairs({tab.background, tab.selected, tab.hover}) do
-        texture:SetSize(bottom and button:GetHeight() or button:GetWidth(), bottom and (button:GetWidth() + 5) or (button:GetHeight() + 5))
-        texture:SetRotation(bottom and -math.pi / 2 or 0)
+        texture:ClearAllPoints()
+        texture:SetPoint("CENTER", button, "CENTER")
+        texture:SetSize((bottom or top) and button:GetHeight() or button:GetWidth(), (bottom or top) and (button:GetWidth() + 5) or (button:GetHeight() + 5))
+        texture:SetRotation(bottom and -math.pi / 2 or top and math.pi / 2 or left and math.pi or 0)
         texture:SetDesaturated(style ~= "forever")
         texture:SetShown(enabled)
     end
@@ -181,7 +189,7 @@ function Art.SideTab(button, active, hover)
             tab.mask:SetAllPoints(tab.background)
         end
         if not tab.maskApplied then button.navigationIcon:AddMaskTexture(tab.mask); tab.maskApplied = true end
-        tab.mask:SetRotation(bottom and -math.pi / 2 or 0)
+        tab.mask:SetRotation(bottom and -math.pi / 2 or top and math.pi / 2 or left and math.pi or 0)
     elseif tab.maskApplied then
         button.navigationIcon:RemoveMaskTexture(tab.mask)
         tab.maskApplied = nil
@@ -193,11 +201,33 @@ function Art.ModernDock(ex)
     local skin = ex.styleSkin
     if not skin then return end
     Art.Show(skin.dockSegments, false)
+    Art.Show(skin.topActionSegments, false)
     if ex.cfg.style ~= "modern" then return end
+    local actions = {}
+    if ns.Friends then
+        for _, action in ipairs({ns.Friends.whisperButton, ns.Friends.groupButton, ns.Friends.button}) do
+            if action:IsShown() then actions[#actions + 1] = action end
+        end
+    end
     local bottom = ex.cfg.menuStyle == "iconsBottom"
     local docked = bottom or ex.cfg.menuStyle == "iconsRight"
     local color = ns.Appearance.palettes.modern.frameEdge
     for _, edge in ipairs(skin.edges) do edge:SetColorTexture(unpack(color)); edge:Show() end
+    if #actions > 0 then
+        skin.edges[1]:Hide()
+        skin.topActionSegments = skin.topActionSegments or {}
+        for index = 1, #actions + 1 do
+            local segment = skin.topActionSegments[index] or ex:CreateTexture(nil, "BORDER")
+            skin.topActionSegments[index] = segment
+            segment:ClearAllPoints()
+            segment:SetColorTexture(unpack(color))
+            segment:SetHeight(1)
+            local previous, following = actions[index - 1], actions[index]
+            segment:SetPoint("TOPLEFT", previous or skin.bounds, previous and "BOTTOMRIGHT" or "TOPLEFT")
+            segment:SetPoint("TOPRIGHT", following or skin.bounds, following and "BOTTOMLEFT" or "TOPRIGHT")
+            segment:Show()
+        end
+    end
     if not docked then return end
     local visible = {}
     for _, button in ipairs(ex.buttons) do

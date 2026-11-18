@@ -287,4 +287,12 @@ ns.locales.koKR={
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="새로운 스타일과 아이콘 메뉴가 추가되었습니다! 메뉴가 하단 아이콘으로 변경되었습니다. 언제든지 %s > %s에서 변경하고 다른 옵션을 선택할 수 있습니다.",
     ["Slot"]="장비 칸",
     ["Hit Rating"]="적중도",
+    ["Add to friends list"]="친구 목록에 추가",
+    ["Already on your friends list"]="이미 친구 목록에 있습니다",
+    ["Invite to group"]="파티에 초대",
+    ["Already in your group"]="이미 파티에 있습니다",
+    ["You cannot invite players right now."]="지금은 플레이어를 초대할 수 없습니다.",
+    ["Show Player Actions"]="플레이어 행동 표시",
+    ["Shows friend, group invite and whisper buttons for the displayed player."]="표시된 플레이어의 친구 추가, 파티 초대 및 귓속말 버튼을 표시합니다.",
+    ["Whisper"]="귓속말",
 };

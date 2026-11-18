@@ -286,4 +286,12 @@ ns.locales.esMX={
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="¡Hay nuevos estilos y menús de iconos! El menú se cambió a iconos abajo. Puedes cambiarlo cuando quieras y encontrar más opciones en %s > %s.",
     ["Slot"]="Ranura",
     ["Hit Rating"]="Índice de golpe",
+    ["Add to friends list"]="Agregar a la lista de amigos",
+    ["Already on your friends list"]="Ya está en tu lista de amigos",
+    ["Invite to group"]="Invitar al grupo",
+    ["Already in your group"]="Ya está en tu grupo",
+    ["You cannot invite players right now."]="No puedes invitar jugadores en este momento.",
+    ["Show Player Actions"]="Mostrar acciones de jugador",
+    ["Shows friend, group invite and whisper buttons for the displayed player."]="Muestra botones para añadir amigos, invitar al grupo y susurrar al jugador mostrado.",
+    ["Whisper"]="Susurrar",
 };

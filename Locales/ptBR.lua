@@ -286,4 +286,12 @@ ns.locales.ptBR={
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="Novos estilos e menus de ícones estão disponíveis! O menu foi alterado para ícones na parte inferior. Você pode alterá-lo a qualquer momento e encontrar mais opções em %s > %s.",
     ["Slot"]="Espaço",
     ["Hit Rating"]="Taxa de acerto",
+    ["Add to friends list"]="Adicionar à lista de amigos",
+    ["Already on your friends list"]="Já está na sua lista de amigos",
+    ["Invite to group"]="Convidar para o grupo",
+    ["Already in your group"]="Já está no seu grupo",
+    ["You cannot invite players right now."]="Você não pode convidar jogadores agora.",
+    ["Show Player Actions"]="Mostrar ações do jogador",
+    ["Shows friend, group invite and whisper buttons for the displayed player."]="Mostra botões para adicionar amigos, convidar para o grupo e sussurrar para o jogador exibido.",
+    ["Whisper"]="Sussurrar",
 };

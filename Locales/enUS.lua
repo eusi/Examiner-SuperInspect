@@ -286,4 +286,12 @@ ns.locales.enUS={
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s.",
     ["Slot"]="Slot",
     ["Hit Rating"]="Hit Rating",
+    ["Add to friends list"]="Add to friends list",
+    ["Already on your friends list"]="Already on your friends list",
+    ["Invite to group"]="Invite to group",
+    ["Already in your group"]="Already in your group",
+    ["You cannot invite players right now."]="You cannot invite players right now.",
+    ["Show Player Actions"]="Show Player Actions",
+    ["Shows friend, group invite and whisper buttons for the displayed player."]="Shows friend, group invite and whisper buttons for the displayed player.",
+    ["Whisper"]="Whisper",
 };

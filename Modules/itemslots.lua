@@ -26,6 +26,9 @@ local gtt = GameTooltip
 
 local mod = ex:CreateModule("ItemSlots")
 mod.slotBtns = {}
+mod.pendingItems, mod.requestedItems = {}, {}
+local itemEvents = CreateFrame("Frame")
+mod.itemEvents = itemEvents
 
 -- VARIABLES
 
@@ -52,6 +55,8 @@ end
 
 -- Clear equipment data and hide stale controls.
 function mod:OnClearInspect()
+    wipe(self.pendingItems); wipe(self.requestedItems)
+    itemEvents:UnregisterAllEvents()
     for _, button in ipairs(self.slotBtns) do
         if gtt:IsOwned(button) then
             gtt:Hide()
@@ -133,6 +138,7 @@ end
 
 -- Refresh equipment icons and item-level overlays.
 function mod:UpdateItemSlots()
+    wipe(self.pendingItems)
     for index, button in ipairs(self.slotBtns) do
         local link = ex.info.Items[button.slotName]
         if cfg.alwaysShowItemLevel then
@@ -154,6 +160,8 @@ function mod:UpdateItemSlots()
                 itemLevel = GetDetailedItemLevelInfo(link)
                 button.level:SetText(itemLevel)
             else
+                local id = tonumber(link:match("item:(%d+)"))
+                if id then self.pendingItems[id] = true end
                 button.realLink = link
                 button.link = nil
                 button.texture:SetTexture(ITEM_ICON_UNKNOWN)
@@ -162,7 +170,26 @@ function mod:UpdateItemSlots()
             end
         end
     end
+    if next(self.pendingItems) then
+        itemEvents:RegisterEvent("GET_ITEM_INFO_RECEIVED")
+        ExaminerNS.Compat.Try(itemEvents.RegisterEvent, itemEvents, "ITEM_DATA_LOAD_RESULT")
+        for id in pairs(self.pendingItems) do
+            if not self.requestedItems[id] then
+                self.requestedItems[id] = true
+                ExaminerNS.Compat.Try(C_Item and C_Item.RequestLoadItemDataByID, id)
+            end
+        end
+    else itemEvents:UnregisterAllEvents() end
 end
+
+-- Refresh only the current slots when requested item metadata becomes available.
+itemEvents:SetScript("OnEvent", function(_, event, id, success)
+    if success == false or not mod.pendingItems[id] then return end
+    mod:UpdateItemSlots()
+    for _, button in ipairs(mod.slotBtns) do
+        if gtt:IsOwned(button) then button:GetScript("OnEnter")(button) end
+    end
+end)
 
 
 --------------------------------------------------------------------------------------------------------
@@ -210,9 +237,7 @@ local function OnClick(self, button)
             end
         end
     elseif self.realLink then
-        local entryName = ex:GetEntryName()
-        ex:ClearInspect()
-        ex:LoadPlayerFromCache(entryName)
+        mod:UpdateItemSlots()
         self:GetScript("OnEnter")(self)
     end
 end

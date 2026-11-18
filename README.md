@@ -5,10 +5,21 @@ With Examiner, you can inspect other players' gear, stats, item level/gearScore,
 
 Originally developed by Aezay, Examiner has been maintained and extensively enhanced by me since 2024.
 
+**Major Enhancements Since 2024**
+
+- **UI Overhaul**: New themes, scaling and customization.
+- **Compatibility**: Supports all WoW versions, incl. Retail, Forever, Classic.
+- **New Modules**: Professions, Player Actions, Achievements, SoD Runes, Glyphs.
+- **Gear & Stats**: GearScore, improved stats and new gear list.
+- **Talents & PvP**: Enhanced talent trees and PvP stats.
+- **Player Cache**: Advanced search, filtering and sorting.
+
+[*Full Changelog*](https://github.com/eusi/Examiner-SuperInspect/blob/master/CHANGELOG.md)
+
 ## Installation
 
-- **Automatic:** Install via [CurseForge](https://www.curseforge.com/wow/addons/examiner-classic-sod)
-- **Manual:** Download the addon ZIP from [GitHub Releases](https://github.com/eusi/Examiner-SoD-/releases), extract the `Examiner` folder into your WoW client's `Interface/AddOns`. Then restart WoW and enable Examiner in **AddOns**.
+- **Automatic:** Install via [CurseForge](https://www.curseforge.com/wow/addons/examiner-superinspect), [WoWInterface](https://www.wowinterface.com/downloads/fileinfo.php?id=26695#info), or [Wago](https://addons.wago.io/addons/examiner-superinspect-forever-retail-classic-sod).
+- **Manual:** Download the addon ZIP from [GitHub Releases](https://github.com/eusi/Examiner-SuperInspect/releases), extract the `Examiner` folder into your WoW client's `Interface/AddOns`. Then restart WoW and enable Examiner in **AddOns**.
 
 <br>
 <br>
@@ -33,6 +44,7 @@ Originally developed by Aezay, Examiner has been maintained and extensively enha
 - **Glyphs:** Major and minor glyphs in the Talents tab, including empty and locked slots (Mists).
 - **Auto-inspect:** Follow target changes while Examiner is open.
 - **Modules:** Enable/disable modules and tabs. Modules unavailable in your WoW version are greyed out.
+- **Player actions:** Add friends, invite players to your group, or open a whisper.
 - **Gear comparison:** Stat differences between players or individual items.
 - **Settings:** Movable, scalable, item-level, tooltip, caching options, font via LibSharedMedia support, and more.
 - **Appearance:** Classic, Modern, and Forever styles. Bottom icon menus by default; text and right-side icon menus remain available.
@@ -53,6 +65,7 @@ Features depend on the client and available inspect data.
 - **Model:** Left-drag to rotate, right-drag to move, scroll to zoom. Ctrl-left-click changes the background; Ctrl-right-click toggles it; Shift-left-click resets the model.
 - **Gear List:** Enable it under **More > Modules** (disabled by default).
 - **Style / menu:** Choose these independently under **More > Settings**.
+- **Player actions:** Show or hide under **More > Settings > Show Player Actions**.
 
 ## Commands
 
@@ -67,11 +80,16 @@ Features depend on the client and available inspect data.
 | `/ex reset` | Center the window when **Make Examiner Movable** is enabled in Settings. |
 | `/ex clearcache` | Delete all cached inspection data. |
 
+## Support
+
+Report bugs or suggest features in [GitHub Issues](https://github.com/eusi/Examiner-SuperInspect/issues).
+
 ## History & Credits
 
-I took over and rebuilt Aezay's original Examiner in 2024, followed by another major overhaul in 2026, while keeping the original idea.
+I took over and rebuilt Aezay's original Examiner from taxidriveer in 2024, followed by another major overhaul in 2026, while keeping the original idea.
 
 - Aezay, the original author of Examiner.
+- taxidriveer, who took over from Aezay in 2019.
 - Chester, the original author of SuperInspect, who gave me the idea to make this mod.
 - Haldamir of Gorgonnash, for the German translation.
 - Qcat0214, who made the Chinese translation for the 1.13.2 patch.

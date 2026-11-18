@@ -287,4 +287,12 @@ ns.locales.ruRU={
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="Доступны новые стили и меню со значками! Меню переключено на значки внизу. Вы можете изменить его в любое время и найти другие настройки в %s > %s.",
     ["Slot"]="Ячейка",
     ["Hit Rating"]="Рейтинг меткости",
+    ["Add to friends list"]="Добавить в друзья",
+    ["Already on your friends list"]="Уже в вашем списке друзей",
+    ["Invite to group"]="Пригласить в группу",
+    ["Already in your group"]="Уже в вашей группе",
+    ["You cannot invite players right now."]="Сейчас вы не можете приглашать игроков.",
+    ["Show Player Actions"]="Показывать действия с игроком",
+    ["Shows friend, group invite and whisper buttons for the displayed player."]="Показывает кнопки добавления в друзья, приглашения в группу и шёпота для отображаемого игрока.",
+    ["Whisper"]="Шепнуть",
 };

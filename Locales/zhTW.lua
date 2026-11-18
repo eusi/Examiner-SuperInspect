@@ -287,4 +287,12 @@ ns.locales.zhTW={
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="新增樣式與圖示選單！選單已切換為底部圖示。你可以隨時在 %s > %s 中變更並查看更多選項。",
     ["Slot"]="部位",
     ["Hit Rating"]="命中等級",
+    ["Add to friends list"]="加入好友名單",
+    ["Already on your friends list"]="已在你的好友名單中",
+    ["Invite to group"]="邀請加入隊伍",
+    ["Already in your group"]="已在你的隊伍中",
+    ["You cannot invite players right now."]="你目前無法邀請玩家。",
+    ["Show Player Actions"]="顯示玩家操作",
+    ["Shows friend, group invite and whisper buttons for the displayed player."]="顯示目前玩家的加入好友、邀請加入隊伍及密語按鈕。",
+    ["Whisper"]="密語",
 };

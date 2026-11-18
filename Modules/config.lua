@@ -407,16 +407,17 @@ function mod:OnInitialize()
     end)
     slider:SetScript("OnLeave", ex.HideGTT)
     self:OnConfigChanged("scale", cfg.scale)
+    local optionOffset = math.max(0, #checkBtns - 6) * 19
     self.sourceDropDown =
-        CreateSelector(content, -312, ExaminerNS.L["Average Item Level"], SourceMenuInit, SourceMenuSelect)
-    self.fontDropDown = CreateSelector(content, -280, ExaminerNS.L["Font"], FontMenuInit, FontMenuSelect)
-    self.styleDropDown = CreateSelector(content, -248, ExaminerNS.L["Style"], AppearanceMenuInit, AppearanceMenuSelect)
+        CreateSelector(content, -312 - optionOffset, ExaminerNS.L["Average Item Level"], SourceMenuInit, SourceMenuSelect)
+    self.fontDropDown = CreateSelector(content, -280 - optionOffset, ExaminerNS.L["Font"], FontMenuInit, FontMenuSelect)
+    self.styleDropDown = CreateSelector(content, -248 - optionOffset, ExaminerNS.L["Style"], AppearanceMenuInit, AppearanceMenuSelect)
     self.styleDropDown.appearanceSetting = "style"
-    self.menuDropDown = CreateSelector(content, -216, ExaminerNS.L["Menu"], AppearanceMenuInit, AppearanceMenuSelect)
+    self.menuDropDown = CreateSelector(content, -216 - optionOffset, ExaminerNS.L["Menu"], AppearanceMenuInit, AppearanceMenuSelect)
     self.menuDropDown.appearanceSetting = "menuStyle"
-    content:SetHeight(374)
+    content:SetHeight(374 + optionOffset)
     vers:ClearAllPoints()
-    vers:SetPoint("TOP", content, "TOP", 0, -350)
+    vers:SetPoint("TOP", content, "TOP", 0, -350 - optionOffset)
     ScrollTo(scroll:GetVerticalScroll())
     self:OnConfigChanged("itemLevelSource", cfg.itemLevelSource)
     self:OnConfigChanged("font", cfg.font)
@@ -432,6 +433,7 @@ end
 
 -- Apply changed preferences to the settings display.
 function mod:OnConfigChanged(var, value)
+    if var == "showPlayerActions" and ExaminerNS.Friends then ExaminerNS.Friends.Update() end
     if var == "scale" and self.scaleSlider then
         local slider = self.scaleSlider
         slider.pendingScale = nil

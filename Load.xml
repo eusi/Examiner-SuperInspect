@@ -33,6 +33,7 @@
     <Script file="Services\Appearance.lua"/>
     <Script file="Services\FrameArt.lua"/>
     <Script file="Services\ClassIcon.lua"/>
+    <Script file="Services\Friends.lua"/>
     <Script file="Modules\itemslots.lua"/>
     <Script file="Modules\config.lua"/>
     <Script file="Modules\cache.lua"/>

@@ -287,4 +287,12 @@ ns.locales.frFR={
     ["New styles and icon menus are available! The menu has been switched to bottom icons. You can change it at any time and find more options under %s > %s."]="De nouveaux styles et menus à icônes sont disponibles ! Le menu utilise désormais les icônes en bas. Vous pouvez le modifier à tout moment et trouver plus d’options dans %s > %s.",
     ["Slot"]="Emplacement",
     ["Hit Rating"]="Score de toucher",
+    ["Add to friends list"]="Ajouter à la liste d’amis",
+    ["Already on your friends list"]="Déjà dans votre liste d’amis",
+    ["Invite to group"]="Inviter dans le groupe",
+    ["Already in your group"]="Déjà dans votre groupe",
+    ["You cannot invite players right now."]="Vous ne pouvez pas inviter de joueurs pour le moment.",
+    ["Show Player Actions"]="Afficher les actions de joueur",
+    ["Shows friend, group invite and whisper buttons for the displayed player."]="Affiche les boutons d’ajout d’ami, d’invitation au groupe et de chuchotement pour le joueur affiché.",
+    ["Whisper"]="Chuchoter",
 };
