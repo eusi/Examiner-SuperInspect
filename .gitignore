@@ -1,6 +1,3 @@
-/.examiner-builds/
-/.examiner-backups/
-/.examiner-tools
-/.examiner-docs
+/.examiner*/
 /*.bak
 /.changelog

@@ -154,6 +154,8 @@ function Art.SideTab(button, active, hover)
         texture:SetSize((bottom or top) and button:GetHeight() or button:GetWidth(), (bottom or top) and (button:GetWidth() + 5) or (button:GetHeight() + 5))
         texture:SetRotation(bottom and -math.pi / 2 or top and math.pi / 2 or left and math.pi or 0)
         texture:SetDesaturated(style ~= "forever")
+        local shade = style == "dark" and texture == tab.background and 0.55 or 1
+        texture:SetVertexColor(shade, shade, shade, 1)
         texture:SetShown(enabled)
     end
     if not enabled then return end

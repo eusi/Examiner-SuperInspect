@@ -256,6 +256,9 @@ function F.StyleTooltip()
     if not tooltip or not F.IsOwned(tooltip:GetOwner()) then
         return
     end
+    if tooltip:GetOwner().nativeTooltipFont then
+        return
+    end
     if tooltip.GetItem then
         local _, link = tooltip:GetItem()
         if ns.Compat.IsSecret(link) or ns.Compat.IsString(link) then

@@ -18,6 +18,8 @@ local function CreateAction(texture, fill)
     action:SetSize(ACTION_WIDTH, ACTION_HEIGHT)
     action.navigationIconMode, action.navigationIconPosition = true, "top"
     action.actionDock = true
+    -- Native tooltip fonts retain character coverage for player and realm names.
+    action.nativeTooltipFont = true
     action.fillActionIcon, action.actionIconSize = fill, fill and 20 or 18
     action.navigationIcon = action:CreateTexture(nil, "ARTWORK")
     action.navigationIcon:SetSize(action.actionIconSize, action.actionIconSize)
@@ -70,13 +72,18 @@ local function AddFunction()
     return C_FriendList and C_FriendList.AddFriend or AddFriend
 end
 
--- Follow the native WoW-friend route when Retail disables character friends.
+-- Prefer native name-based invitations, including the newer WoW-friend system.
 local function FriendAction(name)
+    if not name then return end
     local add = AddFunction()
     if type(add) == "function" then return add, name end
-    if not name or ex.isCacheEntry or not ex.unit or not C_BattleNet then return end
+    if not C_BattleNet then return end
     if not C.IsTrue(C.Try(BNFeaturesEnabledAndConnected))
         or not C.IsTrue(C.Try(C_BattleNet.AreTitleFriendsEnabled)) then return end
+    if type(C_BattleNet.SendTitleFriendInviteByName) == "function" then
+        return C_BattleNet.SendTitleFriendInviteByName, name
+    end
+    if ex.isCacheEntry or not ex.unit then return end
     local _, battleTag = C.Try(BNGetInfo)
     local guid = C.Text(ex.info.guid)
     if not C.Text(battleTag) or not guid or guid ~= C.Text(C.Try(UnitGUID, ex.unit)) then return end
@@ -207,7 +214,7 @@ function F.Update()
     local x = ex.cfg.style == "modern" and 65 or 71
     local y = bounds == ex and -12 or 0
     -- Dock to each style's visible upper frame edge, using compact native art.
-    if ex.cfg.style == "forever" then y = y + 4
+    if ns.Appearance.TexturedStyle() then y = y + 4
     elseif ex.cfg.style == "classic" then y = y - 1 end
     if bounds ~= ex then x = x - 12 end
     button.playerName = visible and name or nil
@@ -237,6 +244,7 @@ function F.Update()
         local iconY = action == whisper and -2 or (inset or ex.cfg.style == "modern") and -1 or 0
         action.navigationIcon:SetPoint("CENTER", 0, iconY)
         ns.Appearance.PaintButton(action, false, true)
+        if action == button then action.navigationIcon:SetDesaturated(false) end
         if GameTooltip:IsShown() and GameTooltip:GetOwner() == action then
             if action:IsShown() and ex:IsShown() then action:GetScript("OnEnter")(action) else GameTooltip:Hide() end
         end
@@ -246,10 +254,15 @@ end
 
 -- Explain the action using the same identity that a click will resolve again.
 function F.ShowTooltip()
+    local friend = IsFriend(button.playerName)
+    local add = FriendAction(button.playerName)
     GameTooltip:SetOwner(button, "ANCHOR_TOP")
     GameTooltip:ClearLines()
-    GameTooltip:AddLine(IsFriend(button.playerName) and L["Already on your friends list"] or L["Add to friends list"], 1, 0.82, 0)
+    GameTooltip:AddLine(friend and L["Already on your friends list"] or L["Add to friends list"], 1, 0.82, 0)
     GameTooltip:AddLine(button.playerName or "", 1, 1, 1)
+    if not friend and type(add) ~= "function" then
+        GameTooltip:AddLine(L["Not available"], 0.7, 0.7, 0.7)
+    end
     GameTooltip:Show()
 end
 

@@ -10,7 +10,7 @@
 --                                            Module Setup                                            --
 --------------------------------------------------------------------------------------------------------
 
-local _, ExaminerNS = ...
+local addonName, ExaminerNS = ...
 if ExaminerNS.blocked then
     return
 end
@@ -32,6 +32,7 @@ local NUM_BUTTONS = 10
 local BUTTON_HEIGHT = (240 / NUM_BUTTONS)
 local activeCacheList = {}
 local buttons = {}
+mod.nameSearch = ""
 
 -- EXPOSE THESE TABLES
 
@@ -109,6 +110,7 @@ end
 function mod:OnInitialize()
     cfg = ex.cfg
     cache = ex.cache
+    self:UpdateSearchArt()
     -- DEFAULTS
 
     cfg.cacheSort = cfg.cacheSort or "class"
@@ -475,8 +477,12 @@ function mod:BuildCacheList()
     -- CREATE DISPLAY TABLE
 
     wipe(activeCacheList)
+    local search = self.nameSearch:match("^%s*(.-)%s*$"):lower()
     for entryName, entry in next, cache do
-        if notFiltered or (IncludeFilteredEntry(entry, filter, lvlMin, lvlHyphen, lvlMax)) then
+        local name = C.IsTable(entry) and C.Text(entry.name, "") or ""
+        local matchesSearch = search == "" or name:lower():find(search, 1, true)
+            or entryName:lower():find(search, 1, true)
+        if matchesSearch and (notFiltered or IncludeFilteredEntry(entry, filter, lvlMin, lvlHyphen, lvlMax)) then
             activeCacheList[#activeCacheList + 1] = entryName
         end
     end
@@ -489,11 +495,98 @@ function mod:BuildCacheList()
     self.page.header:SetFormattedText(
         ExaminerNS.L["Cached Players (%d)%s"],
         #activeCacheList,
-        (notFiltered and "" or " |cffffff00*")
+        (notFiltered and search == "" and "" or " |cffffff00*")
     )
+    -- Keep translated titles beside the search icon within the page bounds.
+    local header = self.page.header
+    local face, _, flags = header:GetFont()
+    for size = 16, 10, -1 do
+        header:SetFont(face, size, flags)
+        if header:GetStringWidth() <= self.page:GetWidth() - 42 then break end
+    end
     UpdateShownItems(self.scroll)
     wipe(filterList)
 end
+
+--------------------------------------------------------------------------------------------------------
+--                                            Name Search                                             --
+--------------------------------------------------------------------------------------------------------
+
+local searchButton = CreateFrame("Button", nil, mod.page)
+mod.searchButton = searchButton
+searchButton:SetSize(20, 20)
+local searchIcon = searchButton:CreateTexture(nil, "ARTWORK")
+local searchCircle = searchButton:CreateTexture(nil, "BACKGROUND")
+searchCircle:SetAllPoints(searchButton)
+searchCircle:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Textures\\SearchCircle")
+searchCircle:SetTexCoord(0, 48 / 64, 0, 48 / 64)
+mod.searchIcon, mod.searchCircle = searchIcon, searchCircle
+
+-- Keep the selected circled search motif consistent across window styles.
+function mod:UpdateSearchArt()
+    searchButton:ClearAllPoints()
+    searchButton:SetPoint("TOPLEFT", 11, -12)
+    searchCircle:Show()
+    searchIcon:ClearAllPoints()
+    searchIcon:SetPoint("CENTER", searchButton, "CENTER", 0, 0)
+    searchIcon:SetSize(10.8, 10.8)
+    searchIcon:SetTexture("Interface\\AddOns\\" .. addonName .. "\\Textures\\SearchMagnifier")
+    searchIcon:SetTexCoord(0, 21 / 32, 0, 22 / 32)
+end
+
+-- Refresh immediately when switching the window style without a reload.
+function mod:OnConfigChanged(setting)
+    if setting == "style" then self:UpdateSearchArt() end
+end
+
+mod:UpdateSearchArt()
+local searchBox = CreateFrame("EditBox", nil, mod.page, "InputBoxTemplate")
+mod.searchBox = searchBox
+-- The native input border extends 5 px left; leave 12 px clear of the circle.
+searchBox:SetPoint("TOPLEFT", 48, -10)
+searchBox:SetPoint("TOPRIGHT", -10, -10)
+searchBox:SetHeight(22)
+searchBox:SetAutoFocus(false)
+searchBox:SetFontObject("ChatFontNormal")
+searchBox:SetMaxLetters(80)
+ExaminerNS.Fonts.Apply(searchBox)
+searchBox:Hide()
+mod.page.header:ClearAllPoints()
+mod.page.header:SetPoint("TOPLEFT", 34, -14)
+mod.page.header:SetPoint("TOPRIGHT", -8, -14)
+mod.page.header:SetMaxLines(1)
+
+-- Toggle the title overlay; closing clears this transient name search only.
+local function ToggleSearch(show)
+    searchBox:SetShown(show)
+    mod.page.header:SetShown(not show)
+    if show then
+        searchBox:SetFocus()
+    else
+        searchBox:ClearFocus()
+        searchBox:SetText("")
+        mod.nameSearch = ""
+        if cfg then mod:BuildCacheList() end
+    end
+end
+searchButton:SetScript("OnClick", function() ToggleSearch(not searchBox:IsShown()) end)
+searchButton:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    GameTooltip:AddLine(ExaminerNS.L["Search cached players"], 1, 0.82, 0)
+    GameTooltip:AddLine(ExaminerNS.L["Search by name"], 1, 1, 1, true)
+    GameTooltip:Show()
+end)
+searchButton:SetScript("OnLeave", ex.HideGTT)
+searchBox:SetScript("OnTextChanged", function(self)
+    mod.nameSearch = self:GetText() or ""
+    if cfg then
+        FauxScrollFrame_OnVerticalScroll(mod.scroll, 0, BUTTON_HEIGHT, function() end)
+        mod:BuildCacheList()
+    end
+end)
+searchBox:SetScript("OnEscapePressed", function() ToggleSearch(false) end)
+searchBox:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+mod.page:HookScript("OnHide", function() searchBox:ClearFocus() end)
 
 
 --------------------------------------------------------------------------------------------------------

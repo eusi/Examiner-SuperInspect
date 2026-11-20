@@ -246,7 +246,7 @@ function mod:Step()
     elseif
         self.state == "queued"
         and now - lastRequest >= 5
-        and C.IsTrue(C.Try(CheckInteractDistance, self.session.unit, 1))
+        and C.InInteractRange(self.session.unit, 1)
     then
         self.sending = true
         -- Forever otherwise retains the previously compared player's statistics.

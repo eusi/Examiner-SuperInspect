@@ -183,6 +183,17 @@ end
 --                                          Inspection Logic                                          --
 --------------------------------------------------------------------------------------------------------
 
+-- Match the displayed guild to the player's guild without mixing realm names.
+local function OwnGuild(data, unit)
+    local ownName, _, _, ownRealm = C.Try(GetGuildInfo, "player")
+    ownName = C.Text(ownName)
+    if not data.name or not ownName or data.name ~= ownName then return false end
+    if C.IsTrue(C.Try(UnitIsUnit, unit, "player")) then return true end
+    ownRealm = C.Text(ownRealm, C.Text(C.Try(GetRealmName)))
+    local realm = C.Text(data.realm, C.Text(ex.info.realm, C.Text(C.Try(GetRealmName))))
+    return realm and ownRealm and realm:gsub("%s", ""):lower() == ownRealm:gsub("%s", ""):lower() or false
+end
+
 -- Read client guild data for the current inspected player.
 function mod:Read(unit, inspectReady)
     local guild, rankName, _, guildRealm = C.Try(GetGuildInfo, unit)
@@ -215,6 +226,11 @@ function mod:Read(unit, inspectReady)
     if data.name and (not data.realm or data.realm == "") then
         data.realm = C.Text(ex.info.realm, C.Text(C.Try(GetRealmName)))
     end
+    -- Own-guild totals come from the roster, not the foreign inspect result.
+    if OwnGuild(data, unit) then
+        local count = C.Try(GetNumGuildMembers)
+        if C.IsNumber(count) and count > 0 and count % 1 == 0 then data.members = count end
+    end
     ex.guildData = data
     self:Draw(data)
     self:HasData(C.IsString(data.name) and data.name ~= "")
@@ -228,6 +244,10 @@ end
 -- Prepare guild data for a new inspected player.
 function mod:OnInspect(unit)
     self:Read(unit)
+    if ex.guildData and OwnGuild(ex.guildData, unit) and GetTime() - (self.lastRosterRequest or -100) >= 5 then
+        self.lastRosterRequest = GetTime()
+        C.Try(C_GuildInfo and C_GuildInfo.GuildRoster or GuildRoster)
+    end
 end
 
 -- Read guild data after the inspection reply.
@@ -268,3 +288,16 @@ function mod:OnCacheLoaded(entry)
     self:Draw(ex.guildData)
     self:HasData(C.IsString(ex.guildData.name) and ex.guildData.name ~= "")
 end
+
+-- Refresh a live own-guild count after roster data arrives; cached data stays frozen.
+local rosterEvents = CreateFrame("Frame")
+mod.rosterEvents = rosterEvents
+rosterEvents:RegisterEvent("GUILD_ROSTER_UPDATE")
+rosterEvents:RegisterEvent("PLAYER_GUILD_UPDATE")
+rosterEvents:SetScript("OnEvent", function(_, event, unit)
+    if event == "PLAYER_GUILD_UPDATE" and unit ~= "player" then return end
+    local session = ns.Inspector and ns.Inspector.active
+    if mod:IsEnabled() and not ex.isCacheEntry and session and ns.Inspector:Valid(session) then
+        mod:Read(session.unit, session.serverReady)
+    end
+end)

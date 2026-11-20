@@ -147,6 +147,20 @@ function C.Try(fn, ...)
     return TryResult(pcall(fn, ...))
 end
 
+-- Defer protected distance probes in combat; the player needs no range test.
+function C.InInteractRange(unit, index)
+    if not C.IsString(unit) or unit == "" then
+        return false
+    end
+    if C.IsTrue(C.Try(UnitIsUnit, unit, "player")) then
+        return true
+    end
+    if type(InCombatLockdown) == "function" and C.Safe(C.Try(InCombatLockdown)) ~= false then
+        return false
+    end
+    return C.IsTrue(C.Try(CheckInteractDistance, unit, index))
+end
+
 local seasonID = C_Seasons and C.Try(C_Seasons.GetActiveSeason)
 local discoveryID = Enum and Enum.SeasonID and Enum.SeasonID.SeasonOfDiscovery
 C.isSoD = C.isEra and discoveryID ~= nil and seasonID == discoveryID

@@ -41,7 +41,7 @@ local map = {
     PARRY_RATING = "PARRYRATING",
     EXPERTISE_RATING = "EXPERTISERATING",
     RESILIENCE_RATING = "RESILIENCERATING",
-    DEFENSE_SKILL_RATING = "DEFENSERATING",
+    DEFENSE_SKILL_RATING = "DEFENSE",
     SPELL_CRIT_RATING = "SPELLCRITRATING",
     SPELL_HASTE_RATING = "SPELLHASTERATING",
     SPELL_HIT_RATING = "SPELLHITRATING",
@@ -80,6 +80,10 @@ for key, token in pairs(aliases) do
     end
 end
 G.labels.DPS = C.Text(_G.DAMAGE_PER_SECOND, C.Text(_G.ITEM_MOD_DAMAGE_PER_SECOND_SHORT, "DPS"))
+-- Preserve the compact translated label after native aliases have been applied.
+G.labels.MP5 = ns.L["Mana Regen / 5 sec"]
+G.labels.DEFENSE = C.Text(_G.DEFENSE, LibGearExam.StatNames.DEFENSE)
+G.statMap.DEFENSERATING = "DEFENSE"
 for index, school in ipairs({ "HOLY", "FIRE", "NATURE", "FROST", "SHADOW", "ARCANE" }) do
     local token = school .. "RESIST"
     G.statMap["RESISTANCE" .. index .. "_NAME"] = token
@@ -133,7 +137,12 @@ function G.CanonicalStats(stats)
         if C.IsNumber(value) then
             local token = G.statMap[key]
                 or (C.IsString(key) and key:match("^ITEM_MOD_") and not G.labels[key] and G.ResolveStat(key)) or key
-            result[token] = (result[token] or 0) + value
+            -- Old snapshots can contain both the native and legacy defense
+            -- representation. Prefer the existing canonical value, never sum
+            -- two representations of that same stat or rewrite saved data.
+            if token ~= "DEFENSE" or key == "DEFENSE" or not C.IsNumber(stats.DEFENSE) then
+                result[token] = (result[token] or 0) + value
+            end
         end
     end
     return result

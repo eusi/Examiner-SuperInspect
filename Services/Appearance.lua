@@ -15,6 +15,8 @@ A.palettes = {
         edge = {0.27, 0.27, 0.27, 1}, accent = {0.6, 0.6, 0.6, 1}, label = {0.9, 0.9, 0.9, 1} },
     forever = { background = {0.075, 0.075, 0.075, 1}, panel = {0.13, 0.13, 0.13, 1},
         edge = {0.38, 0.32, 0.23, 1}, accent = {0.88, 0.73, 0.32, 1}, label = {1, 0.82, 0.35, 1} },
+    dark = { background = {0.055, 0.055, 0.055, 1}, panel = {0.10, 0.10, 0.10, 1},
+        edge = {0.24, 0.24, 0.24, 1}, accent = {0.65, 0.65, 0.65, 1}, label = {1, 0.82, 0.35, 1} },
 }
 local buttons, pages = {}, {}
 local labelColors = setmetatable({}, {__mode = "k"})
@@ -78,7 +80,7 @@ end
 
 -- Normalize appearance choices while preserving all unrelated settings.
 function A.Normalize(cfg)
-    if cfg.style ~= "modern" and cfg.style ~= "forever" then cfg.style = "classic" end
+    if not A.palettes[cfg.style] then cfg.style = "classic" end
     if cfg.menuStyle ~= "classic" and cfg.menuStyle ~= "iconsRight" and cfg.menuStyle ~= "iconsBottom" then
         cfg.menuStyle = "iconsBottom"
     end
@@ -90,6 +92,12 @@ end
 -- Return the active optional palette; Classic uses the original artwork.
 function A.Palette()
     return ns.ex and ns.ex.cfg and A.palettes[ns.ex.cfg.style]
+end
+
+-- Share native frame geometry while keeping Dark's material independent.
+function A.TexturedStyle()
+    local style = ns.ex and ns.ex.cfg and ns.ex.cfg.style
+    return style == "forever" or style == "dark"
 end
 
 --------------------------------------------------------------------------------------------------------
@@ -190,7 +198,7 @@ function A.PaintButton(button, active, iconMode)
     A.RegisterButton(button)
     local palette = A.Palette()
     local visual = palette or (iconMode and A.palettes.forever)
-    local forever = ns.ex.cfg.style == "forever"
+    local forever = A.TexturedStyle()
     -- Text navigation keeps native buttons without an extra surface or selection frame.
     local classicMenu = button.navigationIconMode == false
     if forever or classicMenu then visual = nil end
@@ -204,7 +212,7 @@ function A.PaintButton(button, active, iconMode)
     end
     if record.talentArt then
         local modern = ns.ex.cfg.style == "modern"
-        local forever = ns.ex.cfg.style == "forever"
+        local forever = A.TexturedStyle()
         if button.talentAnchorX then
             button:ClearAllPoints()
             if button.talentLegacy then
@@ -301,7 +309,7 @@ local function PaintPage(page, palette)
         if #original.border == 0 then original.border = {0.7, 0.7, 0.8, 0.2} end
     end
     if palette then
-        local forever = palette == A.palettes.forever
+        local forever = palette == A.palettes.forever or palette == A.palettes.dark
         page:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8X8",
             edgeFile = forever and "Interface\\Tooltips\\UI-Tooltip-Border" or "Interface\\Buttons\\WHITE8X8",
             edgeSize = forever and 8 or 1, tile = forever, tileSize = 128,
@@ -331,7 +339,7 @@ end
 function A.UpdateBackground()
     local ex = ns.ex
     if not ex or not ex.cfg then return end
-    local forever = ex.cfg.style == "forever"
+    local forever = A.TexturedStyle()
     for _, key in ipairs({"bgTopLeft", "bgTopRight", "bgBottomLeft", "bgBottomRight"}) do
         ex[key]:SetShown(ex.cfg.showBackground)
         ex[key]:SetDesaturated(forever)
@@ -351,7 +359,7 @@ function A.UpdatePortrait()
     ex.portrait:SetTexCoord(low, high, low, high)
     ex.portrait:SetDrawLayer(ex.cfg.style == "classic" and "BACKGROUND" or "ARTWORK", ex.cfg.style == "classic" and 0 or 1)
     -- Match the native portrait's circular clipping rather than exposing the texture's square corners.
-    if ex.cfg.style == "forever" and ex.CreateMaskTexture then
+    if A.TexturedStyle() and ex.CreateMaskTexture then
         if not ex.portraitMask then
             ex.portraitMask = ex:CreateMaskTexture(nil, "ARTWORK")
             ex.portraitMask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask")
@@ -434,7 +442,8 @@ function A.Apply()
         ex.styleSkin.fill:SetColorTexture(unpack(palette.background))
         ex.styleSkin.band:SetColorTexture(unpack(palette.panel))
     end
-    local forever = ex.cfg.style == "forever"
+    local forever = A.TexturedStyle()
+    local dark = ex.cfg.style == "dark"
     ex.styleSkin.fill:ClearAllPoints()
     ex.styleSkin.fill:SetPoint("BOTTOMRIGHT", ex.styleSkin.bounds, "BOTTOMRIGHT")
     ex.styleSkin.band:ClearAllPoints()
@@ -464,6 +473,20 @@ function A.Apply()
         ex.styleSkin.fill:SetVertexColor(1,1,1,1)
     end
     ex.styleSkin.metal = ns.FrameArt.MetalFrame(ex, ex.styleSkin.bounds, ex.styleSkin.metal, forever)
+    -- Reset material tint on every switch so Forever keeps its original colors.
+    for _, pieces in ipairs({ex.styleSkin.metal.native, ex.styleSkin.metal.fallback}) do
+        for _, texture in pairs(pieces) do
+            texture:SetDesaturated(dark)
+            local shade = dark and 0.48 or 1
+            texture:SetVertexColor(shade, shade, shade, 1)
+        end
+    end
+    for _, texture in ipairs({ex.styleSkin.fill, ex.styleSkin.headerFill}) do
+        texture:SetDesaturated(dark)
+        local shade = dark and 0.45 or 1
+        texture:SetVertexColor(shade, shade, shade, 1)
+    end
+    if dark then ex.styleSkin.band:SetColorTexture(0.035,0.035,0.035,1) end
     ex.title:SetDrawLayer(ex.cfg.style == "classic" and "ARTWORK" or "OVERLAY", ex.cfg.style == "classic" and 0 or 6)
     A.UpdatePortrait()
     if not ex.navigationGutter then

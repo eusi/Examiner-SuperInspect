@@ -4,6 +4,16 @@ Changes to sAks/eusi's Examiner (SuperInspect) fork, newest first.
 
 Development lineage: **Aezay's original Examiner → taxidriveer's Classic fork (2019) → sAks/eusi's SoD fork (2024), later expanded across WoW clients**. sAks/eusi occasionally helped before taking over in 2024. The entries below trace the additions in this fork back to its predecessors.
 
+## [1.11.0](https://github.com/eusi/Examiner-SuperInspect/releases/tag/v1.11.0) — 2026-11-21
+
+- Renamed Modern to Flat and added a Dark style with dark grey textures and a greyscale character background.
+- Added a live name search to Cached Players.
+- Support friend invitations by name without a current target; hide unavailable friend actions.
+- Fixed the own guild's member count.
+- Kept native fonts in player action tooltips to avoid missing characters in names.
+- Fixed a Retail error when opening the Achievements tab.
+- Fixed the short mana-regeneration label and removed duplicate Defense rows.
+
 ## [1.10.0](https://github.com/eusi/Examiner-SuperInspect/releases/tag/v1.10.0) — 2026-11-18
 
 - Added a button to open a whisper to the inspected player.
@@ -11,6 +21,7 @@ Development lineage: **Aezay's original Examiner → taxidriveer's Classic fork 
 - Added a button to add the inspected player to your friends list.
 - Cached gear now loads missing item details automatically.
 - Small UI fixes.
+- Fixed a blocked interaction-distance call when showing item tooltips during combat.
 
 ## [1.9.0](https://github.com/eusi/Examiner-SuperInspect/releases/tag/v1.9.0) — 2026-11-15
 

@@ -196,11 +196,8 @@ end
 
 local guardedComparison
 
--- Ignore foreign comparison replies in Mists' hidden Blizzard panel.
+-- Ignore comparison replies in the hidden native panel on Retail and Mists.
 local function GuardHiddenComparison()
-    if not C.isMists then
-        return true
-    end
     local comparison = AchievementFrameComparison
     if not comparison then
         return false
@@ -223,7 +220,7 @@ local function GuardHiddenComparison()
     return true
 end
 
-if C.isMists and not GuardHiddenComparison() then
+if not GuardHiddenComparison() then
     local listener = CreateFrame("Frame")
     listener:RegisterEvent("ADDON_LOADED")
     -- Guard the native panel after Blizzard's load-on-demand addon creates it.
@@ -244,7 +241,7 @@ function mod:Start()
     if not session or session.cached or not session.serverReady or not I:Valid(session) then
         return
     end
-    if not C.IsTrue(C.Try(CheckInteractDistance, ex.unit, 1)) and not ex.isSelf then
+    if not C.InInteractRange(ex.unit, 1) and not ex.isSelf then
         return
     end
     GuardHiddenComparison()

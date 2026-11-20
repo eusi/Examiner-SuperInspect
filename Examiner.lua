@@ -218,7 +218,7 @@ end
 
 -- Retry inspection when the player comes within range.
 local function Examiner_OnUpdate(self, elapsed)
-    if (self:ValidateUnit()) and (CheckInteractDistance(self.unit, 3)) then
+    if (self:ValidateUnit()) and (Compat.InInteractRange(self.unit, 3)) then
         self:DoInspect(self.unit)
     end
 end
@@ -1187,7 +1187,7 @@ function ex.ItemButton_OnEnter(self, motion)
     elseif
         self.id
         and ex:ValidateUnit()
-        and CheckInteractDistance(ex.unit, 3)
+        and Compat.InInteractRange(ex.unit, 3)
         and gtt:SetInventoryItem(ex.unit, self.id)
     then
     -- SET ITEM FROM LINK

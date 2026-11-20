@@ -8,6 +8,8 @@
 local _,ns=...;
 if ns.blocked then return; end
 ns.locales.enUS={
+    ["Search cached players"]="Search cached players",
+    ["Search by name"]="Search by name",
     ["Mana Regen / 5 sec"]="Mana Regen / 5 sec",
     ["Sanctified"]="Sanctified",
     ["Increased Daggers Skill"]="Increased Daggers Skill",
@@ -269,7 +271,8 @@ ns.locales.enUS={
     ["Style"]="Style",
     ["Menu"]="Menu",
     ["Classic"]="Classic",
-    ["Modern"]="Modern",
+    ["Flat"]="Flat",
+    ["Dark"]="Dark",
     ["Forever"]="Forever",
     ["Icons on the right"]="Icons on the right",
     ["Item data is still loading."]="Item data is still loading.",

@@ -164,7 +164,7 @@ end
 -- Offer independent style and navigation choices with Classic selected by default.
 local function AppearanceMenuInit(parent, list)
     local style = parent.appearanceSetting == "style"
-    local choices = style and {{"classic", "Classic"}, {"modern", "Modern"}, {"forever", "Forever"}}
+    local choices = style and {{"classic", "Classic"}, {"modern", "Flat"}, {"forever", "Forever"}, {"dark", "Dark"}}
         or {{"classic", "Classic"}, {"iconsRight", "Icons on the right"}, {"iconsBottom", "Icons at the bottom"}}
     for index, choice in ipairs(choices) do
         local row = list[index]
