@@ -34,16 +34,6 @@ mod.itemEvents = itemEvents
 
 local ITEM_ICON_UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark"
 
--- OPTIONS
-
-mod:AddOption({
-    var = "alwaysShowItemLevel",
-    default = true,
-    label = ExaminerNS.L["Always Show Item Levels"],
-    tip = ExaminerNS.L["Shows item levels without holding Alt."],
-})
-
-
 --------------------------------------------------------------------------------------------------------
 --                                           Module Scripts                                           --
 --------------------------------------------------------------------------------------------------------

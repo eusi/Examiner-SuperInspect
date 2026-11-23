@@ -9,6 +9,11 @@ local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="ruRU" then return; end
 ns.locales.ruRU={
+    ["Gamepad: Close with B/Circle"]="Gamepad: Закрывать кнопкой B/Круг",
+    ["Closes Examiner with gamepad B/Circle. Disable if it conflicts with your controller setup."]="Закрывает Examiner кнопкой B/Круг на геймпаде. Отключите при конфликте с настройками геймпада.",
+    ["Cached character"]="Сохранённый персонаж",
+    ["Saved"]="Сохранено",
+    ["%d %b %Y · %H:%M"]="%d.%m.%Y · %H:%M",
     ["Search cached players"]="Поиск сохранённых игроков",
     ["Search by name"]="Поиск по имени",
     ["Mana Regen / 5 sec"]="Рег. маны / 5 сек.",

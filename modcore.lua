@@ -26,7 +26,7 @@ ex.ModuleCore = ModuleCore
 ex.modules = {}
 ex.buttons = {}
 local moduleIcons = {
-    Stats = "INV_Chest_Plate16", Equipment = "INV_Misc_Note_01", PvP = "INV_BannerPVP_02",
+    Stats = "INV_Chest_Plate16", Equipment = "INV_Misc_Note_01", PvP = "Ability_DualWield",
     Talents = "INV_Misc_Book_11", Guild = "INV_Shirt_GuildTabard_01", Runes = "INV_Misc_Rune_06",
     Professions = "Trade_BlackSmithing", Achievements = "Achievement_General", More = "INV_Misc_Gear_01",
     Config = "INV_Misc_Wrench_01", Cache = "INV_Misc_Book_09", Modules = "INV_Misc_EngGizmos_19",
@@ -36,13 +36,45 @@ local moduleIcons = {
 --                                          Helper Functions                                          --
 --------------------------------------------------------------------------------------------------------
 
--- Share menu artwork and use the local player's faction for the PvP navigation banner.
+-- Resolve artwork from the displayed snapshot, never from the viewer's faction.
 function ex:GetModuleIcon(token, fallback)
     if token == "PvP" then
         local C = ExaminerNS.Compat
-        return C.Text(C.Try(UnitFactionGroup, "player")) == "Horde" and "INV_BannerPVP_01" or "INV_BannerPVP_02"
+        local faction=C.Text(self.info.factionGroup)
+        if faction=="Horde" then return "INV_BannerPVP_01" end
+        if faction=="Alliance" then return "INV_BannerPVP_02" end
+        return moduleIcons.PvP
     end
     return moduleIcons[token] or fallback or "INV_Misc_QuestionMark"
+end
+
+-- Specialization artwork can be a native file ID or a complete texture path.
+function ex:GetModuleTexture(token, fallback)
+    local icon=self:GetModuleIcon(token,fallback)
+    if type(icon)=="number" or icon:find("\\",1,true) or icon:find("/",1,true) then return icon end
+    return "Interface\\Icons\\"..icon
+end
+
+-- Set native navigation artwork consistently across both icon menus.
+function ex:SetModuleIcon(icon, token, fallback, override)
+    icon:SetTexture(override or self:GetModuleTexture(token,fallback))
+end
+
+-- Refresh existing artwork without rebuilding navigation or requesting inspect data.
+function ex:RefreshNavigationIcons()
+    for _,module in ipairs(self.modules) do
+        local owner=module.button
+        if owner and owner.navigationIcon then
+            self:SetModuleIcon(owner.navigationIcon,module.token)
+        end
+    end
+    local controls=self:GetModuleFromToken("Modules")
+    for _,row in ipairs(controls and controls.listButtons or {}) do
+        if row.entry and row.icon then
+            local module=self:GetModuleFromToken(row.entry[1])
+            self:SetModuleIcon(row.icon,row.entry[1],row.entry[3],ExaminerNS.Compat.Icon(module and module.icon))
+        end
+    end
 end
 
 -- Find a registered module by its stable token.
@@ -390,9 +422,9 @@ function ex:RefreshModuleButtons()
             button.navigationIcon:ClearAllPoints()
             button.navigationIcon:SetPoint("CENTER", compactIcons and 0 or iconsBottom and 0 or -2, compactIcons and 0 or iconsBottom and 2 or 0)
             button.navigationIcon:SetSize(iconSize, iconSize)
-            button.navigationIcon:SetTexture("Interface\\Icons\\" .. self:GetModuleIcon(module.token))
             button.navigationIcon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
             button.navigationIcon:SetShown(iconMode)
+            self:SetModuleIcon(button.navigationIcon,module.token)
             if module.hasData then
                 button:Enable()
             else

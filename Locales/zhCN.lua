@@ -9,6 +9,11 @@ local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="zhCN" then return; end
 ns.locales.zhCN={
+    ["Gamepad: Close with B/Circle"]="Gamepad: 用B/圆圈键关闭",
+    ["Closes Examiner with gamepad B/Circle. Disable if it conflicts with your controller setup."]="使用手柄的B/圆圈键关闭Examiner。如与手柄设置冲突，请禁用此选项。",
+    ["Cached character"]="已缓存的角色",
+    ["Saved"]="保存于",
+    ["%d %b %Y · %H:%M"]="%Y年%m月%d日 · %H:%M",
     ["Search cached players"]="搜索已缓存玩家",
     ["Search by name"]="按名称搜索",
     ["Mana Regen / 5 sec"]="法力回复 / 5秒",

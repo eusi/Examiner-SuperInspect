@@ -8,6 +8,11 @@
 local _,ns=...;
 if ns.blocked then return; end
 ns.locales.enUS={
+    ["Gamepad: Close with B/Circle"]="Gamepad: Close with B/Circle",
+    ["Closes Examiner with gamepad B/Circle. Disable if it conflicts with your controller setup."]="Closes Examiner with gamepad B/Circle. Disable if it conflicts with your controller setup.",
+    ["Cached character"]="Cached character",
+    ["Saved"]="Saved",
+    ["%d %b %Y · %H:%M"]="%d %b %Y · %H:%M",
     ["Search cached players"]="Search cached players",
     ["Search by name"]="Search by name",
     ["Mana Regen / 5 sec"]="Mana Regen / 5 sec",

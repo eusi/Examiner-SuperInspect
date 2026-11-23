@@ -146,13 +146,31 @@ ex.options = {
         label = ExaminerNS.L["Smart Tooltip Anchor"],
         tip = ExaminerNS.L["Shows item tooltips beside Examiner instead of beside each item."],
     },
+    {
+        var = "alwaysShowItemLevel",
+        default = true,
+        label = ExaminerNS.L["Always Show Item Levels"],
+        tip = ExaminerNS.L["Shows item levels without holding Alt."],
+    },
+    {
+        var = "showPlayerActions",
+        default = true,
+        label = ExaminerNS.L["Show Player Actions"],
+        tip = ExaminerNS.L["Shows friend, group invite and whisper buttons for the displayed player."],
+    },
+    {
+        var = "gamepadClose",
+        default = true,
+        label = ExaminerNS.L["Gamepad: Close with B/Circle"],
+        tip = ExaminerNS.L["Closes Examiner with gamepad B/Circle. Disable if it conflicts with your controller setup."],
+    },
 }
 
 -- BINDING NAME
 
 BINDING_HEADER_EXAMINER = modName
 BINDING_NAME_EXAMINER_OPEN = ExaminerNS.L["Open Examiner"]
-BINDING_NAME_EXAMINER_TARGET = "Ex: " .. INSPECT .. " " .. TARGET
+BINDING_NAME_EXAMINER_TARGET = INSPECT .. " " .. TARGET
 BINDING_NAME_EXAMINER_MOUSEOVER = ExaminerNS.L["Inspect mouseover"]
 BINDING_NAME_EXAMINER_SELF = ExaminerNS.L["Inspect yourself"]
 
@@ -178,6 +196,17 @@ StaticPopupDialogs[appearanceNoticeKey] = {
     whileDead = true,
     hideOnEscape = false,
 }
+
+-- Handle an unmodified controller Back/B locally, without replacing game bindings.
+local function Examiner_OnGamePadButtonDown(self, button)
+    if not cfg or not cfg.gamepadClose or button ~= "PAD2" or not self:IsVisible()
+        or IsShiftKeyDown() or IsControlKeyDown() or IsAltKeyDown() then return true end
+    if (GameMenuFrame and GameMenuFrame:IsShown())
+        or (ColorPickerFrame and ColorPickerFrame:IsShown()) then return true end
+    if StaticPopup_IsAnyDialogShown and StaticPopup_IsAnyDialogShown() then return true end
+    self:Display(false)
+    return false
+end
 
 -- Apply the one-time menu migration and explain it when the window first opens.
 local function Examiner_OnShow(self)
@@ -367,7 +396,7 @@ end
 
 -- Refresh the model when the inspected unit changes appearance.
 function ex:UNIT_MODEL_CHANGED(event, unit)
-    if unit and self:ValidateUnit() and UnitIsUnit(unit, self.unit) then
+    if not self.isCacheEntry and unit and self:ValidateUnit() and UnitIsUnit(unit, self.unit) then
         self.model:SetUnit(self.unit)
         SetPortraitTexture(self.portrait, self.unit)
     end
@@ -426,6 +455,10 @@ end
 
 -- Restore the displayed model when its frame becomes visible.
 local function Model_OnShow(self)
+    if ex.isCacheEntry and ExaminerNS.CachedModel then
+        ExaminerNS.CachedModel.Show(true)
+        return
+    end
     if self.cleared then
         self:ClearModel()
     end
@@ -433,6 +466,9 @@ end
 
 -- Apply model rotation and panning while dragging.
 local function Model_OnUpdate(self, elapsed)
+    if ExaminerNS.CachedModel then ExaminerNS.CachedModel.Tick(elapsed) end
+    if ex.isCacheEntry and (ExaminerNS.CachedModel.pending or not ExaminerNS.CachedModel.loaded) then return end
+    local dragging = self.isRotating or self.isPanning
     if self.isRotating then
         local endx, endy = GetCursorPosition()
         self.rotation = (endx - self.startx) / 34 + self:GetFacing()
@@ -446,10 +482,15 @@ local function Model_OnUpdate(self, elapsed)
         self:SetPosition(z, x, y)
         self.startx, self.starty = GetCursorPosition()
     end
+    if dragging and ex.isCacheEntry then ExaminerNS.CachedModel.SaveTransform() end
 end
 
 -- Zoom the character model within its supported limits.
 local function Model_OnMouseWheel(self, delta)
+    if ex.isCacheEntry then
+        ExaminerNS.CachedModel.Zoom(delta)
+        return
+    end
     local z, x, y = self:GetPosition()
     local scale = (IsControlKeyDown() and 2 or 0.7)
     z = (delta > 0 and z + scale or z - scale)
@@ -458,6 +499,7 @@ end
 
 -- Start model manipulation or apply its modifier shortcuts.
 local function Model_OnMouseDown(self, button)
+    if ex.isCacheEntry and (ExaminerNS.CachedModel.pending or not ExaminerNS.CachedModel.loaded) then return end
     self.startx, self.starty = GetCursorPosition()
     if button == "LeftButton" then
         self.isRotating = true
@@ -496,6 +538,10 @@ ex:Hide()
 ex:SetHitRectInsets(12, 35, 10, 2)
 ex:SetScript("OnShow", Examiner_OnShow)
 ex:SetScript("OnHide", Examiner_OnHide)
+if type(ex.EnableGamePadButton) == "function" then
+    ex:EnableGamePadButton(true)
+    ex:SetScript("OnGamePadButtonDown", Examiner_OnGamePadButtonDown)
+end
 -- Dispatch the relevant client event to its inspection handler.
 ex:SetScript("OnEvent", function(self, event, ...)
     self[event](self, event, ...)
@@ -625,7 +671,7 @@ function ex:SetUnitDetailString()
             uDetails[#uDetails + 1] =
                 format("|cff%.2x%.2x%.2x%s|r", color.r * 255, color.g * 255, color.b * 255, info.class)
         end
-        if info.realm then
+        if info.realm and not Compat.isForever then
             uDetails[#uDetails + 1] = "[" .. info.realm .. "]"
         end
     end
@@ -717,6 +763,15 @@ function ex:OpenSimple()
         self:DoInspect("player")
     else
         self:Display(not self:IsVisible())
+    end
+end
+
+-- Toggle only the target binding; self and mouseover retain their original actions.
+function ex:ToggleInspectTarget()
+    if self:IsVisible() then
+        self:Display(false)
+    else
+        self:DoInspect("target")
     end
 end
 
@@ -916,7 +971,9 @@ end
 function ex:UpdateObjects()
     -- TEXTURES & MODEL
 
-    if ex.unit and ex.unitType == 1 then
+    if ex.isCacheEntry then
+        ExaminerNS.CachedModel.Show()
+    elseif ex.unit and ex.unitType == 1 then
         Compat.Try(SetPortraitTexture,ex.portrait,ex.unit)
         Compat.Try(ex.model.ClearModel,ex.model)
         Compat.Try(ex.model.SetUnit,ex.model,ex.unit)
@@ -940,6 +997,8 @@ function ex:UpdateObjects()
     ex:SetUnitDetailString()
     ex:SetUnitGuildString()
     ExaminerNS.Appearance.UpdatePortrait()
+    ExaminerNS.Appearance.UpdateLayout()
+    self:RefreshNavigationIcons()
 end
 
 -- Display the selected available module page.

@@ -1,18 +1,18 @@
 ## Interface: 120105
-## Version: 1.11.0
+## Version: 1.12.0
 ## Title: Examiner
 ## Author: Aezay (Earthen Ring EU), sAks
-## Notes: Inspect gear, item levels, talents, PvP details and more in one convenient window.
-## Notes-deDE: Ausrüstung, Itemlevel, Talente, PvP und mehr bequem in einem Fenster betrachten.
-## Notes-frFR: Équipement, niveaux des objets, talents, JcJ et plus dans une fenêtre pratique.
-## Notes-esES: Inspecciona equipo, niveles de objeto, talentos, JcJ y más en una cómoda ventana.
-## Notes-esMX: Inspecciona equipo, niveles de objeto, talentos, JcJ y más en una cómoda ventana.
-## Notes-itIT: Ispeziona equipaggiamento, livelli oggetti, talenti, PvP e altro in una comoda finestra.
-## Notes-ptBR: Inspecione equipamentos, níveis de item, talentos, JxJ e mais em uma janela prática.
-## Notes-ruRU: Экипировка, уровни предметов, таланты, PvP и другое в одном удобном окне.
-## Notes-koKR: 장비, 아이템 레벨, 특성, PvP 정보 등을 하나의 편리한 창에서 살펴보세요.
-## Notes-zhCN: 在一个便捷窗口中查看装备、物品等级、天赋、PvP详情等信息。
-## Notes-zhTW: 在一個便利視窗中查看裝備、物品等級、天賦、PvP詳情等資訊。
+## Notes: Advanced character inspection window replacing the basic default.
+## Notes-deDE: Erweitertes Charakterfenster als Ersatz für die einfache Standardinspektion.
+## Notes-frFR: Fenêtre d'inspection avancée remplaçant la fenêtre standard.
+## Notes-esES: Ventana avanzada de inspección de personajes que sustituye a la predeterminada.
+## Notes-esMX: Ventana avanzada de inspección de personajes que reemplaza la predeterminada.
+## Notes-itIT: Finestra avanzata di ispezione dei personaggi che sostituisce quella predefinita.
+## Notes-ptBR: Janela avançada de inspeção de personagens que substitui a janela padrão.
+## Notes-ruRU: Расширенное окно осмотра персонажа вместо стандартного.
+## Notes-koKR: 기본 살펴보기 창을 대체하는 고급 캐릭터 살펴보기 창입니다.
+## Notes-zhCN: 替代默认简易窗口的高级角色观察窗口。
+## Notes-zhTW: 取代預設簡易視窗的進階角色觀察視窗。
 ## SavedVariables: Examiner_Config, Examiner_Cache
 ## OptionalDeps: LibSharedMedia-3.0, SharedMedia
 ## Category: User Interface

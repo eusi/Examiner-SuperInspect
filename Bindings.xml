@@ -3,7 +3,7 @@
 		Examiner:OpenSimple();
 	</Binding>
 	<Binding name="EXAMINER_TARGET" category="BINDING_HEADER_EXAMINER">
-		Examiner:DoInspect("target");
+		Examiner:ToggleInspectTarget();
 	</Binding>
 	<Binding name="EXAMINER_SELF" category="BINDING_HEADER_EXAMINER">
 		Examiner:InspectSelf();

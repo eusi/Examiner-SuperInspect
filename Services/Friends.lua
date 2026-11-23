@@ -40,11 +40,6 @@ local button = CreateAction("Interface\\Icons\\Achievement_Reputation_01", true)
 local group = CreateAction("Interface\\Icons\\INV_Misc_GroupNeedMore", true)
 local whisper = CreateAction("Interface\\GossipFrame\\GossipGossipIcon")
 F.button, F.groupButton, F.whisperButton = button, group, whisper
-ex.options[#ex.options + 1] = {
-    var = "showPlayerActions", default = true,
-    label = L["Show Player Actions"],
-    tip = L["Shows friend, group invite and whisper buttons for the displayed player."],
-}
 
 --------------------------------------------------------------------------------------------------------
 --                                         Player Identity                                            --

@@ -143,7 +143,7 @@ function mod:Draw(data)
     name:SetText(data.name or ns.L["No guild information"])
     local rankLabel = ns.L.Rank:gsub(":$", "")
     rank:SetText(data.rank and data.rank ~= "" and (rankLabel .. ": " .. data.rank) or "")
-    realm:SetText(data.realm and data.realm ~= "" and (ns.L.Realm .. ": " .. data.realm) or "")
+    realm:SetText(not C.isForever and data.realm and data.realm ~= "" and (ns.L.Realm .. ": " .. data.realm) or "")
     members:SetText(
         C.IsNumber(data.members)
                 and ("|cffffd100" .. C.FormatNumber(data.members) .. "|r " .. ns.L["Guild Members"])
@@ -159,15 +159,18 @@ function mod:Draw(data)
     local backgroundColor = crest and Color(crest.background)
     local borderColor = crest and Color(crest.border)
     local emblemColor = crest and Color(crest.color)
-    local visible = data.name
+    local hasGuild = C.Text(data.name)
+    hasGuild = hasGuild ~= nil and hasGuild ~= ""
+    local visible = hasGuild
         and crest
         and C.Icon(crest.emblem)
         and backgroundColor
         and borderColor
         and emblemColor
-    for _, texture in ipairs({ banner, border, left, right }) do
-        texture:SetShown(visible and true or false)
-    end
+    banner:SetShown(hasGuild)
+    border:SetShown(hasGuild)
+    left:SetShown(visible and true or false)
+    right:SetShown(visible and true or false)
     left:SetTexture(visible and crest.emblem or nil)
     right:SetTexture(visible and crest.emblem or nil)
     if visible then
@@ -175,7 +178,12 @@ function mod:Draw(data)
         border:SetVertexColor(borderColor.r, borderColor.g, borderColor.b)
         left:SetVertexColor(emblemColor.r, emblemColor.g, emblemColor.b)
         right:SetVertexColor(emblemColor.r, emblemColor.g, emblemColor.b)
+    else
+        -- Keep an empty native white crest when this guild has no saved artwork.
+        banner:SetVertexColor(1, 1, 1)
+        border:SetVertexColor(1, 1, 1)
     end
+    ex:RefreshNavigationIcons()
 end
 
 
@@ -189,6 +197,8 @@ local function OwnGuild(data, unit)
     ownName = C.Text(ownName)
     if not data.name or not ownName or data.name ~= ownName then return false end
     if C.IsTrue(C.Try(UnitIsUnit, unit, "player")) then return true end
+    -- Forever guild names identify the guild without a realm; unit surnames do not.
+    if C.isForever then return true end
     ownRealm = C.Text(ownRealm, C.Text(C.Try(GetRealmName)))
     local realm = C.Text(data.realm, C.Text(ex.info.realm, C.Text(C.Try(GetRealmName))))
     return realm and ownRealm and realm:gsub("%s", ""):lower() == ownRealm:gsub("%s", ""):lower() or false
@@ -200,7 +210,7 @@ function mod:Read(unit, inspectReady)
     local data = {
         name = C.Text(guild),
         rank = C.Text(rankName),
-        realm = C.Text(guildRealm),
+        realm = not C.isForever and C.Text(guildRealm) or nil,
         time = time(),
         complete = inspectReady or ex.isSelf or nil,
     }
@@ -215,7 +225,7 @@ function mod:Read(unit, inspectReady)
             C.Try(paper.GetInspectGuildInfo or GetInspectGuildInfo, unit)
         if C.IsString(inspectName) and inspectName ~= "" and (not data.name or data.name == inspectName) then
             data.name = inspectName
-            data.realm = C.Text(inspectRealm, data.realm)
+            if not C.isForever then data.realm = C.Text(inspectRealm, data.realm) end
             data.points = C.Number(pointsValue)
             data.members = C.Number(count)
         end
@@ -223,7 +233,7 @@ function mod:Read(unit, inspectReady)
             data.banner = ReadBanner(unit)
         end
     end
-    if data.name and (not data.realm or data.realm == "") then
+    if not C.isForever and data.name and (not data.realm or data.realm == "") then
         data.realm = C.Text(ex.info.realm, C.Text(C.Try(GetRealmName)))
     end
     -- Own-guild totals come from the roster, not the foreign inspect result.
@@ -284,6 +294,8 @@ end
 -- Restore guild details from the saved player snapshot.
 function mod:OnCacheLoaded(entry)
     ex.guildData = ns.Cache.Copy(entry.Guild) or { name = entry.guild, rank = entry.guildRank }
+    -- Discard the former surname-as-realm fallback only in the display snapshot.
+    if C.isForever then ex.guildData.realm = nil end
     ex.guildData.cached = true
     self:Draw(ex.guildData)
     self:HasData(C.IsString(ex.guildData.name) and ex.guildData.name ~= "")

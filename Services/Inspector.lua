@@ -60,6 +60,7 @@ end
 -- Cancel the session and clear all inspected player data.
 function I:Clear()
     self:Cancel()
+    if ns.CachedModel then ns.CachedModel.Clear() end
     ns.ClassIcon.ClearSpecialization()
     ex.unit, ex.guid, ex.isSelf, ex.unitType, ex.canInspect = nil, nil, nil, nil, nil
     ex.itemsLoaded, ex.isCacheEntry, ex.gear = nil, nil, nil

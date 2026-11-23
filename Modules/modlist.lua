@@ -76,7 +76,7 @@ local function PaintRow(row, entry)
     row.id = module and module.index
     row.name:SetText(module and module.title or L[entry[2]])
     row.name:SetTextColor(module and 1 or 0.5, module and 1 or 0.5, module and 1 or 0.5)
-    row.icon:SetTexture(ns.Compat.Icon(module and module.icon) or "Interface\\Icons\\" .. ex:GetModuleIcon(entry[1], entry[3]))
+    ex:SetModuleIcon(row.icon,entry[1],entry[3],ns.Compat.Icon(module and module.icon))
     row.icon:SetDesaturated(not module)
     if row.check then
         row.check:SetChecked(module ~= nil and module:IsEnabled())

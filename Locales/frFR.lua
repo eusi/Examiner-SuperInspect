@@ -9,6 +9,11 @@ local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="frFR" then return; end
 ns.locales.frFR={
+    ["Gamepad: Close with B/Circle"]="Gamepad: Fermer avec B/Cercle",
+    ["Closes Examiner with gamepad B/Circle. Disable if it conflicts with your controller setup."]="Ferme Examiner avec B/Cercle sur la manette. Désactivez cette option en cas de conflit avec votre configuration.",
+    ["Cached character"]="Personnage en cache",
+    ["Saved"]="Enregistré",
+    ["%d %b %Y · %H:%M"]="%d/%m/%Y · %H:%M",
     ["Search cached players"]="Rechercher des joueurs enregistrés",
     ["Search by name"]="Rechercher par nom",
     ["Mana Regen / 5 sec"]="Régén. mana / 5 s",

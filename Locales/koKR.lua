@@ -9,6 +9,11 @@ local _,ns=...;
 if ns.blocked then return; end
 if GetLocale()~="koKR" then return; end
 ns.locales.koKR={
+    ["Gamepad: Close with B/Circle"]="Gamepad: B/동그라미로 닫기",
+    ["Closes Examiner with gamepad B/Circle. Disable if it conflicts with your controller setup."]="게임패드의 B/동그라미 버튼으로 Examiner를 닫습니다. 컨트롤러 설정과 충돌하면 비활성화하세요.",
+    ["Cached character"]="저장된 캐릭터",
+    ["Saved"]="저장 시각",
+    ["%d %b %Y · %H:%M"]="%Y.%m.%d · %H:%M",
     ["Search cached players"]="저장된 플레이어 검색",
     ["Search by name"]="이름으로 검색",
     ["Mana Regen / 5 sec"]="마나 회복 / 5초",

@@ -293,6 +293,7 @@ function A.UpdateLayout()
     local ex = ns.ex
     if not ex or not ex.cfg then return end
     local extra = ex.cfg.menuStyle ~= "classic" and 24 or 0
+    if ex.isCacheEntry and ns.CachedModel then ns.CachedModel.Layout() end
     if ex.navigationContentExtra == extra then return end
     ex.navigationContentExtra = extra
     for page, record in pairs(pages) do page:SetHeight(record.height + extra) end

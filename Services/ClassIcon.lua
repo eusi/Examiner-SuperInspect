@@ -168,12 +168,20 @@ function P.CaptureSpecialization(unit)
         data = {specName=name,specIcon=icon}
     end
     P.specName, P.specIcon = P.ReadSpecialization(data)
+    ex.info.specialization=P.specIcon and {name=P.specName,icon=P.specIcon} or false
     P.Update()
 end
 
 -- Restore only this cached player's saved talent snapshot, without querying live APIs.
 function P.LoadSpecialization(entry)
-    P.specName, P.specIcon = P.ReadSpecialization(entry.Talents or entry.ClassicTalents)
+    local saved=entry.specialization
+    if C.IsTable(saved) then
+        P.specName,P.specIcon=C.Text(saved.name),C.Icon(saved.icon)
+    elseif saved==false then
+        P.specName,P.specIcon=nil,nil
+    else
+        P.specName, P.specIcon = P.ReadSpecialization(entry.Talents or entry.ClassicTalents)
+    end
     P.Update()
 end
 

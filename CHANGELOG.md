@@ -4,6 +4,14 @@ Changes to sAks/eusi's Examiner (SuperInspect) fork, newest first.
 
 Development lineage: **Aezay's original Examiner → taxidriveer's Classic fork (2019) → sAks/eusi's SoD fork (2024), later expanded across WoW clients**. sAks/eusi occasionally helped before taking over in 2024. The entries below trace the additions in this fork back to its predecessors.
 
+## [1.12.0](https://github.com/eusi/Examiner-SuperInspect/releases/tag/v1.12.0) — 2026-11-23
+
+- Added a zoomable chest and saved inspection time to cached profiles.
+- Fixed PvP icons to match the inspected character's faction.
+- Fixed surnames appearing as realms on Forever.
+- Inspect Target now closes the window when pressed again.
+- Added optional gamepad B/Circle support to close the window.
+
 ## [1.11.0](https://github.com/eusi/Examiner-SuperInspect/releases/tag/v1.11.0) — 2026-11-21
 
 - Renamed Modern to Flat and added a Dark style with dark grey textures and a greyscale character background.

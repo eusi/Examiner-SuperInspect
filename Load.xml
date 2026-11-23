@@ -30,6 +30,7 @@
     <Script file="Services\PvP.lua"/>
     <Script file="Examiner.lua"/>
     <Script file="modcore.lua"/>
+    <Script file="Services\CachedModel.lua"/>
     <Script file="Services\Appearance.lua"/>
     <Script file="Services\FrameArt.lua"/>
     <Script file="Services\ClassIcon.lua"/>

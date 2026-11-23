@@ -18,8 +18,8 @@ Originally developed by Aezay, Examiner has been maintained and extensively enha
 
 ## Installation
 
-- **Automatic:** Install via [CurseForge](https://www.curseforge.com/wow/addons/examiner-superinspect), [WoWInterface](https://www.wowinterface.com/downloads/fileinfo.php?id=26695#info), or [Wago](https://addons.wago.io/addons/examiner-superinspect-forever-retail-classic-sod).
-- **Manual:** Download the addon ZIP from [GitHub Releases](https://github.com/eusi/Examiner-SuperInspect/releases), extract the `Examiner` folder into your WoW client's `Interface/AddOns`. Then restart WoW and enable Examiner in **AddOns**.
+- **Automatic:** Use the [CurseForge app](https://www.curseforge.com/download/app), [Wago App](https://addons.wago.io/app), or [Minion](https://minion.mmoui.com/) (WoWInterface).
+- **Manual:** Download the ZIP from [GitHub Releases](https://github.com/eusi/Examiner-SuperInspect/releases) and extract `Examiner` into `Interface/AddOns`.
 
 <br>
 <br>
@@ -56,14 +56,17 @@ Features depend on the client and available inspect data.
 
 - **Inspect** through the player's unit menu or via `/ins [unit]`.
 - Assign shortcuts under **Key Bindings > Examiner** if needed.
+- Press **Inspect Target** again to close the window.
+- Press gamepad **B / Circle** to close Examiner; toggle this in Settings.
 - Only gear is **cached** by default. Enable optional caching under **More > Settings**.
 
 ## Controls
 
 - **Gear comparison:** Shift-left-click **Stats** to mark a reference; Shift-right-click to clear it.
 - **Cache search:** In **More > Cached Players**, click the search icon to filter by name.
+- **Cached profiles:** A closed chest replaces the live model and shows when the inspection was saved. Left-drag to rotate, right-drag to move, and scroll to zoom; hold Ctrl for larger zoom steps.
 - **Cache filters:** In **More > Cached Players**, right-click **More** and choose **Set Filter...**. Examples: `1-79`, `class:deathknight`, `class:hunter guild:awesome`.
-- **Model:** Left-drag to rotate, right-drag to move, scroll to zoom. Ctrl-left-click changes the background; Ctrl-right-click toggles it; Shift-left-click resets the model.
+- **Model:** Left-drag to rotate, right-drag to move, scroll to zoom. Ctrl-left-click changes the background; Ctrl-right-click toggles it.
 - **Gear List:** It is disabled by default. Enable it under **More > Modules**.
 - **Style / menu:** Choose these independently under **More > Settings**.
 - **Player actions:** Show or hide under **More > Settings > Show Player Actions**.

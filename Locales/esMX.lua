@@ -8,6 +8,11 @@
 local _,ns=...;
 if ns.blocked or GetLocale()~="esMX" then return; end
 ns.locales.esMX={
+    ["Gamepad: Close with B/Circle"]="Gamepad: Cerrar con B/Círculo",
+    ["Closes Examiner with gamepad B/Circle. Disable if it conflicts with your controller setup."]="Cierra Examiner con B/Círculo del control. Desactívalo si entra en conflicto con tu configuración del control.",
+    ["Cached character"]="Personaje guardado",
+    ["Saved"]="Guardado",
+    ["%d %b %Y · %H:%M"]="%d/%m/%Y · %H:%M",
     ["Search cached players"]="Buscar jugadores guardados",
     ["Search by name"]="Buscar por nombre",
     ["Mana Regen / 5 sec"]="Regen. maná / 5 s",
