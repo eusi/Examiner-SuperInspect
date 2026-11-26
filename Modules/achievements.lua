@@ -81,7 +81,7 @@ local function Valid()
         and I:Valid(mod.session)
         and not ex.isCacheEntry
         and mod.owner == mod.session.guid
-        and mod:IsShown()
+        and (mod:IsShown() or mod.summaryOnly)
 end
 
 -- Format achievement completion status and date.
@@ -134,6 +134,8 @@ end
 
 -- Render the available achievement snapshot.
 function mod:Draw()
+    if ns.UITransitions.DeferPage(self, self.points ~= nil or #list > 0 or self.state == "ready",
+        ex.isCacheEntry or self.state == "unavailable") then return end
     FauxScrollFrame_Update(self.scroll, #list, ROWS, HEIGHT)
     for index, row in ipairs(rows) do
         local item = list[(self.scroll.offset or 0) + index]
@@ -160,6 +162,7 @@ end
 
 -- Stop achievement comparison requests and release owned data.
 function mod:Stop(release)
+    self.summaryOnly = nil
     frame:Hide()
     frame:UnregisterEvent("INSPECT_ACHIEVEMENT_READY")
     local owner = self.owner
@@ -182,10 +185,12 @@ function mod:Reset()
     self:Stop(true)
     self.state = nil
     self.points = nil
+    self.summaryRequested = nil
     wipe(list)
+    for _, row in ipairs(rows) do row.item = nil end
     self.scroll.offset = 0
     self.scroll:SetVerticalScroll(0)
-    status:SetText("")
+    if not self.transitionPending then status:SetText("") end
     self:Draw()
 end
 
@@ -232,7 +237,7 @@ if not GuardHiddenComparison() then
 end
 
 -- Start achievement loading for the current inspected player.
-function mod:Start()
+function mod:Start(summaryOnly)
     if self.state == "ready" or self.state == "waiting" or self.state == "building" or not Eligible() then
         return
     end
@@ -249,7 +254,10 @@ function mod:Start()
         status:SetText(L["Close the other achievement comparison first."])
         return
     end
+    local knownPoints = self.points
     self:Reset()
+    self.points = knownPoints
+    self.summaryOnly, self.summaryRequested = summaryOnly or nil, true
     self.session = session
     self.owner = session.guid
     self.state = "waiting"
@@ -271,6 +279,8 @@ if type(SetAchievementComparisonUnit) == "function" then
     hooksecurefunc("SetAchievementComparisonUnit", function()
         if not mod.sending then
             mod:Stop(false)
+            mod:HasData(mod.points ~= nil or #list > 0)
+            mod:Draw()
         end
     end)
 end
@@ -279,6 +289,8 @@ if type(ClearAchievementComparisonUnit) == "function" then
     hooksecurefunc("ClearAchievementComparisonUnit", function()
         if not mod.sending then
             mod:Stop(false)
+            mod:HasData(mod.points ~= nil or #list > 0)
+            mod:Draw()
         end
     end)
 end
@@ -341,6 +353,9 @@ function mod:Step()
     end
     if self.state == "waiting" and GetTime() - self.started >= 12 then
         self:Stop(true)
+        self.state = self.points ~= nil and "partial" or "unavailable"
+        self:Draw()
+        self:HasData(self.points ~= nil or #list > 0)
         return
     end
     if self.state ~= "building" then
@@ -352,6 +367,7 @@ function mod:Step()
             table.sort(list, NewestFirst)
             self.state = "ready"
             self:Stop(true)
+            self:HasData(self.points ~= nil or #list > 0)
             status:SetText(
                 (self.points and (L.Points .. ": " .. C.FormatNumber(self.points) .. " · ") or "")
                     .. ns.F("%d achievements", #list)
@@ -369,12 +385,26 @@ function mod:Step()
             self.itemIndex = 1
         end
     end
+    self:HasData(self.points ~= nil or #list > 0)
     self:Draw()
 end
 
 -- Dispatch the relevant client event to its inspection handler.
 frame:SetScript("OnEvent", function(_, _, guid)
     if mod.state ~= "waiting" or not C.IsString(guid) or not Valid() or guid ~= mod.owner then
+        return
+    end
+    if mod.summaryOnly then
+        -- Establish availability cheaply; keep the full list deferred until opened.
+        local points = Count(C.Try(GetComparisonAchievementPoints))
+        mod:Stop(true)
+        mod.points = points
+        mod.state = points ~= nil and "summary" or nil
+        status:SetText(points ~= nil and (L.Points .. ": " .. C.FormatNumber(points)) or "")
+        mod:HasData(points ~= nil)
+        mod:Draw()
+        -- The user may have selected the page while its background summary was pending.
+        if mod:IsShown() then mod:Start() end
         return
     end
     local categories = C.Try(GetCategoryList)
@@ -393,6 +423,7 @@ frame:SetScript("OnEvent", function(_, _, guid)
         end
     end
     mod.points = Count(C.Try(GetComparisonAchievementPoints))
+    mod:HasData(mod.points ~= nil or #list > 0)
     mod.categoryIndex, mod.itemIndex, mod.chain, mod.seen = 1, 1, {}, {}
     mod.state = "building"
     mod.started = GetTime()
@@ -411,7 +442,7 @@ end)
 -- Prepare achievement data for a new inspected player.
 function mod:OnInspect()
     self:Reset()
-    self:HasData(Eligible())
+    self:HasData(nil)
 end
 
 -- Initialize achievement controls and saved preferences.
@@ -427,9 +458,11 @@ end
 
 -- Read achievement data after the inspection reply.
 function mod:OnInspectReady()
-    self:HasData(Eligible())
-    if page:IsShown() then
+    self:HasData(Eligible() and (self.points ~= nil or #list > 0))
+    if self:IsShown() then
         self:Start()
+    elseif not self.summaryRequested then
+        self:Start(true)
     end
 end
 
@@ -453,7 +486,7 @@ end
 function mod:OnPageChanged(module, shown)
     if module == self and shown and self:IsShown() then
         self:Start()
-    elseif (module == self and not shown) or (module ~= self and shown) then
+    elseif not self.summaryOnly and ((module == self and not shown) or (module ~= self and shown)) then
         self:Stop(true)
     end
 end
@@ -510,3 +543,7 @@ mod.scroll:SetScript("OnVerticalScroll", function(self, offset)
         mod:Draw()
     end)
 end)
+
+local fadeContents = {status}
+for _, row in ipairs(rows) do fadeContents[#fadeContents + 1] = row end
+ns.UITransitions.RegisterPage(mod, fadeContents, function() mod:Draw() end)

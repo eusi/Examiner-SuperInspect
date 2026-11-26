@@ -134,7 +134,7 @@ function mod:OnInspect(unit)
     cached = nil
     if ex.isSelf then
         isInspect = nil
-        self:HasData(true)
+        self:HasData(TabCount() > 0)
         self:InitTalents()
     end
 end
@@ -143,7 +143,7 @@ end
 function mod:OnInspectReady(unit)
     cached = nil
     isInspect = not ex.isSelf
-    self:HasData(true)
+    self:HasData(TabCount() > 0)
     self:InitTalents()
 end
 
@@ -211,7 +211,7 @@ function mod:OnClearInspect()
     cached = nil
     self:HasData(nil)
     self.talentSpec, self.talentPoints = nil, nil
-    self.details:Clear()
+    if not self.transitionPending then self.details:Clear() end
 end
 
 
@@ -547,6 +547,8 @@ local function CalculateBranchLines(tier, column, rank, ...)
 end
 
 -- Populate legacy talent buttons and dependency lines.
+ExaminerNS.UITransitions.RegisterPage(mod, {mod.page}, function() mod:InitTalents() end,
+    {ex.bgTopLeft, ex.bgTopRight, ex.bgBottomLeft, ex.bgBottomRight})
 function mod:InitTalents()
     activeSpec = SelectedGroup()
     self.details:Clear()
@@ -575,6 +577,7 @@ function mod:InitTalents()
             end
         end
     end
+    if not complete and self.transitionPending then ExaminerNS.UITransitions.ResetPage(self) end
     self:HasData(complete)
     if self:IsShown() then
         self:UpdateTalents()
@@ -602,6 +605,7 @@ end
 
 -- Refresh talent ranks for the selected inspected group.
 function mod:UpdateTalents()
+    if ExaminerNS.UITransitions.DeferPage(self, self.hasData) then return end
     activeSpec = SelectedGroup()
     activeTab = math.min(activeTab, math.max(1, TabCount()))
     for _, button in ipairs(talentBtns) do

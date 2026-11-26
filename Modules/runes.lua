@@ -36,6 +36,7 @@ local NUM_BUTTONS = 10
 local BUTTON_HEIGHT = (mod.page:GetHeight() - 47) / NUM_BUTTONS
 local showEngravings = {}
 local buttons = {}
+mod.rows = buttons
 
 
 --------------------------------------------------------------------------------------------------------
@@ -61,6 +62,10 @@ end
 function mod:OnClearInspect()
     self:HasData(nil)
     wipe(showEngravings)
+    for _, button in ipairs(buttons) do
+        button.id = nil
+        if not self.transitionPending then button:Hide() end
+    end
 end
 
 -- Update rune controls when the active page changes.
@@ -77,6 +82,7 @@ end
 
 -- Show the equipped rune spell and its gear slot.
 local function RuneButton_OnEnter(self, motion)
+    if not self.id then return end
     gtt:SetOwner(self, "ANCHOR_RIGHT")
     gtt:SetSpellByID(self.id)
     gtt:Show()
@@ -94,6 +100,8 @@ end
 
 -- Update the visible rune rows for the current scroll offset.
 local function UpdateShownItems(self)
+    if ExaminerNS.UITransitions.DeferPage(mod, #showEngravings > 0,
+        ex.isCacheEntry or (ex.itemsLoaded and #showEngravings == 0)) then return end
     FauxScrollFrame_Update(self, #showEngravings, NUM_BUTTONS, BUTTON_HEIGHT)
     for i = 1, NUM_BUTTONS do
         local btn = buttons[i]
@@ -183,3 +191,13 @@ function mod:OnLayoutChanged()
     for _, button in ipairs(buttons) do button:SetHeight(BUTTON_HEIGHT) end
     UpdateShownItems(self.scroll)
 end
+
+local fadeContents = {}
+for _, button in ipairs(buttons) do
+    button.slotFrame = button:CreateTexture(nil, "BACKGROUND")
+    button.slotFrame:SetAllPoints(button.icon)
+    button.slotFrame:SetTexture("Interface\\Buttons\\UI-EmptySlot-Disabled")
+    fadeContents[#fadeContents + 1] = button.icon
+    fadeContents[#fadeContents + 1] = button.name
+end
+ExaminerNS.UITransitions.RegisterPage(mod, fadeContents, function() UpdateShownItems(mod.scroll) end)

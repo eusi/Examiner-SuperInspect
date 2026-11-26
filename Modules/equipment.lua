@@ -15,6 +15,7 @@ mod.help = L["Shows equipped items, item levels and available enhancements."]
 mod.toggleHelp = L["Enable/disable the Gear List module, which shows equipped items, item levels and available enhancements."]
 mod.icon = "Interface\\Icons\\INV_Misc_Note_01"
 mod:CreatePage(true)
+mod.keepPageWhilePending = true
 mod:HasButton(true)
 local ROW_HEIGHT = 14
 local SIDE_PADDING, SCROLLBAR_SPACE = 8, 18
@@ -309,7 +310,7 @@ mod.OnGearUpdated = mod.OnInspectReady
 
 -- Present the selected cached snapshot, including unresolved item metadata.
 function mod:OnCacheLoaded()
-    self:HasData(true)
+    self:HasData(ex.gear and ex.gear.state == "ready" or next(ex.info.Items or {}) ~= nil)
     self:BuildEquipmentList()
 end
 mod.OnDataTimeout = mod.OnCacheLoaded
@@ -317,18 +318,25 @@ mod.OnDataTimeout = mod.OnCacheLoaded
 -- Discard row identities and tooltips when changing players or disabling the module.
 function mod:OnClearInspect()
     self:HasData(nil)
+    local keepLayout = self.inspectPending and self:IsShown()
     for _, row in ipairs(self.equipmentRows) do
         if GameTooltip:IsOwned(row) then GameTooltip:Hide() end
         row.link, row.slotName, row.id = nil, nil, nil
         row.hover:Hide()
-        row:Hide()
+        row.icon:SetTexture(nil)
+        row.name:SetText("")
+        row.level:SetText("")
+        if not keepLayout then row:Hide() end
     end
-    self.equipmentCount = 0
+    if not keepLayout then self.equipmentCount = 0 end
     self.equipmentPending = {}
     summary:SetText("")
     score:SetText("")
-    content:SetHeight(1)
-    ScrollTo(0)
+    status:SetText("")
+    if not keepLayout then
+        content:SetHeight(1)
+        ScrollTo(0)
+    end
 end
 
 -- Update the optional list when its appearance preference changes.

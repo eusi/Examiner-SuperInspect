@@ -3,23 +3,26 @@
 
 With Examiner, you can inspect other players' gear, stats, item level/GearScore, talents, PvP details, achievements, guild information, professions, glyphs and runes in one convenient window. Mouseover shortcuts, gear comparisons and a searchable inspection cache make inspecting players quick and comfortable.
 
-Originally developed by Aezay, Examiner has been maintained and extensively enhanced by me since 2024.
+Originally developed by Aezay and maintained by the community, Examiner has been extensively enhanced by me (sAks) since 2024.
 
-**Recent Enhancements (2026):**
+**Major Enhancements Since 2024:**
 
-- **UI Overhaul**: New themes, scaling and customizations.
-- **Compatibility**: Supports all WoW versions, incl. Retail, Forever, Classic.
-- **New Modules**: Professions, Player Actions, Achievements, SoD Runes, Glyphs.
-- **Gear & Stats**: GearScore, improved stats and new gear list.
-- **Talents & PvP**: Enhanced talent trees and PvP stats.
-- **Player Cache**: Advanced search, filtering and sorting.
+- **UI Overhaul:** New themes, scaling and customization.
+- **Compatibility:** Supports all WoW versions, incl. Retail, Forever, Classic.
+- **New Features:** Professions, Player Actions, Achievements, SoD Runes and Glyphs.
+- **Gear & Stats:** GearScore, improved stats and a new gear list.
+- **Talents & PvP:** Improved talent trees and PvP information.
+- **Player Cache:** Search, filtering and sorting.
+- **Further Improvements:** Gamepad support and faster & smoother inspections.
 
 [*Full Changelog*](https://github.com/eusi/Examiner-SuperInspect/blob/master/CHANGELOG.md)
 
 ## Installation
 
-- **Automatic:** Use the [CurseForge app](https://www.curseforge.com/download/app), [Wago App](https://addons.wago.io/app), or [Minion](https://minion.mmoui.com/) (WoWInterface).
-- **Manual:** Download the ZIP from [GitHub Releases](https://github.com/eusi/Examiner-SuperInspect/releases) and extract `Examiner` into `Interface/AddOns`.
+We recommend an addon manager such as CurseForge, Wago App, or Minion (WoWInterface) to keep Examiner up to date.
+
+- **Automatic:** Install via [CurseForge](https://www.curseforge.com/wow/addons/examiner-superinspect), [WoWInterface](https://www.wowinterface.com/downloads/fileinfo.php?id=26695#info), or [Wago](https://addons.wago.io/addons/examiner-superinspect-forever-retail-classic-sod).
+- **Manual:** Download the ZIP from [GitHub Releases](https://github.com/eusi/Examiner-SuperInspect/releases) and extract the `Examiner` folder into your WoW client's `Interface/AddOns` folder. Then restart WoW.
 
 <br>
 <br>
@@ -56,15 +59,12 @@ Features depend on the client and available inspect data.
 
 - **Inspect** through the player's unit menu or via `/ins [unit]`.
 - Assign shortcuts under **Key Bindings > Examiner** if needed.
-- Press **Inspect Target** again to close the window.
-- Press gamepad **B / Circle** to close Examiner; toggle this in Settings.
 - Only gear is **cached** by default. Enable optional caching under **More > Settings**.
 
 ## Controls
 
 - **Gear comparison:** Shift-left-click **Stats** to mark a reference; Shift-right-click to clear it.
 - **Cache search:** In **More > Cached Players**, click the search icon to filter by name.
-- **Cached profiles:** A closed chest replaces the live model and shows when the inspection was saved. Left-drag to rotate, right-drag to move, and scroll to zoom; hold Ctrl for larger zoom steps.
 - **Cache filters:** In **More > Cached Players**, right-click **More** and choose **Set Filter...**. Examples: `1-79`, `class:deathknight`, `class:hunter guild:awesome`.
 - **Model:** Left-drag to rotate, right-drag to move, scroll to zoom. Ctrl-left-click changes the background; Ctrl-right-click toggles it.
 - **Gear List:** It is disabled by default. Enable it under **More > Modules**.

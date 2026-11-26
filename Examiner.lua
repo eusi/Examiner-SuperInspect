@@ -378,8 +378,8 @@ end
 -- Follow target changes while automatic inspection is enabled.
 function ex:PLAYER_TARGET_CHANGED(event)
     if cfg.autoInspect and (UnitExists("target")) then
-        self:DoInspect("target")
-    elseif self.unit == "target" then
+        ExaminerNS.Inspector:QueueTarget()
+    elseif self.unit == "target" or ExaminerNS.Inspector.pendingTarget then
         ExaminerNS.Inspector:Cancel()
         self.unit = nil
         self:SetScript("OnUpdate", nil)
@@ -1045,7 +1045,7 @@ function ex:ShowModulePage(index)
     -- HIDE CURRENT PAGE
 
     local lastMod = ex.modules[cfg.activePage]
-    if lastMod then
+    if lastMod and (index or not (lastMod.hasData or (lastMod.keepPageWhilePending and lastMod.inspectPending))) then
         lastMod.page:Hide()
     end
     -- WHEN WE HAVE A NEW INDEX
@@ -1070,7 +1070,7 @@ function ex:ShowModulePage(index)
 
     if cfg.activePage then
         local shownMod = ex.modules[cfg.activePage]
-        if shownMod.hasData then
+        if shownMod.hasData or (shownMod.keepPageWhilePending and shownMod.inspectPending) then
             shownMod.page:Show()
         else
             shownMod.page:Hide()
@@ -1082,6 +1082,8 @@ end
 
 -- Choose the character background and its texture coordinates.
 function ex:SetBackgroundTexture(param)
+    local shownMod = self.modules[cfg.activePage]
+    if shownMod and shownMod.token == "Talents" and shownMod.transitionPending and not shownMod.backgroundFrame then return end
     local texture
     -- FIND TEXTURE
 

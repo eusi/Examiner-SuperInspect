@@ -44,6 +44,8 @@ function ex:GetModuleIcon(token, fallback)
         if faction=="Horde" then return "INV_BannerPVP_01" end
         if faction=="Alliance" then return "INV_BannerPVP_02" end
         return moduleIcons.PvP
+    elseif token=="Talents" and ExaminerNS.ClassIcon and ExaminerNS.ClassIcon.specIcon then
+        return ExaminerNS.ClassIcon.specIcon
     end
     return moduleIcons[token] or fallback or "INV_Misc_QuestionMark"
 end
@@ -55,9 +57,31 @@ function ex:GetModuleTexture(token, fallback)
     return "Interface\\Icons\\"..icon
 end
 
--- Set native navigation artwork consistently across both icon menus.
+-- Track unresolved dynamic artwork independently of module availability.
+function ex:IsNavigationPending(token)
+    return not self.isCacheEntry and self.navigationPending and self.navigationPending[token]
+end
+
+-- Share loading, resolved artwork and native crest layers across both icon menus.
 function ex:SetModuleIcon(icon, token, fallback, override)
-    icon:SetTexture(override or self:GetModuleTexture(token,fallback))
+    local transitions = ExaminerNS.UITransitions
+    if transitions and icon.examinerToken and icon.examinerToken ~= token then transitions.Reset(icon, true) end
+    if transitions and transitions.Pending(token) and icon.examinerToken == token and icon.examinerArtwork then return end
+    local pending = self:IsNavigationPending(token)
+    local texture = override or self:GetModuleTexture(token,fallback)
+    local changed = icon.examinerArtwork ~= texture or icon.examinerWasPending
+    if pending then
+        icon:SetColorTexture(0,0,0,1)
+    else
+        icon:SetTexture(texture)
+    end
+    if ExaminerNS.GuildIcon then ExaminerNS.GuildIcon.Apply(icon,token) end
+    icon.examinerArtwork, icon.examinerWasPending = texture, pending or nil
+    icon.examinerToken = token
+    if transitions and token == "Talents" and not pending and changed then
+        local module = self:GetModuleFromToken(token)
+        transitions.Fade(icon, texture, module and (module.hasData or module.inspectPending) and 1 or 0.2)
+    end
 end
 
 -- Refresh existing artwork without rebuilding navigation or requesting inspect data.
@@ -89,7 +113,8 @@ end
 -- Register a module with its title and page index.
 function ex:CreateModule(token, title)
     local mod =
-        setmetatable({ token = token, title = title, hasData = true, index = #ex.modules + 1 }, ModuleCore)
+        setmetatable({ token = token, title = title, hasData = token == "More" or token == "Config"
+            or token == "Cache" or token == "Modules", index = #ex.modules + 1 }, ModuleCore)
     ex.modules[#ex.modules + 1] = mod
     return mod
 end
@@ -339,14 +364,22 @@ end
 
 -- Update page and button availability without disabling the feature.
 function ModuleCore:HasData(value)
+    if self.token == "More" then value = true end
+    local wasPending = self.inspectPending
+    if ExaminerNS.UITransitions then ExaminerNS.UITransitions.Resolve(self, value) end
     local changed = (self.hasData and true or false) ~= (value and true or false)
+        or wasPending ~= self.inspectPending
     self.hasData = (value and true or nil)
     if value and self:IsEnabled() then
         if self.button then
             self.button:Enable()
         end
+        if changed and self.page and ex.cfg and ex.cfg.activePage == self.index and not self.isPopup then
+            self.page:Show()
+        end
     else
-        if self.page then
+        if self.page and not (self.keepPageWhilePending and self.inspectPending
+            and ExaminerNS.UITransitions.IsSelected(self)) then
             self.page:Hide()
         end
         if self.button then

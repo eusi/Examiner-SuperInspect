@@ -77,8 +77,16 @@ function mod:OnLayoutChanged(extra)
 end
 
 -- Show six glyph slots, including empty, locked and unknown entries.
+local function HasGlyphData(data)
+    for _, slot in ipairs(data and data.slots or {}) do
+        if slot.state == "filled" or slot.state == "empty" or slot.state == "locked" then return true end
+    end
+    return false
+end
+
 function mod:Draw()
     local data = ex.glyphData or G.Empty()
+    if ns.UITransitions.DeferPage(self, HasGlyphData(data), ex.glyphData and data.state == "unavailable") then return end
     local height = mod.page:GetHeight() / 6
     for index, row in ipairs(self.rows) do
         row:ClearAllPoints()
@@ -111,7 +119,7 @@ function mod:Read()
         return
     end
     ex.glyphData = G.Read(self.session.unit, ex.isSelf, self.requested)
-    self:HasData(true)
+    self:HasData(HasGlyphData(ex.glyphData))
     self:Draw()
     if ex.glyphData.state == "loading" then
         worker:Show()
@@ -133,12 +141,14 @@ function mod:OnDataTimeout()
         ex.glyphData.state = known and "partial" or "unavailable"
     end
     worker:Hide()
+    self:HasData(HasGlyphData(ex.glyphData))
     self:Draw()
 end
 
 -- Use native glyph tooltips only for the matching live player, never for cached entries.
 local function Tooltip(row)
     local slot = row.slot
+    if not slot then return end
     GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
     local native = slot
         and slot.spell
@@ -167,7 +177,7 @@ function mod:OnInspect()
     self:Stop()
     wipe(self.requested)
     ex.glyphData = G.Empty("loading")
-    self:HasData(ex.unitType ~= 1)
+    self:HasData(nil)
     self:Draw()
 end
 
@@ -193,6 +203,7 @@ function mod:OnClearInspect()
     self:Stop()
     wipe(self.requested)
     ex.glyphData = nil
+    for _, row in ipairs(self.rows) do row.slot = nil end
     self:HasData(nil)
     self:Draw()
 end
@@ -227,7 +238,7 @@ function mod:OnCacheLoaded(entry)
     local snapshot = C.IsTable(entry.Glyphs) and C.IsTable(entry.Glyphs.slots) and entry.Glyphs
     ex.glyphData = ns.Cache.Copy(snapshot) or G.FromTalents(entry.Talents) or G.Empty()
     ex.glyphData.cached = true
-    self:HasData(true)
+    self:HasData(HasGlyphData(ex.glyphData))
     self:Draw()
 end
 
@@ -249,6 +260,9 @@ for index = 1, 6 do
     row.icon:SetSize(30, 30)
     row.icon:SetPoint("LEFT")
     row.icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
+    row.slotFrame = row:CreateTexture(nil, "BACKGROUND")
+    row.slotFrame:SetAllPoints(row.icon)
+    row.slotFrame:SetTexture("Interface\\Spellbook\\UI-Glyph-Rune1")
     row.name = ns.Fonts.Create(row, nil, "OVERLAY", "GameFontHighlightSmall")
     row.name:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 6, -1)
     row.name:SetPoint("RIGHT", -2, 0)
@@ -257,7 +271,15 @@ for index = 1, 6 do
     row.detail = ns.Fonts.Create(row, nil, "OVERLAY", "GameFontHighlightSmall")
     row.detail:SetPoint("BOTTOMLEFT", row.icon, "BOTTOMRIGHT", 6, 1)
     row.detail:SetTextColor(0.5, 0.75, 1)
+    row.detail:SetText(L[order[index] % 2 == 0 and "Major glyph" or "Minor glyph"])
 end
+
+local fadeContents = {}
+for _, row in ipairs(mod.rows) do
+    fadeContents[#fadeContents + 1] = row.icon
+    fadeContents[#fadeContents + 1] = row.name
+end
+ns.UITransitions.RegisterPage(mod, fadeContents, function() mod:Draw() end)
 
 -- Repaint the page when selected from a tab or the module list.
 mod.page:SetScript("OnShow", function()

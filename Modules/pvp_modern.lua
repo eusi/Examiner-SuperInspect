@@ -157,6 +157,7 @@ for i = 1, #fields do
     row.record:SetPoint("TOPLEFT", 4, -16)
     row.record:SetPoint("TOPRIGHT", 0, -16)
     row.record:SetJustifyH("LEFT")
+    if C.isMists then row.record:SetSpacing(4) end
     row.record:SetTextColor(0.8, 0.8, 0.8)
     rows[i] = row
 end
@@ -234,8 +235,13 @@ end
 --------------------------------------------------------------------------------------------------------
 
 -- Render the available PvP snapshot.
+ns.UITransitions.RegisterPage(mod, {scroll, scrollbar, rankIcon, rankTitle, rankNumber, status}, function()
+    mod:Draw(ex.pvpData or {state = "unavailable"})
+    mod:HasData(mod.visibleFields > 0)
+end)
 function mod:Draw(data)
     P.Filter(data)
+    if ns.UITransitions.DeferPage(self, data.state == "ready", data.state == "unavailable") then return end
     if progress then
         progress:Hide()
         progress:SetValue(0)
@@ -348,7 +354,7 @@ function mod:Draw(data)
         row.record:SetText(recordText)
         row.record:SetShown(recordText ~= "")
         local labelHeight = C.Number(row.label:GetStringHeight(), 0)
-        local recordTop = math.max(16, labelHeight + 2)
+        local recordTop = math.max(C.isMists and 20 or 16, labelHeight + 2)
         row.record:ClearAllPoints()
         row.record:SetPoint("TOPLEFT", 4, -recordTop)
         row.record:SetPoint("TOPRIGHT", 0, -recordTop)
@@ -357,6 +363,7 @@ function mod:Draw(data)
             or 20
         height = math.max(
             height,
+            C.isMists and 24 or 20,
             labelHeight + 4,
             recordText ~= "" and (recordTop + C.Number(row.record:GetStringHeight(), 0) + 4) or 0
         )
@@ -383,7 +390,7 @@ function mod:Draw(data)
                 header:ClearAllPoints()
                 header:SetPoint("TOPLEFT", 0, y)
                 header:Show()
-                y = y - 18
+                y = y - (C.isMists and 24 or 18)
                 group = section
             end
             row:ClearAllPoints()
@@ -533,7 +540,7 @@ function mod:Read(unit)
     end
     ex.pvpData = data
     self:Draw(data)
-    self:HasData(self.visibleFields > 0 or waiting)
+    self:HasData(self.visibleFields > 0)
 end
 
 
@@ -544,7 +551,7 @@ end
 -- Prepare PvP data for a new inspected player.
 function mod:OnInspect(unit)
     self:ScrollTo(0)
-    self:HasData(true)
+    self:HasData(nil)
     if ex.isSelf then
         C.Try(C_PvP and C_PvP.RequestRatedInfo or RequestRatedInfo)
         self:Read(unit)
@@ -568,6 +575,9 @@ end
 
 -- Clear PvP data and hide stale controls.
 function mod:OnClearInspect()
+    ex.pvpData, self.visibleFields = nil, 0
+    self:HasData(nil)
+    if self.transitionPending then return end
     self:ScrollTo(0)
     if progress then
         progress:Hide()
@@ -590,6 +600,7 @@ function mod:OnDataTimeout()
         data.message = "PvP inspection data could not be loaded."
         ex.pvpData = data
         self:Draw(data)
+        self:HasData(self.visibleFields > 0)
     end
 end
 

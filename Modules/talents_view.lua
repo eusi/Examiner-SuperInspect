@@ -518,7 +518,7 @@ function ns.TalentTabs(data, classToken)
     else
         for index, tree in ipairs(data.trees or {}) do
             local name = tree.name
-            local fullName, treeSpecID = tree.name, nil
+            local fullName, treeSpecID, points, labelName = tree.name, nil, nil, nil
             if C.isForever then
                 local specs = foreverTrees[foreverClasses[data.specID] or classToken]
                 treeSpecID = specs and specs[index]
@@ -527,7 +527,8 @@ function ns.TalentTabs(data, classToken)
                     name = ns.L[label]
                     fullName = name
                 end
-                local points = ns.Talents.Points(tree, data.state == "ready")
+                labelName = name
+                points = ns.Talents.Points(tree, data.state == "ready")
                 if points then
                     name = name .. " |cff00ff00" .. C.FormatNumber(points) .. "|r"
                 end
@@ -537,6 +538,8 @@ function ns.TalentTabs(data, classToken)
                 id = tree.id,
                 name = name,
                 fullName = fullName,
+                labelName = labelName,
+                points = points,
                 backgroundSpecID = treeSpecID,
                 icon = tree.icon,
                 role = tree.role,

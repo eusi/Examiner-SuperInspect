@@ -70,7 +70,7 @@ status:SetJustifyH("LEFT")
 --                                          Profession Data                                           --
 --------------------------------------------------------------------------------------------------------
 
--- Accept only complete nonnegative skill counters, preserving unknown values.
+-- Preserve unknown counters; cap the displayed overall progress at 300.
 local function Skill(value)
     if value == "--" or value == "—" then
         return 0
@@ -79,7 +79,7 @@ local function Skill(value)
         value = tonumber((value:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("[,%.%s]", "")))
     end
     if C.IsNumber(value) and value >= 0 and value < math.huge and value % 1 == 0 then
-        return value
+        return math.min(value, MAX_PROFESSION_SKILL)
     end
 end
 
@@ -195,7 +195,7 @@ function mod:Read(session, own)
     self.state = data.complete and "ready" or "unavailable"
     self:Stop(true)
     self:Draw()
-    self:HasData(true)
+    self:HasData(data.complete or #data.skills > 0)
     if data.complete then
         ex:CachePlayer()
     end
@@ -307,8 +307,11 @@ end
 
 -- Render primary and secondary skills, keeping unknown and empty data distinct.
 function mod:Draw()
-    wipe(entries)
     local skills = self.data and self.data.skills or {}
+    self:HasData(self.data and (self.data.complete or #skills > 0))
+    if ns.UITransitions.DeferPage(self, self.data and (self.data.complete or #skills > 0),
+        self.state == "unavailable" or self.state == "busy" or (ex.isCacheEntry and not self.data)) then return end
+    wipe(entries)
     for group = 1, 2 do
         entries[#entries + 1] = {
             header = true,
@@ -342,6 +345,7 @@ function mod:Draw()
         end
         local item = entries[(self.scroll.offset or 0) + index]
         row.item = item
+        row.isHeader = item and item.header or nil
         row:SetShown(item ~= nil)
         if item then
             local definition = byID[item.id]
@@ -456,16 +460,26 @@ end)
 function mod:OnClearInspect()
     self:Stop(true)
     self.data, self.liveSession, self.state = nil, nil, nil
+    for _, row in ipairs(rows) do row.item = nil end
+    if self.transitionPending then self:HasData(nil); return end
     self.scroll.offset = 0
     self.scroll:SetVerticalScroll(0)
     self:Draw()
     self:HasData(nil)
 end
 
+ns.UITransitions.RegisterPage(mod, {status}, function() mod:Draw() end)
+mod.transitionPrepare = function()
+    local regions = {status}
+    for _, row in ipairs(rows) do
+        if not row.isHeader then regions[#regions + 1] = row end
+    end
+    mod.transitionRegions = regions
+end
+
 -- Prepare a new profession snapshot without reading unconfirmed comparisons.
 function mod:OnInspect()
     self:OnClearInspect()
-    self:HasData(ex.unitType ~= 1)
 end
 
 -- Request profession data once the inspected player is confirmed by the server.
@@ -515,11 +529,12 @@ function mod:OnCacheLoaded(entry)
         -- Old snapshots may contain a learned tier such as 75 or no maximum at all.
         self.data.progressBasis = "overall"
         for _, skill in ipairs(self.data.skills) do
+            skill.value = Skill(skill.value)
             skill.maximum = MAX_PROFESSION_SKILL
         end
         self.data.cached = true
         self.state = "ready"
         self:Draw()
-        self:HasData(true)
+        self:HasData(data.complete or #data.skills > 0)
     end
 end

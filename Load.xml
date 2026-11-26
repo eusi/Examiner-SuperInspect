@@ -30,11 +30,14 @@
     <Script file="Services\PvP.lua"/>
     <Script file="Examiner.lua"/>
     <Script file="modcore.lua"/>
+    <Script file="Services\UITransitions.lua"/>
     <Script file="Services\CachedModel.lua"/>
+    <Script file="Services\GuildIcon.lua"/>
     <Script file="Services\Appearance.lua"/>
     <Script file="Services\FrameArt.lua"/>
     <Script file="Services\ClassIcon.lua"/>
     <Script file="Services\Friends.lua"/>
+    <Script file="Services\ClassicArt.lua"/>
     <Script file="Modules\itemslots.lua"/>
     <Script file="Modules\config.lua"/>
     <Script file="Modules\cache.lua"/>

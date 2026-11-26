@@ -1,5 +1,5 @@
 ## Interface: 50504
-## Version: 1.12.0
+## Version: 1.13.0
 ## Title: Examiner
 ## Author: Aezay (Earthen Ring EU), sAks
 ## Notes: Advanced character inspection window replacing the basic default.

@@ -53,6 +53,7 @@ local extraHonor = ExaminerNS.Fonts.Create(mod.page, nil, "ARTWORK", "GameFontHi
 extraHonor:SetPoint("TOPLEFT", 16, -88)
 extraHonor:SetPoint("TOPRIGHT", -16, -88)
 extraHonor:SetJustifyH("LEFT")
+extraHonor:SetSpacing(6)
 local progress
 if C.isEra then
     progress = ExaminerNS.ProgressBars.Create(mod.page)
@@ -106,7 +107,7 @@ function mod:OnInspectReady()
     else
         self.waiting = true
         ex.pvpData = { state = "loading" }
-        self:HasData(true)
+        self:HasData(nil)
         ex:RequestHonorData()
     end
     if not ex.isSelf and C.IsTrue(C.Try(HasInspectHonorData)) then
@@ -137,8 +138,9 @@ end
 -- Finish the honor display with the data currently available.
 function mod:OnDataTimeout()
     self.waiting = nil
+    if not next(hd) then ex.pvpData = {state = "unavailable"} end
     self:UpdateHonor()
-    ex.pvpData = { state = self.visibleData and "ready" or "unavailable" }
+    ex.pvpData = { state = self.transitionPending and "loading" or self.visibleData and "ready" or "unavailable" }
 end
 
 -- Save available honor details into the player snapshot.
@@ -165,6 +167,10 @@ end
 
 -- Clear honor data and hide stale controls.
 function mod:OnClearInspect()
+    self.waiting, self.visibleData, ex.pvpData = nil, nil, nil
+    wipe(hd)
+    self:HasData(nil)
+    if self.transitionPending then return end
     if progress then
         progress:Hide()
         progress:SetValue(0)
@@ -215,11 +221,12 @@ function mod:LoadHonorNormal()
     end
 
     self:UpdateHonor()
-    ex.pvpData = { state = self.visibleData and "ready" or "unavailable" }
+    ex.pvpData = { state = self.transitionPending and "loading" or self.visibleData and "ready" or "unavailable" }
 end
 
 -- Refresh the visible honor values and rank display.
 function mod:UpdateHonor()
+    if ExaminerNS.UITransitions.DeferPage(self, next(hd) ~= nil, not next(hd) and ex.pvpData and ex.pvpData.state == "unavailable") then return end
     if progress then
         local value = C.Number(hd.rankProgress)
         local valid = value and value >= 0 and value <= 100
@@ -249,17 +256,19 @@ function mod:UpdateHonor()
     self.highestRank:SetText(highest and (L["Highest PvP rank"] .. ": " .. highest) or "")
     self.highestRank:SetShown(highest ~= nil and highest ~= false)
     local offset = highest and 16 or 0
+    local rowHeight, tableTop = 24, 44
     for i, label in ipairs(labels) do
         label:ClearAllPoints()
         if (i - 1) % 3 == 0 then
-            label:SetPoint("TOP", -28, -36 - (i - 1) / 3 * 12 - offset)
+            label:SetPoint("TOP", -28, -tableTop - (i - 1) / 3 * rowHeight - offset)
         else
             label:SetPoint("LEFT", labels[i - 1], "RIGHT")
         end
     end
     extraHonor:ClearAllPoints()
-    extraHonor:SetPoint("TOPLEFT", 16, -88 - offset)
-    extraHonor:SetPoint("TOPRIGHT", -16, -88 - offset)
+    local detailTop = 120
+    extraHonor:SetPoint("TOPLEFT", 16, -detailTop - offset)
+    extraHonor:SetPoint("TOPRIGHT", -16, -detailTop - offset)
     -- SHOW KILLS/HONOR
 
     local values = { hd.todayHK, hd.yesterdayHK, hd.lifetimeHK, hd.todayHonor, hd.yesterdayHonor }
@@ -321,7 +330,8 @@ function mod:UpdateHonor()
         end
     end
     self.visibleData = visible and true or nil
-    self:HasData(self.visibleData or self.waiting)
+    ex.pvpData = {state = self.visibleData and "ready" or "unavailable"}
+    self:HasData(self.visibleData)
 end
 
 
@@ -383,7 +393,7 @@ end
 
 local t = ExaminerNS.Fonts.Create(mod.page, nil, "ARTWORK", "GameFontHighlightSmall")
 t:SetPoint("RIGHT", labels[4], "LEFT")
-t:SetWidth(70)
+t:SetWidth(90)
 t:SetJustifyH("LEFT")
 t:SetText(L["Honor Kills"])
 t:SetTextColor(0.5, 0.75, 1)
@@ -392,7 +402,7 @@ t:Hide()
 
 t = ExaminerNS.Fonts.Create(mod.page, nil, "ARTWORK", "GameFontHighlightSmall")
 t:SetPoint("RIGHT", labels[7], "LEFT")
-t:SetWidth(70)
+t:SetWidth(90)
 t:SetJustifyH("LEFT")
 t:SetText(L["Honor Points"])
 t:SetTextColor(0.5, 0.75, 1)
@@ -419,6 +429,12 @@ if C.isTBC then
         arena[index] = row
     end
 end
+local fadeContents = {mod.rankIcon, mod.rankTitle, mod.highestRank, extraHonor}
+if progress then fadeContents[#fadeContents + 1] = progress end
+for _, group in ipairs({labels, sideHeaders, arena}) do
+    for _, region in ipairs(group) do fadeContents[#fadeContents + 1] = region end
+end
+ExaminerNS.UITransitions.RegisterPage(mod, fadeContents, function() mod:UpdateHonor() end)
 if C.isEra then
     local updates = CreateFrame("Frame")
     mod.selfUpdateFrame = updates

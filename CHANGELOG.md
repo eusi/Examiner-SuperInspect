@@ -4,6 +4,17 @@ Changes to sAks/eusi's Examiner (SuperInspect) fork, newest first.
 
 Development lineage: **Aezay's original Examiner → taxidriveer's Classic fork (2019) → sAks/eusi's SoD fork (2024), later expanded across WoW clients**. sAks/eusi occasionally helped before taking over in 2024. The entries below trace the additions in this fork back to its predecessors.
 
+## [1.13.0](https://github.com/eusi/Examiner-SuperInspect/releases/tag/v1.13.0) — 2026-11-23
+
+- Added specialization icons and guild crests to navigation tabs.
+- Improved inspection speed and reduced repeated gear processing.
+- Improved player switches with smoother transitions and stable tab layouts.
+- Fixed talent-tab text clipping and spacing on Forever.
+- Fixed profession progress exceeding 300 on Forever.
+- Fixed an error during animated player switches.
+- Fixed missing achievements after inspecting an NPC.
+- Fixed cramped PvP details and window, portrait and icon-menu artwork on Classic clients.
+
 ## [1.12.0](https://github.com/eusi/Examiner-SuperInspect/releases/tag/v1.12.0) — 2026-11-23
 
 - Added a zoomable chest and saved inspection time to cached profiles.

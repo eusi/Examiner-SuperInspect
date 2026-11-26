@@ -167,12 +167,12 @@ local function Showable(data)
     if not data or data.state == "locked" then
         return false
     end
-    if data.state == "loading" or (C.IsString(data.loadout) and data.loadout ~= "") then
+    if C.IsString(data.loadout) and data.loadout ~= "" then
         return true
     end
     for _, list in ipairs({ data.trees or {}, data.extraTrees or {} }) do
         for _, tree in ipairs(list) do
-            if #(tree.nodes or {}) > 0 then
+            if #(tree.nodes or {}) > 0 or (data.state == "ready" and C.Number(tree.points) ~= nil) then
                 return true
             end
         end
@@ -339,6 +339,30 @@ end
 --                                           Tree Selectors                                           --
 --------------------------------------------------------------------------------------------------------
 
+-- Measure outside the constrained visible label, which may already report an ellipsized width.
+local tabMeasure = ns.Fonts.Create(page, nil, "OVERLAY", "GameFontNormalSmall")
+tabMeasure:Hide()
+local function TabTextWidth(text, source)
+    if source then tabMeasure:SetFont(source:GetFont()) end
+    tabMeasure:SetText(text)
+    return C.Number(tabMeasure:GetStringWidth(), 0)
+end
+
+-- Keep the longest whole UTF-8 prefix that fits with two trailing dots.
+local function FitTabName(text, width)
+    if TabTextWidth(text) <= width then return text end
+    if TabTextWidth("..") > width then return "" end
+    local chars = {}
+    for char in text:gmatch("[^\128-\191][\128-\191]*") do chars[#chars + 1] = char end
+    local low, high = 0, #chars
+    while low < high do
+        local middle = math.floor((low + high + 1) / 2)
+        if TabTextWidth(table.concat(chars, "", 1, middle) .. "..") <= width then low = middle
+        else high = middle - 1 end
+    end
+    return table.concat(chars, "", 1, low) .. ".."
+end
+
 -- Create a selector for one available talent tree.
 local function CreateTreeTab(index)
     local tab = CreateFrame("Button", nil, page)
@@ -361,6 +385,12 @@ local function CreateTreeTab(index)
     label:SetJustifyV("MIDDLE")
     tab:SetFontString(label)
     tab.label = label
+    label:SetWordWrap(false)
+    tab.pointLabel = ns.Fonts.Create(tab, nil, "OVERLAY", "GameFontNormalSmall")
+    tab.pointLabel:SetWordWrap(false)
+    tab.pointLabel:SetJustifyH("LEFT")
+    tab.pointLabel:SetJustifyV("MIDDLE")
+    tab.pointLabel:SetTextColor(0, 1, 0)
     tab:SetNormalFontObject(GameFontNormalSmall)
     tab:SetHighlightFontObject(GameFontHighlightSmall)
     tab:SetHighlightTexture("Interface\\PaperDollInfoFrame\\UI-Character-Tab-Highlight", "ADD")
@@ -399,6 +429,7 @@ end
 -- Render the available talent snapshot.
 function mod:Draw()
     local data = self:GetSelectedData() or { trees = {}, state = "loading", message = "Waiting for talent data." }
+    if ns.UITransitions.DeferPage(self, Showable(data), data.state == "unavailable" or data.state == "locked") then return end
     local trees = ns.TalentTabs(data, ex.info.classFixed)
     self.displayTrees = trees
     if selectedKey then
@@ -469,21 +500,31 @@ function mod:Draw()
             tab = CreateTreeTab(index)
             tabs[index] = tab
         end
-        tab:SetText(tree.name)
-        tab.label:ClearAllPoints()
-        tab.label:SetWidth(0)
-        tab.label:SetHeight(20)
-        widths[index] = math.max(56, tab.label:GetStringWidth() + 28)
+        tab:SetDisabledFontObject(tree.disabled and GameFontDisableSmall or GameFontHighlightSmall)
+        if index == selected or tree.disabled then tab:Disable() else tab:Enable() end
+        local face, _, flags = tab.label:GetFont()
+        local _, normalSize = GameFontNormalSmall:GetFont()
+        tab.label:SetFont(face, math.max(1, normalSize - 1), flags)
+        tab.label:SetJustifyH(tree.points ~= nil and "LEFT" or "CENTER")
+        tab:SetText(tree.labelName or tree.name)
+        local pointText = tree.points ~= nil and C.FormatNumber(tree.points) or ""
+        tab.pointLabel:SetText(pointText)
+        tab.pointLabel:SetShown(tree.points ~= nil)
+        tab.counterWidth = tree.points ~= nil and (math.ceil(TabTextWidth(pointText, tab.pointLabel)) + 2) or 0
+        tab.pointsGap = tree.points ~= nil and 3 or 0
+        tab.pointsWidth = tab.counterWidth + tab.pointsGap
+        widths[index] = math.max(56, TabTextWidth(tree.labelName or tree.name or "", tab.label)
+            + tab.pointsWidth + (tree.points ~= nil and 16 or 28))
         totalWidth = totalWidth + widths[index]
     end
     local available = C.isMists and math.min(page:GetWidth() - 100, math.max(110, page:GetWidth() * 0.45))
-        or page:GetWidth() - 45
+        or page:GetWidth() - 58
     local minimum = math.min(56, available / math.max(1, #trees))
     local shrink = totalWidth > available
             and math.max(0, (available - minimum * #trees) / (totalWidth - minimum * #trees))
         or 1
     local usedWidth = minimum * #trees + (totalWidth - minimum * #trees) * shrink
-    local tabX = C.isMists and (page:GetWidth() - 8 - usedWidth) or 45
+    local tabX = page:GetWidth() - 8 - usedWidth
     for index, tree in ipairs(trees) do
         local tab = tabs[index]
         tab.key = tree.key
@@ -518,8 +559,15 @@ function mod:Draw()
         end
         tab.label:ClearAllPoints()
         tab.label:SetPoint("TOPLEFT", 8, 0)
-        tab.label:SetPoint("BOTTOMRIGHT", -8, 0)
-        tab:SetDisabledFontObject(tree.disabled and GameFontDisableSmall or GameFontHighlightSmall)
+        local space = math.max(0, width - 16 - tab.pointsWidth)
+        TabTextWidth("", tab.label)
+        local fitted = FitTabName(tree.labelName or tree.name or "", space)
+        tab.fittedNameWidth = tree.points ~= nil and math.min(space, math.ceil(TabTextWidth(fitted))) or nil
+        tab.label:SetSize(tab.fittedNameWidth or space, 20)
+        tab.label:SetText(fitted)
+        tab.pointLabel:ClearAllPoints()
+        tab.pointLabel:SetPoint("LEFT", tab.label, "RIGHT", tab.pointsGap, 0)
+        tab.pointLabel:SetSize(math.max(1, tab.counterWidth), 20)
         if tree.disabled then
             tab.label:SetTextColor(0.5, 0.5, 0.5)
         elseif tab.selected then
@@ -529,11 +577,6 @@ function mod:Draw()
         end
         if #trees > 1 then
             tab:Show()
-            if index == selected or tree.disabled then
-                tab:Disable()
-            else
-                tab:Enable()
-            end
         else
             tab:Hide()
         end
@@ -657,6 +700,17 @@ page:SetScript("OnHide", function()
     ex.guild:SetShown(guildShown)
     ex.model:SetShown(modelShown)
 end)
+ns.UITransitions.RegisterPage(mod, {page}, function() mod:Draw() end, {background})
+if C.isMists then
+    mod.transitionPrepare = function()
+        local glyphs = ex:GetModuleFromToken("Glyphs")
+        if glyphs and glyphs.page:IsShown() then
+            local regions = {}
+            for _, tab in ipairs(tabs) do regions[#regions + 1] = tab end
+            mod.transitionRegions, mod.transitionBackgrounds = regions, {}
+        else mod.transitionRegions, mod.transitionBackgrounds = {page}, {background} end
+    end
+end
 
 --------------------------------------------------------------------------------------------------------
 --                                           Module Events                                            --
@@ -666,7 +720,9 @@ end)
 function mod:OnInspect(unit)
     self.selectedGroup = nil
     wipe(ns.Talents.requested)
-    selected, selectedKey = 1, nil
+    if not (C.isMists and selectedKey == "glyphs" and page:IsShown()) then
+        selected, selectedKey = 1, nil
+    end
     copyMode = "build"
     ex.talentData = ns.Talents.LowLevelData(unit)
         or { state = "loading", trees = {}, message = "Waiting for talent data." }
@@ -691,7 +747,7 @@ function mod:OnInspectReady(unit)
         local glyphs = ex:GetModuleFromToken("Glyphs")
         if glyphs and glyphs:IsEnabled() then
             glyphs:OnInspectReady()
-            self:HasData(true)
+            self:HasData(Showable(ex.talentData))
         end
     end
     if page:IsShown() then
@@ -701,6 +757,7 @@ end
 
 -- Clear talent data and hide stale controls.
 function mod:OnClearInspect()
+    build:ClearFocus()
     self.selectedGroup = nil
     ex.talentData = nil
     if C.isMists then
@@ -804,7 +861,9 @@ end
 -- Restore talent details from the saved player snapshot.
 function mod:OnCacheLoaded(entry)
     self.selectedGroup = nil
-    selected, selectedKey = 1, nil
+    if not (C.isMists and selectedKey == "glyphs" and page:IsShown()) then
+        selected, selectedKey = 1, nil
+    end
     copyMode = "build"
     local snapshot = entry.Talents
     if C.isForever and C.IsTable(snapshot) and snapshot.groupingVersion ~= 2 then

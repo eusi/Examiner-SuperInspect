@@ -20,7 +20,7 @@ ns.Inspector = I
 local timer = CreateFrame("Frame")
 I.frame = timer
 timer:Hide()
-local RETRY_AFTER, TIMEOUT, MAX_REQUESTS = 2, 12, 2
+local RETRY_AFTER, TIMEOUT, MAX_REQUESTS, TARGET_DELAY = 2, 12, 2, 0.2
 
 
 --------------------------------------------------------------------------------------------------------
@@ -43,9 +43,11 @@ function I:Valid(session)
 end
 
 -- Stop pending inspection work without clearing the displayed snapshot.
-function I:Cancel()
+function I:Cancel(keepVisualPending)
+    self.pendingTarget = nil
     self.generation = self.generation + 1
     self.active = nil
+    if ns.UITransitions and not keepVisualPending then ns.UITransitions.ResolveAll(true) end
     timer:Hide()
     if self.ownsRequest then
         self.ownsRequest = false
@@ -55,11 +57,26 @@ function I:Cancel()
     ex:UnregisterEvent("UPDATE_MOUSEOVER_UNIT")
     ex:UnregisterEvent("INSPECT_HONOR_UPDATE")
     ex:SetScript("OnUpdate", nil)
+    self:FinishNavigation()
+end
+
+-- End a pending icon state on timeout/cancellation without exposing a stale preview.
+function I:FinishNavigation()
+    local pending=ex.navigationPending
+    ex.navigationPending=nil
+    if not pending then return end
+    if not ex.isCacheEntry then
+        if pending.Talents then ns.ClassIcon.ClearSpecialization() end
+    end
+    if ex.cfg then ex:RefreshNavigationIcons() end
 end
 
 -- Cancel the session and clear all inspected player data.
-function I:Clear()
-    self:Cancel()
+function I:Clear(forSelection, keepNPCFade)
+    local slots = ex:GetModuleFromToken("ItemSlots")
+    if slots and not keepNPCFade then slots:CancelNPCFade() end
+    if ns.UITransitions then ns.UITransitions.Begin(forSelection) end
+    self:Cancel(forSelection)
     if ns.CachedModel then ns.CachedModel.Clear() end
     ns.ClassIcon.ClearSpecialization()
     ex.unit, ex.guid, ex.isSelf, ex.unitType, ex.canInspect = nil, nil, nil, nil, nil
@@ -124,8 +141,9 @@ function I:Start(unit, open)
         end
         return true
     end
-    self:Clear()
+    self:Clear(true)
     local selfUnit = C.IsTrue(UnitIsUnit(unit, "player"))
+    if not selfUnit then ex.navigationPending={Talents=true,Guild=true} end
     local session = {
         generation = self.generation,
         unit = unit,
@@ -137,6 +155,8 @@ function I:Start(unit, open)
     }
     session.capture = guid .. ":" .. time() .. ":" .. session.started .. ":" .. self.generation
     self.active = session
+    -- A recent matching request may already be finished; it must not delay this session.
+    session.immediateRequest = not selfUnit or nil
     ex.unit, ex.guid, ex.isSelf = unit, guid, selfUnit
     ex.unitType = not C.IsTrue(UnitIsPlayer(unit)) and 1
         or C.IsTrue(UnitCanCooperate("player", unit)) and 3
@@ -203,7 +223,9 @@ end
 
 -- Show available NPC details without requiring a GUID or requesting player inspection data.
 function I:ShowNPC(unit, open)
-    self:Clear()
+    local slots = ex:GetModuleFromToken("ItemSlots")
+    if slots then slots:FadeOutForNPC() end
+    self:Clear(false, true)
     ex.unit, ex.unitType, ex.canInspect = unit, 1, false
     local info = ex.info
     info.name = C.Text(C.Try(UnitName,unit),UNKNOWN or "Unknown")
@@ -266,12 +288,29 @@ function I:Refresh(session)
             end
         end
     end
-    local result = ns.Gear.Calculate(
-        links,
-        session.cached and nil or session.unit,
-        true,
-        session.cached and ex.info.Sets
-    )
+    local result = session.gearResult
+    local reuse = result and not session.gearDirty and result.state == "ready"
+        and result.statsState == "ready" and (not result.gems or result.gems.state == "ready")
+        and #unknown == 0 and ex.gear == result
+    if reuse then
+        for _, slot in ipairs(LibGearExam.Slots) do
+            if links[slot] ~= result.links[slot] then reuse = false; break end
+        end
+    end
+    if not reuse then
+        result = ns.Gear.Calculate(
+            links,
+            session.cached and nil or session.unit,
+            true,
+            session.cached and ex.info.Sets
+        )
+        session.gearResult, session.gearDirty = result, nil
+        session.inventoryIDs = {}
+        for _, link in pairs(result.links) do
+            local id = C.IsString(link) and tonumber(link:match("item:(%d+)"))
+            if id then session.inventoryIDs[id] = true end
+        end
+    end
     if session.cached and ex.info.legacy then
         result.statsState = "partial"
         result.legacy = true
@@ -282,17 +321,27 @@ function I:Refresh(session)
     if #result.pending > 0 then
         result.state = "loading"
     end
-    ns.Gear.Apply(ex, result)
+    if not reuse then ns.Gear.Apply(ex, result) end
     ex.isCacheEntry = session.cached or nil
     self:RequestItems(session, result)
+    session.refreshing = true
     if session.cached then
         ex:SendModuleEvent("OnGearUpdated", nil, nil)
     else
         ex.info.time = time()
         ex:SendModuleEvent("OnInspectReady", session.unit, session.guid)
         ns.ClassIcon.CaptureSpecialization(session.unit)
+        if ex.navigationPending then
+            ex.navigationPending.Guild=nil
+            ex.navigationPending.Talents=not ns.ClassIcon.specIcon
+                and C.IsTable(ex.talentData) and ex.talentData.state=="loading" or nil
+            if not ex.navigationPending.Talents then ex.navigationPending=nil end
+            ex:RefreshNavigationIcons()
+        end
         ex:CachePlayer()
     end
+    session.refreshing = nil
+    if ns.UITransitions then ns.UITransitions.ResolveAll() end
     ex:ShowModulePage()
     session.refreshed = GetTime()
     local talent = ex.talentData
@@ -315,17 +364,18 @@ function I:Ready(guid)
         not session
         or (session.done and (not session.serverReady or not ex:IsShown()))
         or session.cached
-        or (not ex.isSelf and session.requests == 0)
+        or (not ex.isSelf and session.requests == 0 and not session.observedRequest)
         or not C.IsString(guid)
         or guid ~= session.guid
         or not self:Valid(session)
     then
         return
     end
-    if self.notificationGUID and self.notificationGUID ~= guid then
+    if not ex.isSelf and self.notificationGUID ~= guid then
         return
     end
     session.serverReady = true
+    session.gearDirty = true
     ns.Record("inspect-ready", guid)
     self:Refresh(session)
 end
@@ -335,6 +385,10 @@ function I:SpecializationChanged(unit)
     local session = self.active
     if not ex:IsShown() or not session or session.cached or not self:Valid(session)
         or not C.IsString(unit) or not C.IsTrue(UnitIsUnit(unit,session.unit)) then return end
+    if not ex.isSelf then
+        ex.navigationPending=ex.navigationPending or {}
+        ex.navigationPending.Talents=true
+    end
     ns.ClassIcon.ClearSpecialization()
     ns.ClassIcon.Update()
     if session.done or session.serverReady or ex.isSelf then self:InventoryChanged(unit) end
@@ -347,6 +401,19 @@ end
 
 -- Retry pending requests and finish or time out the session.
 function I:Tick()
+    local pending = self.pendingTarget
+    if pending then
+        if not ex:IsShown() or not ex.cfg.autoInspect or not C.IsTrue(UnitExists("target"))
+            or UnitGUID("target") ~= pending.guid then
+            self:Clear()
+            return
+        end
+        if GetTime() >= pending.at then
+            self.pendingTarget = nil
+            self:Start("target")
+        end
+        return
+    end
     local session = self.active
     if not session then
         self:Cancel()
@@ -363,6 +430,7 @@ function I:Tick()
         end
         ex.unit = nil
         ex:SendModuleEvent("OnDataTimeout")
+        if ns.UITransitions then ns.UITransitions.ResolveAll() end
         self:Cancel()
         return
     end
@@ -393,7 +461,9 @@ function I:Tick()
         then
             ex:CachePlayer()
         end
+        if ns.UITransitions then ns.UITransitions.ResolveAll() end
         ex:SetBackgroundVertex(1, 1, 1)
+        self:FinishNavigation()
         ns.Record("inspect-timeout", "partial data retained")
         return
     end
@@ -403,13 +473,15 @@ function I:Tick()
         end
     elseif
         session.requests < MAX_REQUESTS
-        and now - self.lastRequest >= RETRY_AFTER
+        and (session.immediateRequest or now - self.lastRequest >= RETRY_AFTER)
         and self:CanInspect(session.unit)
     then
         if InCombatLockdown and InCombatLockdown() then
             return
         end
         session.requests = session.requests + 1
+        session.immediateRequest = nil
+        session.observedRequest = nil
         self.lastRequest = now
         self.notificationGUID = session.guid
         self.ownsRequest = true
@@ -418,6 +490,16 @@ function I:Tick()
         C.Try(NotifyInspect, session.unit)
         self.sending = false
     end
+end
+
+-- Inspect only the last target after a brief pause in automatic target changes.
+function I:QueueTarget()
+    if C.Safe(C.Try(UnitIsPlayer, "target")) == false then return self:ShowNPC("target") end
+    if self.active or ex.guid then self:Clear(true) else self:Cancel(true) end
+    local guid = C.Safe(C.Try(UnitGUID, "target"))
+    if not C.IsString(guid) then return end
+    self.pendingTarget = { guid = guid, at = GetTime() + TARGET_DELAY }
+    timer:Show()
 end
 
 -- Retry talent details after a spell finishes loading.
@@ -478,6 +560,9 @@ function I:InventoryChanged(unit)
     end
     session.started = GetTime()
     session.done = false
+    session.gearDirty = true
+    session.immediateRequest = nil
+    session.observedRequest = nil
     if ex.isSelf then
         self:Refresh(session)
     else
@@ -500,7 +585,7 @@ local elapsedTotal = 0
 -- Advance pending work at the configured update interval.
 timer:SetScript("OnUpdate", function(_, elapsed)
     elapsedTotal = elapsedTotal + elapsed
-    if elapsedTotal >= 0.15 then
+    if I.pendingTarget or elapsedTotal >= 0.15 then
         elapsedTotal = 0
         I:Tick()
     end
@@ -527,6 +612,12 @@ timer:SetScript("OnEvent", function(_, event, ...)
     else
         local session = I.active
         if session and not session.done and I:Valid(session) and (session.serverReady or session.cached) then
+            if event == "ITEM_DATA_LOAD_RESULT" or event == "GET_ITEM_INFO_RECEIVED" then
+                local id = ...
+                if C.IsNumber(id) and not session.requested[id]
+                    and not (session.inventoryIDs and session.inventoryIDs[id]) then return end
+                session.gearDirty = true
+            end
             session.refreshed = nil
             timer:Show()
         end
@@ -551,7 +642,7 @@ if C_Spell and C_Spell.RequestLoadSpellData then
     C.Try(timer.RegisterEvent, timer, "SPELL_DATA_LOAD_RESULT")
 end
 if type(NotifyInspect) == "function" then
-    -- Track inspect requests to respect the shared client throttle.
+    -- Track shared inspect ownership and the spacing of automatic retries.
     hooksecurefunc("NotifyInspect", function(unit)
         I.lastRequest = GetTime()
         I.notificationGUID = C.IsString(unit) and C.Safe(UnitGUID(unit)) or nil
@@ -559,6 +650,8 @@ if type(NotifyInspect) == "function" then
             I.ownsRequest = false
             local session = I.active
             if session and not session.cached and not ex.isSelf then
+                session.observedRequest = I.notificationGUID == session.guid or nil
+                session.gearDirty = true
                 session.serverReady = false
                 session.honorReady = nil
                 ex.requestedHonorData = nil
@@ -566,6 +659,18 @@ if type(NotifyInspect) == "function" then
                     timer:Show()
                 end
             end
+        end
+    end)
+end
+if type(ClearInspectPlayer) == "function" then
+    -- A cleared shared inspect must not validate a late reply or a borrowed request.
+    hooksecurefunc("ClearInspectPlayer", function()
+        I.notificationGUID, I.ownsRequest = nil, false
+        local session = I.active
+        if session and not session.cached and not ex.isSelf then
+            session.observedRequest, session.serverReady, session.honorReady = nil, false, nil
+            session.gearDirty = true
+            if not session.done then timer:Show() end
         end
     end)
 end

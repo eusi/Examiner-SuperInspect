@@ -34,6 +34,29 @@ mod.itemEvents = itemEvents
 
 local ITEM_ICON_UNKNOWN = "Interface\\Icons\\INV_Misc_QuestionMark"
 
+-- Fade only item artwork and its overlays; the native empty slot stays opaque.
+local function RevealItem(button)
+    if not button.hasArtwork or button.artRevealed then return end
+    button.artRevealed = true
+    if ExaminerNS.UITransitions then
+        for _, region in ipairs(button.itemRegions) do ExaminerNS.UITransitions.Fade(region, button, 1) end
+    end
+end
+
+-- Clear only retired visuals; interaction references are cleared synchronously on selection.
+local function ClearVisuals(button)
+    local transitions = ExaminerNS.UITransitions
+    if transitions then
+        transitions.Reset(button)
+        for _, region in ipairs(button.itemRegions) do transitions.Reset(region) end
+    end
+    button.artRevealed, button.hasArtwork = nil, nil
+    button.texture:SetTexture(nil)
+    button.border:Hide()
+    button.level:SetText("")
+    button.level:Hide()
+end
+
 --------------------------------------------------------------------------------------------------------
 --                                           Module Scripts                                           --
 --------------------------------------------------------------------------------------------------------
@@ -43,8 +66,48 @@ function mod:OnInitialize()
     cfg = ex.cfg
 end
 
--- Clear equipment data and hide stale controls.
+-- Clear item contents while retaining native empty slots during player changes.
+function mod:CancelItemFade()
+    if not self.itemsFading then return end
+    self.itemFadeSerial = (self.itemFadeSerial or 0) + 1
+    self.itemsFading, self.itemRefreshPending = nil, nil
+    for _, button in ipairs(self.slotBtns) do
+        for _, region in ipairs(button.itemRegions) do ExaminerNS.UITransitions.Reset(region, true) end
+    end
+end
+
+-- Retire only old item art; apply the latest player's preview after the short fade.
+function mod:RetireItems()
+    if self.itemsFading then return end
+    local transitions, regions = ExaminerNS.UITransitions, {}
+    for _, button in ipairs(self.slotBtns) do
+        if button:IsShown() and button.hasArtwork then
+            for _, region in ipairs(button.itemRegions) do regions[#regions + 1] = region end
+        end
+    end
+    if #regions == 0 then return end
+    self.itemFadeSerial = (self.itemFadeSerial or 0) + 1
+    local serial, remaining = self.itemFadeSerial, #regions
+    self.itemsFading = true
+    for _, region in ipairs(regions) do
+        transitions.FadeOut(region, function()
+            if self.itemFadeSerial ~= serial then return end
+            remaining = remaining - 1
+            if remaining > 0 then return end
+            self.itemsFading = nil
+            for _, button in ipairs(self.slotBtns) do ClearVisuals(button); button:Enable() end
+            if self.itemRefreshPending then
+                self.itemRefreshPending = nil
+                self:UpdateItemSlots(); self:ShowItemSlotButtons()
+            end
+        end)
+    end
+end
+
 function mod:OnClearInspect()
+    if ExaminerNS.UITransitions.holding and not self.npcFading then self:RetireItems()
+    else self:CancelItemFade() end
+    self.previewLinks, self.previewTextures, self.previewVisible = nil, nil, nil
     wipe(self.pendingItems); wipe(self.requestedItems)
     itemEvents:UnregisterAllEvents()
     for _, button in ipairs(self.slotBtns) do
@@ -52,25 +115,75 @@ function mod:OnClearInspect()
             gtt:Hide()
         end
         button.link, button.realLink = nil, nil
-        button.texture:SetTexture(button.bgTexture)
-        button.border:Hide()
-        button.level:SetText("")
-        button.level:Hide()
-        button:Hide()
+        if self.itemsFading then button:Disable()
+        elseif not self.npcFading then ClearVisuals(button); button:Enable() end
     end
     ex.tooltipSlot = nil
+    if cfg then self:ShowItemSlotButtons() end
+end
+
+-- A player/NPC switch fades the existing group, with no empty-slot intermediate.
+function mod:FadeOutForNPC()
+    self:CancelItemFade()
+    local transitions = ExaminerNS.UITransitions
+    if self.npcFading or not transitions then return end
+    local count = 0
+    for _, button in ipairs(self.slotBtns) do if button:IsShown() then count = count + 1 end end
+    if count == 0 then return end
+    self.npcFading = true
+    for _, button in ipairs(self.slotBtns) do
+        if button:IsShown() then
+            button:Disable()
+            button:UnregisterEvent("MODIFIER_STATE_CHANGED")
+            for _, region in ipairs(button.itemRegions) do transitions.Reset(region, true) end
+            transitions.FadeOut(button, function()
+                button:Hide()
+                ClearVisuals(button)
+                count = count - 1
+                if count == 0 then self.npcFading = nil end
+            end)
+        end
+    end
+end
+
+-- A new player/cache selection cancels callbacks that would hide their new equipment.
+function mod:CancelNPCFade()
+    if not self.npcFading then return end
+    self.npcFading = nil
+    for _, button in ipairs(self.slotBtns) do
+        if ExaminerNS.UITransitions then ExaminerNS.UITransitions.Reset(button) end
+        button:Hide()
+    end
 end
 
 -- Read equipment data after the inspection reply.
 function mod:OnInspectReady(unit, guid)
+    if not ex.itemsLoaded and unit and not ex.isCacheEntry then return self:OnInspect(unit) end
+    self.previewLinks, self.previewTextures, self.previewVisible = nil, nil, nil
     self:UpdateItemSlots()
     self:ShowItemSlotButtons()
 end
-mod.OnInspect = mod.OnInspectReady
 mod.OnGearUpdated = mod.OnInspectReady
+
+-- Show only this unit's public equipment artwork while authoritative inspection is pending.
+function mod:OnInspect(unit)
+    local C, count = ExaminerNS.Compat, 0
+    self.previewLinks, self.previewTextures = {}, {}
+    for _, button in ipairs(self.slotBtns) do
+        local link = C.Text(C.Try(GetInventoryItemLink, unit, button.id))
+        local texture = C.Icon(C.Try(GetInventoryItemTexture, unit, button.id))
+        self.previewLinks[button.slotName] = link
+        self.previewTextures[button.slotName] = texture
+        if link or texture then count = count + 1 end
+    end
+    self.previewVisible = count > 0
+    self:UpdateItemSlots()
+    self:ShowItemSlotButtons()
+end
 
 -- Restore equipment details from the saved player snapshot.
 function mod:OnCacheLoaded(entry, unit)
+    self.previewLinks, self.previewTextures, self.previewVisible = nil, nil, nil
     self:UpdateItemSlots()
     self:ShowItemSlotButtons()
 end
@@ -113,13 +226,16 @@ end
 
 -- Show equipment controls only on pages that use them.
 function mod:ShowItemSlotButtons()
+    if self.npcFading then return end
     local shownMod = (cfg.activePage and ex.modules[cfg.activePage])
     local visible = ex.unitType ~= 1
-        and ex.itemsLoaded
-        and (not shownMod or shownMod.showItems or not shownMod.page:IsShown())
+        and (ex.unit or ex.isCacheEntry or ex.itemsLoaded or self.previewVisible
+            or (ExaminerNS.UITransitions and ExaminerNS.UITransitions.holding))
+        and (not shownMod or shownMod.showItems)
     for _, button in ipairs(self.slotBtns) do
         if visible then
             button:Show()
+            RevealItem(button)
         else
             button:Hide()
         end
@@ -128,21 +244,25 @@ end
 
 -- Refresh equipment icons and item-level overlays.
 function mod:UpdateItemSlots()
+    if self.itemsFading then self.itemRefreshPending = true; return end
     wipe(self.pendingItems)
     for index, button in ipairs(self.slotBtns) do
-        local link = ex.info.Items[button.slotName]
+        local link = (self.previewLinks or ex.info.Items)[button.slotName]
+        local previewTexture = self.previewTextures and self.previewTextures[button.slotName]
+        local hasArtwork = previewTexture ~= nil
         if cfg.alwaysShowItemLevel then
             button.level:Show()
         end
         button.realLink = nil
         button.link = link
         if not link then
-            button.texture:SetTexture(button.bgTexture)
+            button.texture:SetTexture(previewTexture)
             button.border:Hide()
             button.level:SetText("")
         else
             local _, _, itemRarity, itemLevel, _, _, _, _, _, itemTexture = GetItemInfo(link)
             if itemTexture then
+                hasArtwork = true
                 button.texture:SetTexture(itemTexture or ITEM_ICON_UNKNOWN)
                 local r, g, b = GetItemQualityColor(itemRarity and itemRarity > 0 and itemRarity or 0)
                 button.border:SetVertexColor(r, g, b)
@@ -154,11 +274,19 @@ function mod:UpdateItemSlots()
                 if id then self.pendingItems[id] = true end
                 button.realLink = link
                 button.link = nil
-                button.texture:SetTexture(ITEM_ICON_UNKNOWN)
+                button.texture:SetTexture(previewTexture)
                 button.border:Hide()
                 button.level:SetText("")
             end
         end
+        if not hasArtwork and button.hasArtwork then
+            button.artRevealed = nil
+            if ExaminerNS.UITransitions then
+                for _, region in ipairs(button.itemRegions) do ExaminerNS.UITransitions.Reset(region) end
+            end
+        end
+        button.hasArtwork = hasArtwork
+        if button:IsShown() then RevealItem(button) end
     end
     if next(self.pendingItems) then
         itemEvents:RegisterEvent("GET_ITEM_INFO_RECEIVED")
@@ -270,6 +398,10 @@ for index, slot in ipairs(LibGearExam.Slots) do
     btn.id, btn.bgTexture = GetInventorySlotInfo(slot)
     btn.slotName = slot
 
+    btn.slotBackground = btn:CreateTexture(nil, "BACKGROUND", nil, -1)
+    btn.slotBackground:SetAllPoints()
+    btn.slotBackground:SetTexture(btn.bgTexture)
+
     btn.texture = btn:CreateTexture(nil, "BACKGROUND")
     btn.texture:SetAllPoints()
 
@@ -282,6 +414,7 @@ for index, slot in ipairs(LibGearExam.Slots) do
     btn.level:SetFont(GameFontHighlight:GetFont(), 12, "OUTLINE")
     btn.level:SetPoint("BOTTOM", 0, 4)
     btn.level:Hide()
+    btn.itemRegions = {btn.texture, btn.border, btn.level}
 
     if index == 1 then
         btn:SetPoint("TOPLEFT", 4, -3)

@@ -68,6 +68,34 @@ local realm = Label(-202)
 mod.guildRealm = realm
 local members = Label(-223)
 mod.guildMembers = members
+local rankCaption, realmCaption, membersCaption = Label(-181), Label(-202), Label(-223)
+mod.guildCaptions = {rankCaption, realmCaption, membersCaption}
+rankCaption:SetText(ns.L.Rank:gsub(":$", "") .. ":")
+realmCaption:SetText(ns.L.Realm .. ":")
+membersCaption:SetText(ns.L["Guild Members"])
+local measure = ns.Fonts.Create(page, nil, "OVERLAY", "GameFontHighlightSmall")
+measure:Hide()
+
+-- Separate fixed captions from fading values while retaining centered lines.
+local function Pair(caption, value, text, y, suffix)
+    value:SetText(text or "")
+    caption:SetShown(text ~= nil and text ~= "")
+    measure:SetText(caption:GetText())
+    local captionWidth = measure:GetStringWidth()
+    measure:SetText(text or "")
+    local valueWidth = math.min(measure:GetStringWidth(), math.max(1, page:GetWidth() - captionWidth - 28))
+    local x = math.max(12, (page:GetWidth() - captionWidth - valueWidth - 4) / 2)
+    caption:ClearAllPoints(); value:ClearAllPoints()
+    caption:SetSize(captionWidth, 20); value:SetSize(valueWidth, 20)
+    caption:SetJustifyH("LEFT"); value:SetJustifyH("LEFT")
+    if suffix then
+        value:SetPoint("TOPLEFT", page, "TOPLEFT", x, y)
+        caption:SetPoint("TOPLEFT", value, "TOPRIGHT", 4, 0)
+    else
+        caption:SetPoint("TOPLEFT", page, "TOPLEFT", x, y)
+        value:SetPoint("TOPLEFT", caption, "TOPRIGHT", 4, 0)
+    end
+end
 local points = ns.Fonts.Create(page, nil, "OVERLAY", "GameFontNormal")
 mod.guildPoints = points
 points:SetPoint("BOTTOM", 0, 23)
@@ -139,16 +167,15 @@ end
 
 -- Render the available guild snapshot.
 function mod:Draw(data)
+    local resolved = self.guildTimedOut or (data and (data.complete or data.cached))
+    if ns.UITransitions.DeferPage(self, resolved,
+        resolved and not C.Text(data and data.name)) then return end
     data = data or {}
     name:SetText(data.name or ns.L["No guild information"])
-    local rankLabel = ns.L.Rank:gsub(":$", "")
-    rank:SetText(data.rank and data.rank ~= "" and (rankLabel .. ": " .. data.rank) or "")
-    realm:SetText(not C.isForever and data.realm and data.realm ~= "" and (ns.L.Realm .. ": " .. data.realm) or "")
-    members:SetText(
-        C.IsNumber(data.members)
-                and ("|cffffd100" .. C.FormatNumber(data.members) .. "|r " .. ns.L["Guild Members"])
-            or ""
-    )
+    Pair(rankCaption, rank, data.rank, -181)
+    Pair(realmCaption, realm, not C.isForever and data.realm or nil, -202)
+    Pair(membersCaption, members, C.IsNumber(data.members) and C.FormatNumber(data.members) or nil, -223, true)
+    members:SetTextColor(1, 0.82, 0)
     points:SetText(
         C.IsNumber(data.points)
                 and (C.FormatNumber(data.points) .. " |TInterface\\AchievementFrame\\UI-Achievement-Shields-NoPoints:18:18:0:0:128:128:0:64:64:128|t")
@@ -267,10 +294,21 @@ end
 
 -- Clear guild data and hide stale controls.
 function mod:OnClearInspect()
+    self.guildTimedOut = nil
     ex.guildData = nil
     self:Draw()
     self:HasData(nil)
 end
+
+-- Finish a visual wait with public partial details without declaring them complete.
+function mod:OnDataTimeout()
+    self.guildTimedOut = true
+    self:Draw(ex.guildData)
+    self:HasData(ex.guildData and C.IsString(ex.guildData.name) and ex.guildData.name ~= "")
+end
+
+ns.UITransitions.RegisterPage(mod, {banner, border, left, right, name, rank, realm, members, points, note},
+    function() mod:Draw(ex.guildData) end)
 
 -- Save available guild details into the player snapshot.
 function mod:OnCache(entry)

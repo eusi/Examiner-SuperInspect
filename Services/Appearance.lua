@@ -174,7 +174,8 @@ function A.TalentTab(tab, selected)
         for _, region in ipairs(regions) do
             local owned = region == record.surface.fill
             for _, edge in ipairs(record.surface.edges) do owned = owned or region == edge end
-            if not owned and not seen[region] and (region.SetTexture and region ~= tab:GetFontString()) then
+            if not owned and not seen[region] and (region.SetTexture and region ~= tab:GetFontString()
+                and region ~= tab.pointLabel) then
                 seen[region] = true
                 local alpha = C.Number(region:GetAlpha(), 1)
                 for _, native in ipairs(record.native) do
@@ -240,14 +241,31 @@ function A.PaintButton(button, active, iconMode)
             end
             button.label:ClearAllPoints()
             button.highlight:ClearAllPoints()
+            local nameWidth=math.max(0, button:GetWidth()-16-(button.pointsWidth or 0))
+            if button.fittedNameWidth then nameWidth=math.min(nameWidth,button.fittedNameWidth) end
             if forever then
-                button.label:SetPoint("BOTTOM", 0, 5)
-                button.label:SetSize(math.max(1, button:GetWidth() - 16), 13)
+                if button.pointLabel then
+                    button.label:SetPoint("BOTTOMLEFT", 8, 5)
+                    button.label:SetSize(nameWidth, 13)
+                    button.pointLabel:ClearAllPoints()
+                    button.pointLabel:SetPoint("LEFT", button.label, "RIGHT", button.pointsGap or 0, 0)
+                    button.pointLabel:SetHeight(13)
+                else
+                    button.label:SetPoint("BOTTOM", 0, 5)
+                    button.label:SetSize(math.max(1, button:GetWidth() - 16), 13)
+                end
                 button.highlight:SetPoint("BOTTOM", 2, -8)
                 button.highlight:SetSize(math.max(1, button:GetWidth() - 30), 32)
             else
                 button.label:SetPoint("TOPLEFT", 8, 0)
-                button.label:SetPoint("BOTTOMRIGHT", -8, 0)
+                if button.pointLabel then
+                    button.label:SetSize(nameWidth, 20)
+                    button.pointLabel:ClearAllPoints()
+                    button.pointLabel:SetPoint("LEFT", button.label, "RIGHT", button.pointsGap or 0, 0)
+                    button.pointLabel:SetHeight(20)
+                else
+                    button.label:SetPoint("BOTTOMRIGHT", -8, 0)
+                end
                 button.highlight:SetAllPoints(button)
             end
         end
@@ -538,8 +556,11 @@ function A.UpdateSelection()
                 and current and (current.token == "Config" or current.token == "Cache" or current.token == "Modules"))
             A.PaintButton(button, button.moduleActive, button.navigationIconMode)
             if button.navigationIcon then
-                button.navigationIcon:SetDesaturated(not module.hasData)
-                button.navigationIcon:SetAlpha(module.hasData and 1 or 0.35)
+                local available = module.token == "More" or module.hasData or module.inspectPending
+                button.navigationIcon:SetDesaturated(not available)
+                if ns.UITransitions then ns.UITransitions.Alpha(button.navigationIcon, available and 1 or 0.2)
+                else button.navigationIcon:SetAlpha(available and 1 or 0.2) end
+                if ns.GuildIcon then ns.GuildIcon.Apply(button.navigationIcon,module.token) end
             end
         end
     end

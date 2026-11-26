@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------------------------------
 --
 -- Services/ClassIcon.lua
--- Shows the inspected class and a style-aware active-specialization badge on the Talents tab.
+-- Shows the inspected class and resolves specialization artwork for Talents navigation.
 --
 ----------------------
 
@@ -25,105 +25,12 @@ button.icon = button:CreateTexture(nil,"ARTWORK")
 button.icon:SetAllPoints()
 button:SetPoint("BOTTOMRIGHT",ex.portrait,"BOTTOMRIGHT",6,-3)
 
--- Clip a decorative layer with the same native round mask as its badge artwork.
+-- Retain the native round material mask for the class badge beside the portrait.
 local function RoundLayer(layer, owner)
-    local mask = (owner or button):CreateMaskTexture(nil,"ARTWORK")
+    local mask=(owner or button):CreateMaskTexture(nil,"ARTWORK")
     mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask")
-    mask:SetAllPoints(layer)
-    layer:AddMaskTexture(mask)
+    mask:SetAllPoints(layer);layer:AddMaskTexture(mask)
     return mask
-end
-
--- Create the tab badge once while leaving all mouse interaction with its parent tab.
-local function CreateSpecBadge(size)
-    local frame = CreateFrame("Button",nil,ex)
-    frame:SetSize(size,size)
-    frame:SetFrameLevel(button:GetFrameLevel())
-    frame:EnableMouse(false)
-    frame:Hide()
-    frame.icon = frame:CreateTexture(nil,"ARTWORK")
-    frame.icon:SetAllPoints()
-    frame.icon:SetTexCoord(0.08,0.92,0.08,0.92)
-    if frame.CreateMaskTexture then
-        frame.mask = frame:CreateMaskTexture(nil,"ARTWORK")
-        frame.mask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask")
-        frame.mask:SetAllPoints(frame.icon)
-        frame.icon:AddMaskTexture(frame.mask)
-        frame.maskAttached = true
-    end
-    -- Release specialization help when a preview is hidden or reparented.
-    frame:SetScript("OnHide",function(self)
-        if GameTooltip:GetOwner() == self then GameTooltip:Hide() end
-    end)
-    return frame
-end
-
-local tabSpecialization = CreateSpecBadge(16)
-tabSpecialization.icon:SetTexCoord(0,1,0,1)
-P.specialization = tabSpecialization
-P.tabSpecialization = tabSpecialization
-P.specCandidates = {tabSpecialization}
-
--- Add a round metal rim, dark inset and glass sheen without enlarging the icon itself.
-local function AddTabGlass(frame)
-    if not frame.CreateMaskTexture then return end
-    frame.bezel = frame:CreateTexture(nil,"BACKGROUND",nil,0)
-    frame.bezel:SetPoint("TOPLEFT",frame,"TOPLEFT",-2,2)
-    frame.bezel:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",2,-2)
-    frame.bezelMask = RoundLayer(frame.bezel,frame)
-    frame.socket = frame:CreateTexture(nil,"BACKGROUND",nil,1)
-    frame.socket:SetPoint("TOPLEFT",frame,"TOPLEFT",-1,1)
-    frame.socket:SetPoint("BOTTOMRIGHT",frame,"BOTTOMRIGHT",1,-1)
-    frame.socket:SetColorTexture(0.04,0.04,0.04,1)
-    frame.socketMask = RoundLayer(frame.socket,frame)
-    frame.glass = frame:CreateTexture(nil,"OVERLAY")
-    frame.glass:SetAllPoints(frame.icon)
-    frame.glass:SetColorTexture(1,1,1,1)
-    frame.glass:SetAlpha(0.25)
-    if frame.glass.SetGradient and CreateColor then
-        frame.glass:SetGradient("VERTICAL",CreateColor(1,1,1,0),CreateColor(1,1,1,0.38))
-    else
-        frame.glass:SetGradientAlpha("VERTICAL",1,1,1,0,1,1,1,0.38)
-    end
-    frame.glassMask = RoundLayer(frame.glass,frame)
-end
-AddTabGlass(tabSpecialization)
-
--- Follow the Talents module when pooled navigation buttons change owner or layout.
-local function UpdateTabSpecialization(show)
-    local talents = ex:GetModuleFromToken("Talents")
-    local owner = talents and talents:IsEnabled() and talents.button
-    if not show or not owner then
-        tabSpecialization:Hide()
-        tabSpecialization:SetParent(ex)
-        return
-    end
-    tabSpecialization:SetParent(owner)
-    tabSpecialization:SetFrameLevel(owner:GetFrameLevel()+8)
-    tabSpecialization:ClearAllPoints()
-    tabSpecialization:SetPoint("BOTTOMRIGHT",owner,"BOTTOMRIGHT",-4,owner.navigationIconMode and 4 or -8)
-    tabSpecialization:SetSize(owner.navigationIconMode and 16 or 12,owner.navigationIconMode and 16 or 12)
-    local round = ex.cfg.style ~= "modern"
-    if tabSpecialization.mask then
-        if round and not tabSpecialization.maskAttached then
-            tabSpecialization.icon:AddMaskTexture(tabSpecialization.mask)
-            tabSpecialization.maskAttached = true
-        elseif not round and tabSpecialization.maskAttached then
-            tabSpecialization.icon:RemoveMaskTexture(tabSpecialization.mask)
-            tabSpecialization.maskAttached = false
-        end
-    end
-    for _, key in ipairs({"bezel","socket","glass"}) do
-        if tabSpecialization[key] then tabSpecialization[key]:SetShown(round) end
-    end
-    if tabSpecialization.bezel then
-        if ex.cfg.style == "forever" then
-            tabSpecialization.bezel:SetColorTexture(0.72,0.56,0.38,1)
-        else
-            tabSpecialization.bezel:SetColorTexture(0.65,0.65,0.65,1)
-        end
-    end
-    tabSpecialization:Show()
 end
 
 -- Select a unique dominant tree only when every active tree has known points.
@@ -185,13 +92,10 @@ function P.LoadSpecialization(entry)
     P.Update()
 end
 
--- Remove a previous player's or previous build's badge while new data is pending.
+-- Clear specialization metadata independently of any held pending artwork.
 function P.ClearSpecialization()
     P.specName, P.specIcon = nil, nil
-    for _, frame in ipairs(P.specCandidates) do
-        frame:Hide()
-        if GameTooltip:GetOwner() == frame then GameTooltip:Hide() end
-    end
+    if ex.cfg then ex:RefreshNavigationIcons() end
 end
 
 -- Keep the Modern badge inside the name bar and restore portrait badges in other styles.
@@ -242,13 +146,11 @@ end
 function P.Update()
     if not ex.cfg then
         button:Hide()
-        for _, frame in ipairs(P.specCandidates) do frame:Hide() end
         return
     end
     local class = C.Text(ex.info.classFixed)
     local coords = class and ((CLASS_ICON_TCOORDS and CLASS_ICON_TCOORDS[class]) or classicCoords[class])
-    local hasSpec = P.specIcon ~= nil and ex.unitType ~= 1 and coords ~= nil
-    UpdateTabSpecialization(hasSpec)
+    ex:RefreshNavigationIcons()
     UpdateStyle()
     if ns.Friends then ns.Friends.Update() end
     if ex.unitType == 1 or not coords then
@@ -273,9 +175,6 @@ function P.Update()
         end
     end
     button:Show()
-    if hasSpec then
-        for _, frame in ipairs(P.specCandidates) do frame.icon:SetTexture(P.specIcon) end
-    end
 end
 
 -- Identify the inspected class without exposing development controls.

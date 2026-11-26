@@ -233,14 +233,14 @@ mod.OnInspect = mod.OnInspectReady
 -- Restore gear statistics details from the saved player snapshot.
 function mod:OnCacheLoaded(entry, unit)
     self.blizzardItemLevel = ExaminerNS.Compat.Number(entry.blizzardItemLevel)
-    self:HasData(true)
+    self:HasData(ex.itemsLoaded)
     self:InitDetails()
     self:BuildShownList()
 end
 mod.OnGearUpdated = mod.OnInspectReady
 -- Finish the gear statistics display with the data currently available.
 function mod:OnDataTimeout()
-    self:HasData(true)
+    self:HasData(ex.itemsLoaded)
     self:InitDetails()
     self:BuildShownList()
 end
