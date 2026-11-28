@@ -315,7 +315,15 @@ function mod:OnInitialize()
         chk.text = ExaminerNS.Fonts.Create(chk, "ARTWORK", nil, "GameFontNormalSmall")
         chk.text:SetPoint("LEFT", chk, "RIGHT", 0, 1)
         chk.text:SetText(option.label)
-        chk:SetHitRectInsets(0, chk.text:GetWidth() * -1, 0, 0)
+        local previewWidth = 0
+        if option.var == "showMinimapButton" then
+            chk.icon = chk:CreateTexture(nil, "ARTWORK")
+            chk.icon:SetSize(16, 16)
+            chk.icon:SetPoint("LEFT", chk.text, "RIGHT", 4, 0)
+            chk.icon:SetTexture(ExaminerNS.Broker.icon)
+            previewWidth = 20
+        end
+        chk:SetHitRectInsets(0, -(chk.text:GetWidth() + previewWidth), 0, 0)
 
         chk.id = index
         chk.var = option.var
@@ -433,6 +441,7 @@ end
 
 -- Apply changed preferences to the settings display.
 function mod:OnConfigChanged(var, value)
+    if var == "showMinimapButton" then ExaminerNS.Minimap.Update() end
     if var == "showPlayerActions" and ExaminerNS.Friends then ExaminerNS.Friends.Update() end
     if var == "scale" and self.scaleSlider then
         local slider = self.scaleSlider

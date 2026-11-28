@@ -492,6 +492,11 @@ function A.Apply()
         ex.styleSkin.fill:SetVertexColor(1,1,1,1)
     end
     ex.styleSkin.metal = ns.FrameArt.MetalFrame(ex, ex.styleSkin.bounds, ex.styleSkin.metal, forever)
+    -- Align the native close-button chrome with the replacement metal corner.
+    if forever and not ns.ClassicArt and ex.styleSkin.metal.available then
+        ex.close:ClearAllPoints()
+        ex.close:SetPoint("TOPRIGHT", -36, -10)
+    end
     -- Reset material tint on every switch so Forever keeps its original colors.
     for _, pieces in ipairs({ex.styleSkin.metal.native, ex.styleSkin.metal.fallback}) do
         for _, texture in pairs(pieces) do

@@ -327,11 +327,11 @@ function mod:GetAverageItemLevel()
     if cfg.itemLevelSource == "blizzard" then
         local value = self.blizzardItemLevel
         if ExaminerNS.Compat.IsNumber(value) and value >= 0 and value < math.huge then
-            return value
+            return ExaminerNS.GearColors.Average(value)
         end
         return "—"
     end
-    return ex.averageItemLevel or "—"
+    return ExaminerNS.GearColors.Average(ex.info.iLvlAverage or ex.averageItemLevel)
 end
 
 -- Build item-level details and cached-snapshot timestamps.
@@ -345,7 +345,9 @@ function mod:InitDetails()
     details:Add("Combined Item Levels", iLvlTotal)
     details:Add(ExaminerNS.L["Average Item Level"], self:GetAverageItemLevel())
     if iLvlMin and iLvlMax then
-        details:Add(ExaminerNS.L["Min / Max Item Levels"], iLvlMin .. " / " .. iLvlMax)
+        details:Add(ExaminerNS.L["Min / Max Item Levels"],
+            ExaminerNS.GearColors.ItemLevelText(iLvlMin, ex.info.level) .. " / "
+                .. ExaminerNS.GearColors.ItemLevelText(iLvlMax, ex.info.level))
     end
     -- CACHE
 
@@ -399,17 +401,10 @@ local function UpdateShownItems(self)
             if displayList[index].value then
                 entry.left:SetTextColor(1, 1, 1)
                 entry.left:SetFormattedText("  %s", displayList[index].name)
-                if
-                    displayList[index]
-                    and displayList[index].name == "GearScore"
-                    and displayList[index].value
-                then
-                    local color = ex.gsQualityColor
-                    if color and color.GetRGB then
-                        entry.right:SetTextColor(color:GetRGB())
-                    else
-                        entry.right:SetTextColor(1, 1, 0)
-                    end
+                if displayList[index].metric == "gearScore" then
+                    entry.right:SetTextColor(ExaminerNS.GearColors.Score(displayList[index].rawValue, ex.info.level))
+                elseif displayList[index].metric == "itemLevel" then
+                    entry.right:SetTextColor(ExaminerNS.GearColors.ItemLevel(displayList[index].rawValue, ex.info.level))
                 else
                     entry.right:SetTextColor(1.0, 1.0, 0.0)
                 end
@@ -450,7 +445,7 @@ local function UpdateShownItems(self)
 end
 
 -- Append a formatted statistics row and optional tooltip.
-local function AddListEntry(name, value, tip, link)
+local function AddListEntry(name, value, tip, link, metric, rawValue)
     if name and value == nil and displayList.count > 0 and displayList[displayList.count].name then
         AddListEntry()
     end
@@ -458,6 +453,7 @@ local function AddListEntry(name, value, tip, link)
     local tbl = displayList[displayList.count] or {}
     displayList[displayList.count] = tbl
     tbl.name = name
+    tbl.metric, tbl.rawValue = metric, rawValue
     tbl.value = ExaminerNS.Compat.IsNumber(value) and ExaminerNS.Compat.FormatNumber(value) or value
     tbl.tip = tip
     tbl.link = link
@@ -469,17 +465,19 @@ local function BuildStatList()
     local compareStats = ExaminerNS.Gear.CanonicalStats(ex.compareStats)
     displayList.count = 0
     AddListEntry(ExaminerNS.L["Item Levels"])
-    AddListEntry(ExaminerNS.L["Average Item Level"], mod:GetAverageItemLevel())
+    local averageMetric = ex.info.iLvlAverage
+    if cfg.itemLevelSource == "blizzard" then averageMetric = mod.blizzardItemLevel end
+    AddListEntry(ExaminerNS.L["Average Item Level"], mod:GetAverageItemLevel(), nil, nil, "itemLevel", averageMetric)
     if ex.gear and ex.gear.min then
         AddListEntry(
             ExaminerNS.L["Min / Max Item Levels"],
-            ExaminerNS.Compat.FormatNumber(ex.gear.min)
+            ExaminerNS.GearColors.ItemLevelText(ex.gear.min, ex.info.level)
                 .. " / "
-                .. ExaminerNS.Compat.FormatNumber(ex.gear.max)
+                .. ExaminerNS.GearColors.ItemLevelText(ex.gear.max, ex.info.level)
         )
     end
     if type(ex.gs) == "number" then
-        AddListEntry("GearScore", ex.gs)
+        AddListEntry("GearScore", ex.gs, nil, nil, "gearScore", ex.gs)
     end
     if ex.gear then
         if ex.gear.state == "loading" then

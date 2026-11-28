@@ -1,6 +1,7 @@
 ## Interface: 11509
-## Version: 1.13.0
+## Version: 1.14.0
 ## Title: Examiner
+## IconTexture: Interface\AddOns\Examiner\Textures\ExaminerLogo.tga
 ## Author: Aezay (Earthen Ring EU), sAks
 ## Notes: Advanced character inspection window replacing the basic default.
 ## Notes-deDE: Erweitertes Charakterfenster als Ersatz für die einfache Standardinspektion.

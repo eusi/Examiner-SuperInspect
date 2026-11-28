@@ -303,4 +303,9 @@ ns.locales.koKR={
     ["Show Player Actions"]="플레이어 행동 표시",
     ["Shows friend, group invite and whisper buttons for the displayed player."]="표시된 플레이어의 친구 추가, 파티 초대 및 귓속말 버튼을 표시합니다.",
     ["Whisper"]="귓속말",
+    ["Left-click: inspect target or yourself; click again to close."]="좌클릭: 대상 또는 자신 살펴보기; 다시 클릭하면 닫습니다.",
+    ["Right-click: open Settings."]="우클릭: 설정 열기.",
+    ["Show Minimap Button"]="미니맵 버튼 표시",
+    ["Shows an Examiner button on the minimap. Drag it to reposition."]="미니맵에 Examiner 버튼을 표시합니다. 드래그하여 위치를 옮길 수 있습니다.",
+    ["Drag to move."]="드래그하여 이동합니다.",
 };

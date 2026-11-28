@@ -4,6 +4,15 @@ Changes to sAks/eusi's Examiner (SuperInspect) fork, newest first.
 
 Development lineage: **Aezay's original Examiner → taxidriveer's Classic fork (2019) → sAks/eusi's SoD fork (2024), later expanded across WoW clients**. sAks/eusi occasionally helped before taking over in 2024. The entries below trace the additions in this fork back to its predecessors.
 
+## [1.14.0](https://github.com/eusi/Examiner-SuperInspect/releases/tag/v1.14.0) — 2026-11-26
+
+- Added Titan Panel, broker bar, minimap and native addon-list support.
+- Added a new Examiner icon.
+- Added role icons for supported specializations.
+- Improved Feral role detection using bear talents on Forever.
+- Improved item-level and GearScore colors based on the inspected character's level.
+- Fixed inspection errors and close-button alignment.
+
 ## [1.13.0](https://github.com/eusi/Examiner-SuperInspect/releases/tag/v1.13.0) — 2026-11-23
 
 - Added specialization icons and guild crests to navigation tabs.

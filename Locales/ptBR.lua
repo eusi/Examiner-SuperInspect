@@ -302,4 +302,9 @@ ns.locales.ptBR={
     ["Show Player Actions"]="Mostrar ações do jogador",
     ["Shows friend, group invite and whisper buttons for the displayed player."]="Mostra botões para adicionar amigos, convidar para o grupo e sussurrar para o jogador exibido.",
     ["Whisper"]="Sussurrar",
+    ["Left-click: inspect target or yourself; click again to close."]="Clique esquerdo: inspecionar o alvo ou você; clique novamente para fechar.",
+    ["Right-click: open Settings."]="Clique direito: abrir configurações.",
+    ["Show Minimap Button"]="Mostrar botão no minimapa",
+    ["Shows an Examiner button on the minimap. Drag it to reposition."]="Mostra um botão do Examiner no minimapa. Arraste-o para reposicionar.",
+    ["Drag to move."]="Arraste para mover.",
 };

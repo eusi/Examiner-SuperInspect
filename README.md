@@ -13,6 +13,7 @@ Originally developed by Aezay and maintained by the community, Examiner has been
 - **Gear & Stats:** GearScore, improved stats and a new gear list.
 - **Talents & PvP:** Improved talent trees and PvP information.
 - **Player Cache:** Search, filtering and sorting.
+- **Integrations:** Titan Panel, Bazooka, minimap and WoW's addon list.
 - **Further Improvements:** Gamepad support and faster & smoother inspections.
 
 [*Full Changelog*](https://github.com/eusi/Examiner-SuperInspect/blob/master/CHANGELOG.md)
@@ -70,6 +71,9 @@ Features depend on the client and available inspect data.
 - **Gear List:** It is disabled by default. Enable it under **More > Modules**.
 - **Style / menu:** Choose these independently under **More > Settings**.
 - **Player actions:** Show or hide under **More > Settings > Show Player Actions**.
+- **Titan Panel / Bazooka:** Enable Examiner in your bar.
+- **Minimap:** Enable under **More > Settings**; drag to move.
+- **Launcher (bar, minimap or addon list):** Left-click to inspect your target (or yourself); click again to close. Right-click for Settings.
 
 ## Commands
 

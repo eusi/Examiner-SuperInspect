@@ -23,6 +23,7 @@
     <Script file="Services\Fonts.lua"/>
     <Script file="Services\ProgressBars.lua"/>
     <Script file="Services\Gear.lua"/>
+    <Script file="Services\GearColors.lua"/>
     <Script file="Services\Cache.lua"/>
     <Script file="Services\Talents.lua"/>
     <Script file="Services\ForeverTalents.lua"/>
@@ -35,6 +36,7 @@
     <Script file="Services\GuildIcon.lua"/>
     <Script file="Services\Appearance.lua"/>
     <Script file="Services\FrameArt.lua"/>
+    <Script file="Services\Roles.lua"/>
     <Script file="Services\ClassIcon.lua"/>
     <Script file="Services\Friends.lua"/>
     <Script file="Services\ClassicArt.lua"/>
@@ -56,5 +58,7 @@
     <Script file="Modules\equipment.lua"/>
     <Script file="Services\Inspector.lua"/>
     <Script file="InspectEntry.lua"/>
+    <Script file="Services\Broker.lua"/>
+    <Script file="Services\Minimap.lua"/>
     <Script file="Diagnostics.lua"/>
 </Ui>

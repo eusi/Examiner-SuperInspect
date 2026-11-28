@@ -9,7 +9,7 @@
 
 -- create new library
 local LIB_NAME = "LibFroznFunctions-1.0";
-local LIB_MINOR = 71; -- bump on changes
+local LIB_MINOR = 73; -- bump on changes
 
 if (not LibStub) then
 	error(LIB_NAME .. " requires LibStub.");
@@ -61,6 +61,7 @@ end
 --         .WotLKC     = true/false for WotLKC
 --         .CataC      = true/false for CataC
 --         .MoPC       = true/false for MoPC
+--         .Forever    = true/false for Forever
 --         .SL         = true/false for SL
 --         .DF         = true/false for DF
 --         .TWW        = true/false for TWW
@@ -71,6 +72,7 @@ LibFroznFunctions.isWoWFlavor = {
 	WotLKC = false,
 	CataC = false,
 	MoPC = false,
+	Forever = false,
 	SL = false,
 	DF = false,
 	TWW = false,
@@ -88,7 +90,11 @@ elseif (_G["WOW_PROJECT_ID"] == _G["WOW_PROJECT_CATACLYSM_CLASSIC"]) then
 elseif (_G["WOW_PROJECT_ID"] == _G["WOW_PROJECT_MISTS_CLASSIC"]) then
 	LibFroznFunctions.isWoWFlavor.MoPC = true;
 else -- WOW_PROJECT_MAINLINE (retail)
-	if (_G["LE_EXPANSION_LEVEL_CURRENT"] == _G["LE_EXPANSION_SHADOWLANDS"]) then
+	local buildInterface = select(4, GetBuildInfo()) or 0;
+	
+	if (_G["LE_EXPANSION_LEVEL_CURRENT"] == _G["LE_EXPANSION_CLASSIC"]) or ((buildInterface >= 16000) and (buildInterface < 20000)) then -- WoW: Forever (interface 16001)
+		LibFroznFunctions.isWoWFlavor.Forever = true;
+	elseif (_G["LE_EXPANSION_LEVEL_CURRENT"] == _G["LE_EXPANSION_SHADOWLANDS"]) then
 		LibFroznFunctions.isWoWFlavor.SL = true;
 	elseif (_G["LE_EXPANSION_LEVEL_CURRENT"] == _G["LE_EXPANSION_DRAGONFLIGHT"]) then
 		LibFroznFunctions.isWoWFlavor.DF = true;
@@ -117,6 +123,7 @@ LFF_GEAR_SCORE_ALGORITHM = {
 --         .talentIconAvailable                                                                = true/false if talent icon is available (since bc)
 --         .roleIconAvailable                                                                  = true/false if role icon is available (since MoP 5.0.4)
 --         .specializationAvailable                                                            = true/false if specialization is available (since MoP 5.0.4)
+--         .specializationGroupsAvailable                                                      = true/false if specialization groups are available (since 4ever 1.60.1)
 --         .itemLevelOfFirstRaidTierSet                                                        = item level of first raid tier set. false if not defined (yet).
 --         .GameTooltipSetPaddingWithLeftAndTop                                                = true/false if GameTooltip:SetPadding() has the optional left and top parameters (since BfA 8.2.0)
 --         .GameTooltipFadeOutNotBeCalledForWorldFrameUnitTips                                 = true/false if GameTooltip:FadeOut() will not be called for worldframe unit tips (till mopc)
@@ -145,6 +152,7 @@ LibFroznFunctions.hasWoWFlavor = {
 	talentIconAvailable = true,
 	roleIconAvailable = true,
 	specializationAvailable = true,
+	specializationGroupsAvailable = false,
 	itemLevelOfFirstRaidTierSet = false,
 	GameTooltipSetPaddingWithLeftAndTop = true,
 	GameTooltipFadeOutNotBeCalledForWorldFrameUnitTips = false,
@@ -156,8 +164,8 @@ LibFroznFunctions.hasWoWFlavor = {
 	relatedExpansionForItemAvailable = true,
 	defaultGearScoreAlgorithm = LFF_GEAR_SCORE_ALGORITHM.TipTac,
 	optionsSliderTemplate = "UISliderTemplateWithLabels",
-	skyriding = (C_MountJournal and C_MountJournal.SwapDynamicFlightMode and true or false), -- see MountJournalDynamicFlightModeButtonMixin:OnClick() in "Blizzard_MountCollection.lua"
-	challengeMode = (C_ChallengeMode and C_ChallengeMode.IsChallengeModeActive and true or false),
+	skyriding = (C_MountJournal and C_MountJournal.SwapDynamicFlightMode and C_MountJournal.GetDynamicFlightModeSpellID and C_Spell and C_Spell.DoesSpellExist and C_Spell.DoesSpellExist(C_MountJournal.GetDynamicFlightModeSpellID()) and true or false), -- see MountJournalDynamicFlightModeButtonMixin:OnClick() in "Blizzard_MountCollection.lua"
+	challengeMode = (ChallengeMode_LoadUI and C_ChallengeMode and C_ChallengeMode.IsChallengeModeActive and true or false),
 	unitCanBeSecretValue = true,
 	GetMountFromSpellNotPossibleInCombat = true,
 	aurasCooldownCountAndDebuffTypeNotAvailableInCombat = true
@@ -208,6 +216,9 @@ end
 if (LibFroznFunctions.isWoWFlavor.MoPC) or (LibFroznFunctions.isWoWFlavor.SL) then
 	LibFroznFunctions.hasWoWFlavor.numTalentTrees = 0;
 end
+if (LibFroznFunctions.isWoWFlavor.Forever) then
+	LibFroznFunctions.hasWoWFlavor.specializationGroupsAvailable = true;
+end
 if (LibFroznFunctions.isWoWFlavor.DF) then
 	LibFroznFunctions.hasWoWFlavor.skyriding = (GetAchievementInfo(15794) and true or false) -- see DRAGONRIDING_ACCOUNT_ACHIEVEMENT_ID in "Blizzard_DragonflightLandingPage.lua"
 end
@@ -217,6 +228,7 @@ LibFroznFunctions.hasWoWFlavor.itemLevelOfFirstRaidTierSet =
 	LibFroznFunctions.isWoWFlavor.WotLKC     and 213 or -- Valorous Dreamwalker Robe (Druid, Tier 7)
 	LibFroznFunctions.isWoWFlavor.CataC      and 359 or -- Stormrider's Robes (Druid, Tier 11)
 	LibFroznFunctions.isWoWFlavor.MoPC       and 397 or -- Deep Earth Robes (Druid, Tier 13)
+	LibFroznFunctions.isWoWFlavor.Forever    and  65 or -- Grovekeeper Chestguard (Druid, Tier 1)
 	LibFroznFunctions.isWoWFlavor.DF         and 395 or -- Lost Landcaller's Robes (Druid, Tier 29)
 	LibFroznFunctions.isWoWFlavor.TWW        and 571 or -- Hide of the Greatlynx (Druid, Tier 32)
 	LibFroznFunctions.isWoWFlavor.MN         and 219;   -- Trunk of the Luminous Bloom (Druid, Tier 35)
@@ -972,6 +984,35 @@ function LibFroznFunctions:GetSpecializationInfo(specIndex, isInspect, isPet, in
 	
 	-- before mopc 5.5.0
 	return GetSpecializationInfo(specIndex, isInspect, isPet, inspectTarget, sex);
+end
+
+-- get specialization id of the inspected unit
+--
+-- @param  unitID  unit id of the inspected unit
+-- @return specialization id, 0 if unknown
+function LibFroznFunctions:GetInspectSpecialization(unitID, ...)
+	-- newer clients provide it in C_SpecializationInfo
+	if (C_SpecializationInfo) and (C_SpecializationInfo.GetInspectSpecialization) then
+		return C_SpecializationInfo.GetInspectSpecialization(unitID, ...);
+	end
+	
+	-- older clients
+	return GetInspectSpecialization(unitID, ...);
+end
+
+-- get specialization info by specialization id
+--
+-- @param  specializationID  id of the specialization
+-- @param  sex               optional. sex of the unit
+-- @return specialization id, name, description, icon, role, primary stat, ...
+function LibFroznFunctions:GetSpecializationInfoByID(specializationID, ...)
+	-- newer clients provide it in C_SpecializationInfo
+	if (C_SpecializationInfo) and (C_SpecializationInfo.GetSpecializationInfoByID) then
+		return C_SpecializationInfo.GetSpecializationInfoByID(specializationID, ...);
+	end
+	
+	-- older clients
+	return GetSpecializationInfoByID(specializationID, ...);
 end
 
 -- get debuff display info table
@@ -5329,7 +5370,111 @@ LFF_FOREVER_SPECS = {
 	DEATHKNIGHT = { LFF_Spec("Blood", "Spell_Deathknight_BloodPresence", "TANK"), LFF_Spec("Frost", "Spell_Deathknight_FrostPresence", "DAMAGER"), LFF_Spec("Unholy", "Spell_Deathknight_UnholyPresence", "DAMAGER") },
 };
 
+-- WoW: Forever 1.60.1 provides the specializations as "groups" of the trait tree. this is the official way to get the specialization name, icon and the points spent per specialization.
+-- returns nil if the groups aren't available (older client, no inspect data, no points spent), so the caller can fall back to another way.
+local function LFF_GetTalentsFromGroups(unitID, isSelf)
+	if (not C_Traits) or (not C_Traits.GetConfigInfo) or (not C_Traits.GetGroupDisplayInfoByTreeID) or (not C_Traits.GetGroupCurrencyInfo) or (not C_Traits.GetTraitCurrencyInfo) or
+			(not Enum) or (not Enum.TraitCurrencyFlag) then
+		return nil;
+	end
+	
+	local configID;
+	
+	if (isSelf) then
+		configID = (C_ClassTalents) and (C_ClassTalents.GetActiveConfigID) and (C_ClassTalents.GetActiveConfigID());
+	else
+		if (not C_Traits.HasValidInspectData) or (not C_Traits.HasValidInspectData()) then
+			return nil;
+		end
+		
+		configID = (Constants) and (Constants.TraitConsts) and (Constants.TraitConsts.INSPECT_TRAIT_CONFIG_ID);
+	end
+	
+	if (not configID) then
+		return nil;
+	end
+	
+	local configInfo = C_Traits.GetConfigInfo(configID);
+	local primaryTreeID = (configInfo) and (configInfo.treeIDs) and (configInfo.treeIDs[1]);
+	
+	if (not primaryTreeID) then
+		return nil;
+	end
+	
+	local groupDisplayInfos = C_Traits.GetGroupDisplayInfoByTreeID(primaryTreeID);
+	
+	if (type(groupDisplayInfos) ~= "table") or (#groupDisplayInfos == 0) then
+		return nil;
+	end
+	
+	local pointsSpent = {};
+	local totalSpent = 0;
+	local maxSpent, specIndex, specName, specIcon;
+	
+	for groupIndex, groupDisplayInfo in ipairs(groupDisplayInfos) do
+		local groupCurrencyInfos = C_Traits.GetGroupCurrencyInfo(configID, { groupDisplayInfo.groupID });
+		local spent = 0;
+		
+		if (type(groupCurrencyInfos) == "table") and (#groupCurrencyInfos > 0) then
+			local groupCurrencyInfo = groupCurrencyInfos[1];
+			groupCurrencyInfo = (groupCurrencyInfo) and (groupCurrencyInfo.currencyInfos) and (groupCurrencyInfo.currencyInfos[1]);
+			
+			if (groupCurrencyInfo) and (type(groupCurrencyInfo.spent) == "number") then
+				local traitCurrencyFlags = C_Traits.GetTraitCurrencyInfo(groupCurrencyInfo.traitCurrencyID);
+				
+				if (traitCurrencyFlags == Enum.TraitCurrencyFlag.UseClassIcon) or (traitCurrencyFlags == Enum.TraitCurrencyFlag.UseSpecIcon) then
+					spent = groupCurrencyInfo.spent;
+				end
+			end
+		end
+		
+		tinsert(pointsSpent, spent);
+		totalSpent = totalSpent + spent;
+		
+		if (not maxSpent) or (spent > maxSpent) then
+			maxSpent = spent;
+			specIndex = groupIndex;
+			specName = groupDisplayInfo.displayName;
+			specIcon = groupDisplayInfo.icon;
+		end
+	end
+	
+	if (totalSpent == 0) then
+		return nil;
+	end
+	
+	-- role (and name if the game doesn't provide one) from the built-in table, which is ordered like the groups
+	local role;
+	local _, classFile = UnitClass(unitID);
+	local fallback = classFile and LFF_FOREVER_SPECS[classFile] and LFF_FOREVER_SPECS[classFile][specIndex];
+	
+	if (fallback) then
+		role = fallback.role;
+		
+		if (type(specName) ~= "string") or (specName == "") then
+			specName = fallback.name;
+		end
+		
+		specIcon = specIcon or fallback.icon;
+	end
+	
+	if (type(specName) ~= "string") or (specName == "") then
+		specName = nil;
+	end
+	
+	return { pointsSpent = pointsSpent, name = specName, iconFileID = specIcon, role = role };
+end
+
 function LibFroznFunctions:GetTalentsForever(unitID, isSelf)
+	-- 1st: specialization groups (official way, since 4ever 1.60.1). 2nd: reading the trait tree directly (below).
+	if (self.hasWoWFlavor.specializationGroupsAvailable) then
+		local okGroups, talentsFromGroups = pcall(LFF_GetTalentsFromGroups, unitID, isSelf);
+		
+		if (okGroups) and (talentsFromGroups) then
+			return talentsFromGroups;
+		end
+	end
+	
 	local ok, talents = pcall(function()
 		if (not C_Traits) or (not C_Traits.GetConfigInfo) or (not C_Traits.GetTreeCurrencyInfo) then
 			return nil;
@@ -5618,13 +5763,13 @@ function LibFroznFunctions:GetTalents(unitID)
 			
 			_, specializationName, _, specializationIcon, role = self:GetSpecializationInfo(specIndex);
 		else -- inspecting
-			local specializationID = GetInspectSpecialization(unitID);
+			local specializationID = self:GetInspectSpecialization(unitID);
 			
 			if (specializationID == 0) then
 				return LFF_TALENTS.none;
 			end
 			
-			_, specializationName, _, specializationIcon, role = GetSpecializationInfoByID(specializationID);
+			_, specializationName, _, specializationIcon, role = self:GetSpecializationInfoByID(specializationID);
 		end
 		
 		if (specializationName ~= "") then

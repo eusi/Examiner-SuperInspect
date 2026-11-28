@@ -303,4 +303,9 @@ ns.locales.zhTW={
     ["Show Player Actions"]="顯示玩家操作",
     ["Shows friend, group invite and whisper buttons for the displayed player."]="顯示目前玩家的加入好友、邀請加入隊伍及密語按鈕。",
     ["Whisper"]="密語",
+    ["Left-click: inspect target or yourself; click again to close."]="左鍵：觀察目標或自己；再次點擊關閉。",
+    ["Right-click: open Settings."]="右鍵：開啟設定。",
+    ["Show Minimap Button"]="顯示小地圖按鈕",
+    ["Shows an Examiner button on the minimap. Drag it to reposition."]="在小地圖旁顯示 Examiner 按鈕。拖曳可調整位置。",
+    ["Drag to move."]="拖曳可移動。",
 };

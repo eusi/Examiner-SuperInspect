@@ -303,4 +303,9 @@ ns.locales.frFR={
     ["Show Player Actions"]="Afficher les actions de joueur",
     ["Shows friend, group invite and whisper buttons for the displayed player."]="Affiche les boutons d’ajout d’ami, d’invitation au groupe et de chuchotement pour le joueur affiché.",
     ["Whisper"]="Chuchoter",
+    ["Left-click: inspect target or yourself; click again to close."]="Clic gauche : inspecter la cible ou vous-même ; cliquez à nouveau pour fermer.",
+    ["Right-click: open Settings."]="Clic droit : ouvrir les paramètres.",
+    ["Show Minimap Button"]="Afficher le bouton minicarte",
+    ["Shows an Examiner button on the minimap. Drag it to reposition."]="Affiche un bouton Examiner sur la minicarte. Faites-le glisser pour le déplacer.",
+    ["Drag to move."]="Faites glisser pour déplacer.",
 };

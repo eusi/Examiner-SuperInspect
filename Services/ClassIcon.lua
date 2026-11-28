@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------------------------------
 --
 -- Services/ClassIcon.lua
--- Shows the inspected class and resolves specialization artwork for Talents navigation.
+-- Shows the inspected class and resolves specialization artwork and role metadata.
 --
 ----------------------
 
@@ -71,17 +71,22 @@ function P.CaptureSpecialization(unit)
         local mod = ex:GetModuleFromToken("Talents")
         data = mod and mod:IsEnabled() and ex.talentData or ns.Talents.ReadForever(unit,ex.isSelf)
     else
-        local _, name, _, icon = C.GetSpecialization(unit,ex.isSelf)
-        data = {specName=name,specIcon=icon}
+        local _, name, _, icon, role = C.GetSpecialization(unit,ex.isSelf)
+        data = {specName=name,specIcon=icon,role=role}
     end
     P.specName, P.specIcon = P.ReadSpecialization(data)
-    ex.info.specialization=P.specIcon and {name=P.specName,icon=P.specIcon} or false
+    P.role = ns.Roles.Resolve(data, ex.info.classFixed)
+    ex.info.specialization=P.specIcon and {name=P.specName,icon=P.specIcon,role=P.role} or false
     P.Update()
 end
 
 -- Restore only this cached player's saved talent snapshot, without querying live APIs.
 function P.LoadSpecialization(entry)
     local saved=entry.specialization
+    P.role = C.IsTable(saved) and ns.Roles.Valid(saved.role) or nil
+    if saved ~= false and not P.role then
+        P.role = ns.Roles.Resolve(entry.Talents or entry.ClassicTalents, ex.info.classFixed)
+    end
     if C.IsTable(saved) then
         P.specName,P.specIcon=C.Text(saved.name),C.Icon(saved.icon)
     elseif saved==false then
@@ -95,6 +100,8 @@ end
 -- Clear specialization metadata independently of any held pending artwork.
 function P.ClearSpecialization()
     P.specName, P.specIcon = nil, nil
+    P.role = nil
+    ns.Roles.Update()
     if ex.cfg then ex:RefreshNavigationIcons() end
 end
 
@@ -175,6 +182,7 @@ function P.Update()
         end
     end
     button:Show()
+    ns.Roles.Update()
 end
 
 -- Identify the inspected class without exposing development controls.

@@ -302,4 +302,9 @@ ns.locales.enUS={
     ["Show Player Actions"]="Show Player Actions",
     ["Shows friend, group invite and whisper buttons for the displayed player."]="Shows friend, group invite and whisper buttons for the displayed player.",
     ["Whisper"]="Whisper",
+    ["Left-click: inspect target or yourself; click again to close."]="Left-click: inspect target or yourself; click again to close.",
+    ["Right-click: open Settings."]="Right-click: open Settings.",
+    ["Show Minimap Button"]="Show Minimap Button",
+    ["Shows an Examiner button on the minimap. Drag it to reposition."]="Shows an Examiner button on the minimap. Drag it to reposition.",
+    ["Drag to move."]="Drag to move.",
 };

@@ -164,6 +164,12 @@ ex.options = {
         label = ExaminerNS.L["Gamepad: Close with B/Circle"],
         tip = ExaminerNS.L["Closes Examiner with gamepad B/Circle. Disable if it conflicts with your controller setup."],
     },
+    {
+        var = "showMinimapButton",
+        default = false,
+        label = ExaminerNS.L["Show Minimap Button"],
+        tip = ExaminerNS.L["Shows an Examiner button on the minimap. Drag it to reposition."],
+    },
 }
 
 -- BINDING NAME
@@ -311,6 +317,7 @@ function ex:VARIABLES_LOADED(event)
     end
     -- CACHE
 
+    ExaminerNS.Minimap.Update()
     if type(_G[ExaminerNS.cacheKey]) ~= "table" then
         _G[ExaminerNS.cacheKey] = {}
     end
@@ -638,47 +645,52 @@ ex.model:SetScript("OnMouseWheel", Model_OnMouseWheel)
 --                                            Unit Details                                            --
 --------------------------------------------------------------------------------------------------------
 
-local uDetails = {}
-
 -- Build the player level, race and class summary.
 function ex:SetUnitDetailString()
+    -- A failed update must never leave restricted or old values for the next unit.
+    local uDetails = {}
+    local level = Compat.Number(info.level, -1)
+    local race, raceFixed = Compat.Text(info.race), Compat.Text(info.raceFixed)
+    local class, realm = Compat.Text(info.class), Compat.Text(info.realm)
     -- LEVEL
 
-    local color = GetQuestDifficultyColor(info.level ~= -1 and info.level or 500)
+    local color = Compat.Try(GetQuestDifficultyColor, level ~= -1 and level or 500)
+    color = Compat.IsTable(color) and color or {}
     uDetails[#uDetails + 1] = format(
         "%s |cff%.2x%.2x%.2x%s|r",
         LEVEL,
-        color.r * 255,
-        color.g * 255,
-        color.b * 255,
-        (info.level ~= -1 and info.level or "??")
+        Compat.Number(color.r, 1) * 255,
+        Compat.Number(color.g, 1) * 255,
+        Compat.Number(color.b, 1) * 255,
+        (level ~= -1 and level or "??")
     )
     -- Classification (non players only, so ok to use ex.unit)
-    if not info.raceFixed then
+    if not raceFixed then
         local classification = Compat.Text(Compat.Try(UnitClassification,ex.unit))
         if CLASSIFICATION_NAMES[classification] then
             uDetails[#uDetails + 1] = "(" .. CLASSIFICATION_NAMES[classification] .. ")"
         end
     end
     -- Race for Players / Family or Type for NPC's
-    if info.race then
-        uDetails[#uDetails + 1] = (info.race ~= "Not specified" and info.race or UNKNOWN)
+    if race then
+        uDetails[#uDetails + 1] = (race ~= "Not specified" and race or UNKNOWN)
     end
     -- Players Only: Class (+ Realm)
-    if info.raceFixed then
-        if info.class then
-            local color = CLASS_COLORS[info.classFixed] or { r = 1, g = 1, b = 1 }
+    if raceFixed then
+        if class then
+            local color = CLASS_COLORS[Compat.Text(info.classFixed)]
+            color = Compat.IsTable(color) and color or {}
             uDetails[#uDetails + 1] =
-                format("|cff%.2x%.2x%.2x%s|r", color.r * 255, color.g * 255, color.b * 255, info.class)
+                format("|cff%.2x%.2x%.2x%s|r", Compat.Number(color.r, 1) * 255,
+                    Compat.Number(color.g, 1) * 255, Compat.Number(color.b, 1) * 255, class)
         end
-        if info.realm and not Compat.isForever then
-            uDetails[#uDetails + 1] = "[" .. info.realm .. "]"
+        if realm and not Compat.isForever then
+            uDetails[#uDetails + 1] = "[" .. realm .. "]"
         end
     end
     -- SET RESULT
 
     self.details:SetText(table.concat(uDetails, " "))
-    wipe(uDetails)
 end
 
 -- Display the inspected player guild and rank.

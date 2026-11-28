@@ -230,6 +230,7 @@ function mod:BuildEquipmentList()
             local level = C.Number(C.Try(C.GetDetailedItemLevelInfo, link), C.Number(baseLevel))
             if level and (level < 0 or level ~= level or level == math.huge) then level = nil end
             row.level:SetText(level and C.FormatNumber(level) or "-")
+            row.level:SetTextColor(ns.GearColors.ItemLevel(level, ex.info.level))
             row:Show()
         end
     end
@@ -241,15 +242,16 @@ function mod:BuildEquipmentList()
         row:Hide()
     end
     self.equipmentCount = count
-    local average = ex.averageItemLevel or "—"
+    local averageNumber = ex.info.iLvlAverage
     if ex.cfg.itemLevelSource == "blizzard" then
         local value = C.Number(ex.info.blizzardItemLevel)
-        average = value and value >= 0 and value < math.huge and C.FormatNumber(value) or "—"
+        averageNumber = value
     end
+    local average = ns.GearColors.Average(averageNumber)
     summary:SetText(tostring(average))
+    summary:SetTextColor(ns.GearColors.ItemLevel(averageNumber, ex.info.level))
     score:SetText(C.IsNumber(ex.gs) and C.FormatNumber(ex.gs) or "—")
-    local r, g, b = C.Try(ex.gsQualityColor and ex.gsQualityColor.GetRGB, ex.gsQualityColor)
-    score:SetTextColor(C.Number(r, 1), C.Number(g, 0.82), C.Number(b, 0))
+    score:SetTextColor(ns.GearColors.Score(ex.gs, ex.info.level))
     local titleWidth = self.page:GetWidth() - 2 * SIDE_PADDING - scoreTitle:GetStringWidth()
         - score:GetStringWidth() - summary:GetStringWidth() - 16
     summaryTitle:SetWidth(math.max(1, math.min(titleWidth, summaryMeasure:GetStringWidth())))

@@ -303,4 +303,9 @@ ns.locales.ruRU={
     ["Show Player Actions"]="Показывать действия с игроком",
     ["Shows friend, group invite and whisper buttons for the displayed player."]="Показывает кнопки добавления в друзья, приглашения в группу и шёпота для отображаемого игрока.",
     ["Whisper"]="Шепнуть",
+    ["Left-click: inspect target or yourself; click again to close."]="ЛКМ: осмотреть цель или себя; повторное нажатие — закрыть.",
+    ["Right-click: open Settings."]="ПКМ: открыть настройки.",
+    ["Show Minimap Button"]="Кнопка у мини-карты",
+    ["Shows an Examiner button on the minimap. Drag it to reposition."]="Показывает кнопку Examiner у мини-карты. Перетащите её, чтобы переместить.",
+    ["Drag to move."]="Перетащите для перемещения.",
 };
